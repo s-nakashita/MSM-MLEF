@@ -1,0 +1,26 @@
+                                      msmtp
+
+Run MSM using RSM or MSM background data
+
+1. How to compile
+1) edit configure
+   At least, you need change the following terms.
+   MACHINE       # machine and compiler
+   You can find all config term and comment in utl/rsm_default.option
+2) execute ./compile
+
+2. How to run
+1) edit configure
+   At least, you need change the following terms.
+   BASEDIR       # data dir
+   RUNENV        # run command
+2) edit run
+   change SDATE
+3) execute ./run
+
+This deck is to run very fine resolution over Taipin island
+for MSM-Tfn version. We leave it very flexible and user-defineable
+that it can use d01 or d03 as base field, and default terrain or
+fine terrain as planned.
+
+

@@ -1,0 +1,51 @@
+EXEC = rmtn.x
+
+SHELL = /bin/sh
+CP = cp
+RM = rm
+CD = cd
+CHMOD = chmod
+
+CPP             =$(C_PREP_RMTN)
+F90             =$(F_COMP_RMTN)
+LIBS            =$(F_LIBS_RMTN)
+FORT_FLAGS      =$(F_FLAG_RMTN)
+INCLUDE_DIR     =-I.
+
+OBJ_MOD = machine.o physcons.o
+
+OBJ_RMTN= mainrmtn.o defg2r.o glats.o g2rini.o poly.o lnczs.o rmakeoal.o rmakeoao.o \
+	rmakemt.o rtersub.o maxmin.o shalfo.o ffscosx1.o ffscosy1.o \
+        ffacosx1.o ffacosy1.o rmakepc.o write_to_grads.o\
+	rftini.o setlatlon.o ful2sgl.o
+
+OBJ_FFT99M= fax.o fftrig.o vpassm.o fft99m.o fft99a.o fft99b.o rfftmlt.o
+
+OBJS = ${OBJ_MOD} ${OBJ_RMTN} ${OBJ_FFT99M}
+
+SRCS = ${OBJS:.o=.F}
+#
+# *****************************************************************
+#
+all: model-rmtn
+
+model-rmtn: ${OBJS}
+	${F90} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${LIBS}
+
+clean:
+	rm -f *.o *.$(F_SUBF) *.mod core
+
+.SUFFIXES : .o .$(F_SUBF) .F
+
+.F.$(F_SUBF) :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+
+.F.o :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+
+.$(F_SUBF).o :
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+

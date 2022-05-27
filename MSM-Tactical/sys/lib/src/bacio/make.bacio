@@ -1,0 +1,15 @@
+SHELL=/bin/sh
+
+$(LIB):	bacio.v1.3.o baciof.o 
+
+bacio.v1.3.o:       bacio.v1.3.c $(INC)
+	ln -f $(INC) clib.h
+	$(CC) -c $(CFLAGS) bacio.v1.3.c
+	ar -rv $(ARFLAGS) $(LIB) bacio.v1.3.o
+	rm clib.h
+
+baciof.o:   baciof.f
+	$(FC) -c $(FFLAGS) baciof.f
+	ar -rv $(ARFLAGS) $(LIB) baciof.o
+	rm -f baciof.o
+

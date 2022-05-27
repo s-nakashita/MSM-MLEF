@@ -1,0 +1,18 @@
+-------------------------------------------------------------------------------
+What is the acceptable FFT length used in RSM?
+
+The 2006 NCEP RSM uses FFT in x and y directions, so the number of grid point
+has to be able to do FFT. In its own package, grid number n has to be
+only factors of 2 and 3. In IBM FFT package, n has to follow
+
+	n=(2**h)(3**i)(5**j)(7**k)(11*m)   <=37748736
+where
+        h=1,2,...,25
+        i=0,1,2
+        j,k,m=0,1
+
+-------------------------------------------------------------------------------
+What ijk sequence used in RSM array?
+
+In grid array, the sequence is i,j,k, which means do i first.
+In wave array, the sequence is j,i,k, which means do j first.

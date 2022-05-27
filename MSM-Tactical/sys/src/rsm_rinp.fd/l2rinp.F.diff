@@ -1,0 +1,38 @@
+--- l2rinp.F.orig	2022-04-14 14:55:18.137962000 +0900
++++ l2rinp.F	2022-04-14 16:23:44.201038000 +0900
+@@ -93,6 +93,14 @@
+       data fngrib/'input.grib'/
+       integer ilatflip
+       data ilatflip/0/
++!ADD for RDA
++      integer iscale
++#ifdef RDA
++      data iscale/1/
++#else
++      data iscale/0/
++#endif
++!END ADD
+ !
+       print *,' enter l2rinp '
+ !
+@@ -159,8 +167,9 @@
+          call preadg1(npgb,clngrd,levs,plevels,iqvar,nfld,cfld,fhour                &
+      &                ,idate,ilatflip)
+       else if (igribversion.eq.2) then
++! modified for RDA
+          call preadg2(npgb,clngrd,levs,plevels,iqvar,nfld,cfld,fhour                &
+-     &                ,idate,ilatflip)
++     &                ,idate,ilatflip,iscale)
+       else
+          print *,'no support grib version'
+       endif
+@@ -457,7 +466,8 @@
+       if (igribversion.eq.1) then
+          call preadg1sfc(npgb,clngrd,nsfcfld,csfcfld)
+       else if (igribversion.eq.2) then
+-         call preadg2sfc(npgb,clngrd,nsfcfld,csfcfld)
++! modified for RDA
++         call preadg2sfc(npgb,clngrd,nsfcfld,csfcfld,iscale)
+       else
+          print *,'no support grib version'
+       endif

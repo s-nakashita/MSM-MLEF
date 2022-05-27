@@ -1,0 +1,108 @@
+This file contains frequent ask questions about svn.
+
+#### How to import system into svn repository?
+
+        Under any file system,  for example
+        $ mkdir newsub
+        $ cd newsub
+        $ mkdir src exp ush job ......
+        $ cd ..
+        $ svn import newsub https://svn.ncep.noaa.gov/emc/rsm
+
+#### How to start up svn system or get directory under svn?
+
+	Under any directory, you can check out with svn system as
+	$ svn co https://svn.ncep.noaa.gov/emc/rsm/doc
+
+
+#### How to get files ?
+
+	Under any directory, you can check out with svn system as
+	$ svn export https://svn.ncep.noaa.gov/emc/rsm/doc/svn-faq.txt
+
+
+#### How to get information about your svn system?
+
+	Under svn control directory and type
+	$ svn info
+
+
+#### How to check the status?
+
+	$ svn st
+
+#### How to update your working copy ?
+
+	update is update your working copy to the tip of the
+	repository, your modification to local files is unchanged
+	to local system
+	$ svn update
+
+#### How to resolve conflict after update ?
+
+	After 'svn update', you will see file list as
+	U	file1
+	C	file2
+	file1 is updated  and file2 is conflict, so edit file2
+	after file2 is edited, to resolve the conflict do
+	$ svn resolved file2
+
+#### How to make your local changes to commit into repositary?
+
+	Each time before commit your local changes, it is better to
+	know what you have in your local working version by
+	$ svn st
+        check most left hand colume of file list to make sure what you
+        want to do ;
+	if files with ?, but you want it to be in svn, you do
+        $ svn add files....
+        $ svn rm --force files...
+        $ svn mv --force file1 file2
+        $ svn mkdir .....
+        then do
+	$ svn update
+	before
+	$ svn ci -m' --- type commit message here ---- '
+
+#### How to make a tag system ?
+
+	make a tag from trunk
+	$ svn copy http://svn.ncep.noaa.gov/emc/rsm/trunk \
+	           http://svn.ncep.noaa.gov/emc/rsm/tags/one-loop \
+	    -m' make a tag of one-loop before any changes '	
+
+	make a tag from your working copy
+	$ svn copy 00wkrsm http://svn.ncep.noaa.gov/emc/rsm/tags/wktag1 \
+            -m' make a tag of one-loop before any changes '
+
+#### How to make a branch ?
+
+     	make branch from scratch
+    	$ svn mkdir https://svn.ncep.noaa.gov/emc/rsm/braches/mybrach
+
+	make a branch from trunk
+	$ svn copy http://svn.ncep.noaa.gov/emc/rsm/trunk \
+                   http://svn.ncep.noaa.gov/emc/rsm/branches/dof90 \
+            -m' make a brach for modify f90 '
+
+        make a branch from your working copy
+        $ svn copy 10wkrsm http://svn.ncep.noaa.gov/emc/rsm/branches/dof90 \
+            -m' make a brach for modify f90 '
+
+#### How to switch your working copy between branches and trunk ?
+
+	switch is working as update, do the following to switch from 
+	trunk to branch
+	$ cd 00wkrsm
+	$ svn info | grep URL
+	URL: http://svn.ncep.noaa.gov/emc/rsm/trunk
+	$ svn switch http://svn.ncep.noaa.gov/emc/rsm/branches/nonhyd
+	U	files
+	Update to revision 405
+	$ svn info | grep URL
+	URL: http://svn.ncep.noaa.gov/emc/rsm/branches/nonhyd
+
+#### how to set properties on files ?
+        set mimetype on a file
+        $ svn propset svn:mime-type text/pdf rsm_flowchart.pdf 
+        See http://svnbook.red-bean.com/en/1.5/svn.ref.svn.c.propset.html

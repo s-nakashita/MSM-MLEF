@@ -1,0 +1,55 @@
+EXEC = plot_sig.x
+
+MACHINE = ibmsp
+SHELL = /bin/sh
+CP = cp
+RM = rm
+CD = cd
+CHMOD = chmod
+
+CC = cc
+CPP = /usr/ccs/lib/cpp
+F77 = xlf
+F90 = xlf90
+LIBS = -lessl -lmass
+MPLB = rmpi.a
+W3LB = -L/nwprod/lib -lw3_d -lbacio_4 -lsp_d
+MOD_FLAGS = -O -qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave
+FORT_FLAGS = -O -qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave
+INCLUDE_DIR = -I.
+
+OBJ_RINP= plot_sig.o maxmin.o
+
+OBJS = ${OBJ_RINP} 
+
+SRCS = ${OBJS:.o=.F}
+#
+# *****************************************************************
+#
+all: model-rmpi
+
+model-rmpi: ${OBJS}
+	${F77} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${LIBS}
+
+clean:
+	rm -f *.o *.f *.mod core
+
+#${EXECUTABLE} : ${SRCS} ${OBJS}
+#	${F77} ${FORT_FLAGS} -o $@ ${OBJS} ${OBJ_MOD} ${MPLB} ${LIBS}
+
+.SUFFIXES : .o .f .F
+
+.F.f :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.f ; rm $*.i
+
+.F.o :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.f ; rm $*.i
+	${F77} ${FORT_FLAGS} -c $*.f
+
+.f.o :
+	${F77} ${FORT_FLAGS} -c $*.f
+
+#
+# *****************************************************************

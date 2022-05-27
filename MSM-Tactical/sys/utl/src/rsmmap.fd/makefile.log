@@ -1,0 +1,9 @@
+gfortran -c -fconvert=big-endian -fallow-argument-mismatch rsmmap.f
+gfortran -o ../../rsmmap.x -fconvert=big-endian -fallow-argument-mismatch rsmmap.o
+                                             1
+Warning: Fortran 2018 deleted feature: Shared DO termination label 100 at (1)
+rsmmap.f:304:72:
+
+  304 |        do 200 i=1,igrd1
+      |                                                                        1
+Warning: Fortran 2018 deleted feature: Shared DO termination label 200 at (1)

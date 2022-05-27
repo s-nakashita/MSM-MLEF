@@ -1,0 +1,102 @@
+gfortran -g -O3 -fconvert=big-endian -fallow-argument-mismatch -o ../../ndate ndate.f -L../../../lib -lw3_4
+gfortran -g -O3 -fconvert=big-endian -fallow-argument-mismatch -o ../../nhour nhour.f -L../../../lib -lw3_4
+' mac_gfortran ]
++ [ freebsd_gfortran '=' mac_absoft ]
++ [ freebsd_gfortran '=' mac_xlf ]
++ [ freebsd_gfortran '=' linux_pgi ]
++ [ freebsd_gfortran '=' linux_gfortran ]
++ [ freebsd_gfortran '=' freebsd_gfortran ]
++ export 'F_SUBF=f90'
++ export 'C_PREP_RMTN=gcc -E'
++ export 'F_COMP_RMTN=gfortran'
++ export 'F_FLAG_RMTN=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LINK_RMTN=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LIBS_RMTN='
++ export 'C_PREP_MOVE=gcc -E'
++ export 'F_COMP_MOVE=gfortran'
++ export 'F_FLAG_MOVE=-O3 -fconvert=big-endian'
++ export 'F_LINK_MOVE=-O3 -fconvert=big-endian'
++ export 'F_LIBS_MOVE='
++ export 'C_PREP_RINP=gcc -E'
++ export 'F_COMP_RINP=gfortran'
++ export 'F_COMP_RINP90=gfortran'
++ export 'F_FLAG_RINP=-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
++ export 'F_LINK_RINP=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LIBS_RINP=-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz'
++ export 'C_PREP_FCST=gcc -E'
++ export 'F_COMP_FCST=gfortran'
++ export 'F_COMP_FCST=mpif90'
++ export 'F_COMP_FCST90=gfortran'
++ export 'F_COMP_FCST90=mpif90'
++ export 'F_FLAG_FCST=-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
++ export 'F_LINK_FCST=-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
++ export 'F_FLAG_FCST=-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
++ export 'F_LINK_FCST=-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
++ export 'F_LIBS_FCST='
++ export 'C_PREP_POST=gcc -E'
++ export 'F_COMP_POST=gfortran'
++ export 'F_FLAG_POST=-O3 -fconvert=big-endian'
++ export 'F_LINK_POST=-O3 -fconvert=big-endian'
++ export 'F_LIBS_POST='
++ export 'C_PREP=gcc -E'
++ export 'F_COMP=gfortran'
++ export 'F_FLAG_r8=-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
++ export 'F_FLAG=-g -O3 -fconvert=big-endian -fallow-argument-mismatch'
++ [ no '=' yes ]
++ export 'F_LIBS=-llapack -lblas'
++ ./fhour.s
++ export 'MACHINE=mac_gfortran'
++ . ../opt/compile.option
++ export 'DEBUG=no'
++ [ mac_gfortran '=' ibm_xlf ]
++ [ mac_gfortran '=' mac_intel ]
++ [ mac_gfortran '=' linux_intel ]
++ [ mac_gfortran '=' mac_gfortran ]
++ export 'F_SUBF=f90'
++ export 'C_PREP_RMTN=cpp'
++ export 'F_COMP_RMTN=gfortran'
++ export 'F_FLAG_RMTN=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LINK_RMTN=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LIBS_RMTN=-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'C_PREP_MOVE=cpp'
++ export 'C_PREP_MOVE=cpp'
++ export 'F_COMP_MOVE=gfortran'
++ export 'F_FLAG_MOVE=-O3 -fconvert=big-endian'
++ export 'F_LINK_MOVE=-O3 -fconvert=big-endian'
++ export 'F_LIBS_MOVE=-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'C_PREP_RINP=cpp'
++ export 'F_COMP_RINP=gfortran'
++ export 'F_COMP_RINP90=gfortran'
++ export 'F_FLAG_RINP=-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
++ export 'F_LINK_RINP=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LIBS_RINP=-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'C_PREP_FCST=cpp'
++ export 'F_COMP_FCST=gfortran'
++ export 'F_COMP_FCST=mpif90'
++ export 'F_COMP_FCST90=gfortran'
++ export 'F_COMP_FCST90=mpif90'
++ export 'F_FLAG_FCST=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LINK_FCST=-O3 -fdefault-real-8 -fconvert=big-endian'
++ export 'F_LIBS_FCST=-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'C_PREP_POST=cpp'
++ export 'F_COMP_POST=gfortran'
++ export 'F_FLAG_POST=-O3 -fconvert=big-endian'
++ export 'F_LINK_POST=-O3 -fconvert=big-endian'
++ export 'F_LIBS_POST=-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'C_PREP=cpp'
++ export 'F_COMP=gfortran'
++ export 'F_FLAG_r8=-O3 -fdefault-real-8 -fconvert=big-endian -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ export 'F_FLAG=-g -O3 -fconvert=big-endian -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
++ [ no '=' yes ]
++ FILEENV='/bin/rm -rf fort.*'
++ ASSIGN='ln -s'
++ FILEFORM=' '
++ UNIT=fort.
++ [ ! -s fhour.x ]
++ cat
++ gfortran -O3 -fdefault-real-8 '-fconvert=big-endian' -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/ -o fhour.x date.f
++ cd src/ndate.fd
++ make
++ cd ../nhour.fd
++ make
++ cd ../../

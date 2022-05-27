@@ -1,0 +1,42 @@
+
+            RELEASE NOTE on December 2018 for MSM-T01.2
+
+This package is a limited-area atmospheric model written in FORTRAN code
+and associated Linux script. In addition to model itself, there are many
+utility programs and geophysical-related fixed files for model preprocess
+and post-process. This package has been evolved from original developed 
+in National Centers for Environmental Prediction (NCEP) for operational
+use to many customized packages. Since NCEP has been released it for 
+public use, there is no restriction for any users to modify for any other
+use without violating copyright issue. However, it can be copy-righted by
+any further developers. And this package is named as MSM Tactical and it
+will be asked to have copyright. And the developer has a serial of
+staged versions from this package as MSM-T00, MSM-Tfx, MSM-Tmv, MSM-Tft, 
+and MSM-T01, as an evolving from initial T00 version to T01 version. Since
+this package is mainly doing mesoscale spectral modeling (MSM), thus it is 
+called MSM Tactical. MSM-T00 is 00 version of MSM-T, and it is the initial 
+version including original ideas of customer requirement, which has been
+released on November 2016. MSM-Tfx is a fixed domain version for given 
+domains as customer requires, which was released on March 2017. MSM-Tmv is a
+movable domain during integration, which was released on June 2017. MSM-Tft
+is a fine tuned of the fixed domain and fine resolution fixed domain version,
+which requires very fine resolution of terrain, and it was released on 
+September 2017. MSM-T01 is a finalized version for this package as the
+current released package to customer. And two maintenance versions are called 
+MSM-T01.1 and MSM-T01.2.
+
+In this release, there are two directories called sys/ and usr/. The sys/
+is an entire collection of source codes, scripts, and data for model to do
+preprocessing, model integration, and post-processing. The usr/ is a user
+experimental design and integral place, which can be copies to each user
+for his/her own use. Each directory has ReadMe file which contains all the
+information for system and individual users to proceed. This package is
+required to be installed once before users can do any modeling integration.
+To install the system, go to sys/ and check into README_sys under sys/, 
+follow the instruction in the installation section in README_sys. Again,
+installation is this system configuratio, only once. After installation, 
+go to usr/ and follow README_usr to do modeling.
+
+This maintenabce 1 version (MSM-T01.2) is the same as MSM-T01.1 with an 
+addition bugs fixed to postprocessor, and a physics temperature changes
+to hydrostatic and nonhydrostatic with a fix to MSLP of typhoon.

@@ -1,0 +1,62 @@
+
+                           README for usr/
+
+This usr/ directory contains only two sub-directories; one is doc/ and
+the other is exp/. The purpose of usr/ is for user to hold his or her
+user documentation, personal note etc in doc/ and personal experiments 
+in exp/. The contains of subdirectories can be described as following:
+
+doc/	contains all documentations in several different forms, such as
+	text form with subflix .txt which can be viewed by UNIX command
+	vi or view; doc form which can be viewed by wordprocessor, and
+	pdf form which can be viewed by display utilities for pdf.
+        In this release, we include a file called FFTableforRSM.pdf
+        which provides the numbers for RSM to use as number of grid
+        spacing in any given horizontal domain side, say east-west or
+        south-north side.
+
+exp/	contains examples of experiments, where
+	gfsp2rsm/	use NCEPgfs grib pressure files as input and 
+			boundary to create regional domain data
+	gfss2rsm/	use NCEPgfs binary model layers data for input
+			and boundary to create regional domain data
+	gsm2rsm/	use global model output as input and boundary
+			to run regional model (hydrostatic)
+	gfsp2rsm27/	use NCEPgfs grib pressure files as input and 
+			boundary to create regional 27km domain data
+	cwbgfsp2rsm27/	use CWB gfs grib pressure files as input and 
+			boundary to create regional 27km domain data
+	rsm2rsm27/	use regional model output as input and boundary 
+			to run 27km (d01) regional model (hydrostatic)
+	rsm2msm9/	use regional model output as input and boundary 
+			to run 9km (d02) mesoscale model (nonhydrostatic)
+	rsm2msm3/	use regional model output as input and boundary 
+			to run 3km (d03) mesoscale model (nonhydrostatic)
+	msm2msm/	use mesoscale model output as input and 
+			boundary to run mesoscale model
+	msm_move/	regional or mesoscale model output as input and 
+			boundary to run movable domain by route defined
+	msm_zuoying/	regional or mesoscale model output as input and 
+			boundary to run fine mesoscale model on Zhouyin harbor
+	msm_dongsha/	regional or mesoscale model output as input and 
+			boundary to run fine mesoscale model on Donsa island
+	msm_taiping/	regional or mesoscale model output as input and 
+			boundary to run fine mesoscale model on Taipin island
+	prepare_terrain/ to prepare terrain data from raw orographic
+			data of different kinds, especially for fine
+			resolution later
+
+Note that gfs is getting from NCEP gfs dataset from internet, gsm is
+local-run global model which is planned to implement later in future
+staged versions. rsm is hydrostatic regional spectral model, and msm
+is nonhydrostatic mesoscale spectral model. Only rsm2rsm27/, rsm2msm9/, 
+rsm2msm3/, msm_move/, msm_zuoying, msm_dongsha/, and msm_taiping/ are all
+fully tested with high resolution terrain data of GTOPO30 (30 sec).
+
+It is a user defined place, one can make any subdirectory and name it
+as one's like, for example, one can have exp1/, exp2/, etc for different
+experiments, or put exp/gfsp2rsm_case1, exp/rsm2msm_case1, ..../case2, ..
+../case3 etc. The system has been tested under the second naming patterns
+for experiments, but to use the first naming/organization method is
+possible by alternating some definition of the directory names in file
+configure under each directory.

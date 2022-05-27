@@ -1,0 +1,55 @@
+#!/bin/sh
+
+# compile options for ibm_xlf, linux_intel, linux_pgi, linux_gfortran, mac_intel
+#                     mac_gfortran
+
+clear
+echo "Welcome to sys/ installation"
+echo "Following is the lists of supported system, type one"
+echo " "
+echo " ibm_xlf 		: ibm sp machine with xlf compiler"
+echo " mac_intel		: Apple mac machine with intel compiler"
+echo " mac_gfortran	: Apple mac machine with GNU fortran compiler"
+echo " linux_intel	: linux machine with intel fortran compiler"
+echo " linux_pgi		: linux machine with pgi fortran compiler"
+echo " linux_gfortran	: linux machine with GNU fortran compiler"
+echo " freebsd_gfortran	: FreeBSD machine with GNU fortran compiler"
+echo " "
+echo "Enter above combination =>"; read mach
+echo "You enter "$mach
+export MACHINE=${mach}
+echo "Press return to continue or Crtl C to stop"; read dummy
+
+echo "Continuing ...... "
+
+DSYS=`cd .. ; pwd`
+echo $DSYS
+# this start from sys/
+cd $DSYS/lib    && pwd && echo "Clean lib*.s etc " && rm -f lib* && ls && echo " " &&\
+#cd incmod && pwd && echo "Clean incmod " && rm -rf * && ls && echo " " && \
+cd $DSYS/lib/src && pwd && echo "Configure and compile lib ...." && \
+./compile.sh 1>compile.log 2>>compile.log && cd .. && pwd && ls && \
+echo "Libraries are all built .... "  && cd .. && echo " "
+
+if [ $MACHINE = linux_intel ] ; then
+echo "Build CWB dms system ...."
+cd lib/src/dms/dms*/src && pwd && \
+make clean && make all 1>compile.log 2>>compile.log && \
+cd - && pwd && cd lib && \
+mv `pwd`/src/dms/dms*/LINUX/lib/librdms.a librdms.a && ls -l && \
+cd -  && pwd
+fi
+
+echo "Build utilities ....."
+cd $DSYS/utl && pwd && rm -rf fhour.x ndate* nhour* rpgbnawips.x && ls && \
+./compile 1>compile.log 2>>compile.log && echo "Done fhour.x ndate nhour " && \
+cd $DSYS/src/rsm_pgrb.fd && pwd && rm -f *.o && echo "Build post ..." && \
+make -f makefile_${MACHINE} 1>makefile.log 2>>makefile.log && \
+echo "Done post " && cd $DSYS/utl && pwd && ls && \
+echo "Build rsmmap ..." && cd src/rsmmap.fd && pwd && \
+make -f makefile_${MACHINE} 1>makefile.log 2>>makefile.log && \
+echo "Done rsmmap " && cd ../.. && pwd && ls && \
+echo "Normal end of installation. "
+
+
+

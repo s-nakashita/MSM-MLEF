@@ -1,0 +1,72 @@
+-------------------------------------------------------------------------------
+What is the acceptable FFT length used in RSM?
+
+The 2006 NCEP RSM uses FFT in x and y directions, so the number of grid point
+has to be able to do FFT. In its own package, grid number n has to be
+only factors of 2 and 3. In IBM FFT package, n has to follow
+
+	n=(2**h)(3**i)(5**j)(7**k)(11*m)   <=37748736
+where
+        h=1,2,...,25
+        i=0,1,2
+        j,k,m=0,1
+
+-------------------------------------------------------------------------------
+What ijk sequence used in RSM array?
+
+In grid array, the sequence is i,j,k, which means do i first.
+In wave array, the sequence is j,i,k, which means do j first.
+
+-------------------------------------------------------------------------------
+GRMSM in source forge  related web pages
+
+URL:               http://sourceforge.net/projects/grmsm
+Web hosting:       http://grmsm.sourceforge.net
+SVN URL:           https://grmsm.svn.sourceforge.net/svnroot/grmsm
+TRAC URL:          http://sourceforge.net/apps/trac/grmsm
+
+-------------------------------------------------------------------------------
+PBS used in mds machine as
+#PBS -l nodes=4:ppn=32
+#PBS -N HelloJob
+#PBS -q workq
+source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/impi/2017.2.174/intel64/bin/mpivars.sh
+cd $PBS_O_WORKDIR
+mpirun  ./mpiBurn.x 
+
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------
+The master information account email henry.juang@noaa.gov  username: hmhjuang
+to access
+
+ssh -t hmhjuang,grmsm@shell.sourceforge.net create
+home: /home/users/h/hm/hmhjuang
+
+scp -r files hmhjuang,grmsm@frs.sourceforge.net: \
+/home/frs/project/g/gr/grmsm/usr or sys
+
+ssh hmhjuang,grmsm@shell.sourceforge.net
+-------------------------------------------------------------------------------

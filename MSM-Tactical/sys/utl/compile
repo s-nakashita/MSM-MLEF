@@ -1,0 +1,12 @@
+#!/bin/sh
+set -x
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, linux_pgi, linux_gfortran
+#export MACHINE=mac_gfortran
+export MACHINE=${MACHINE:-linux_gfortran}
+. ../opt/compile.option
+./fhour.s
+cd src/ndate.fd
+make
+cd ../nhour.fd
+make
+cd ../../

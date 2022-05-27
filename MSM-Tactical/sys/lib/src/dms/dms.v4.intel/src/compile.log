@@ -1,0 +1,58 @@
+icc -DLINUX -DLX64  -I..//inc    -c -o ufs_dms.o ufs_dms.c
+icc -DLINUX -DLX64  -I..//inc    -c -o dms_api.o dms_api.c
+icc -DLINUX -DLX64  -I..//inc    -c -o dms_int.o dms_int.c
+icc -DLINUX -DLX64  -I..//inc    -c -o dms_log.o dms_log.c
+icc -DLINUX -DLX64  -I..//inc    -c -o key_lib.o key_lib.c
+icc -DLINUX -DLX64  -I..//inc    -c -o dms_lib.o dms_lib.c
+icc -DLINUX -DLX64  -I..//inc    -c -o net_lib.o net_lib.c
+icc -DLINUX -DLX64  -I..//inc    -c -o xdr_lib.o xdr_lib.c
+icc -DLINUX -DLX64  -I..//inc    -c -o ipc_lib.o ipc_lib.c
+rm -f ..//LINUX/lib/librdms.a
+ar q ..//LINUX/lib/librdms.a dms_api.o dms_int.o dms_log.o key_lib.o dms_lib.o net_lib.o xdr_lib.o ufs_dms.o ipc_lib.o ; \
+if [ -f /usr/bin/ranlib -o -f /bin/ranlib ]; \
+                then ranlib ..//LINUX/lib/librdms.a; fi
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsadt.o rdmsadt.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsadt rdmsadt.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmschkr.o rdmschkr.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmschkr rdmschkr.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmscpy.o rdmscpy.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmscpy rdmscpy.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmscrt.o rdmscrt.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmscrt rdmscrt.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsdbcrt.o rdmsdbcrt.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsdbcrt rdmsdbcrt.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsdbdlt.o rdmsdbdlt.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsdbdlt rdmsdbdlt.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsdlt.o rdmsdlt.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsdlt rdmsdlt.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsrtn.o rdmsrtn.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsrtn rdmsrtn.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsdmp.o rdmsdmp.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsdmp rdmsdmp.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsfile.o rdmsfile.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsfile rdmsfile.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmspurge.o rdmspurge.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmspurge rdmspurge.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsreorg.o rdmsreorg.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsreorg rdmsreorg.o ..//LINUX/lib/librdms.a 
+icc -DLINUX -DLX64  -I..//inc    -c -o rdmsld.o rdmsld.c
+icc -DLINUX -DLX64  -I..//inc -o ..//LINUX/bin/rdmsld rdmsld.o ..//LINUX/lib/librdms.a 
+rgc, argv,"k:i:m:o:a:l:v")) != EOF)
+                          ^
+
+rdmsdmp.c(135): warning #167: argument of type "char **" is incompatible with parameter of type "char *"
+    while ((c=getopt(argc, argv,"k:i:m:a:l:Xv")) != EOF)
+                           ^
+
+rdmspurge.c(81): warning #167: argument of type "char **" is incompatible with parameter of type "char *"
+    while ((c=getopt(argc, argv,"a:fv")) != EOF)
+                           ^
+
+rdmsreorg.c(28): warning #167: argument of type "char **" is incompatible with parameter of type "char *"
+    while ((c=getopt(argc, argv,"a:v")) != EOF)
+                           ^
+
+rdmsld.c(175): warning #167: argument of type "char **" is incompatible with parameter of type "char *"
+    while ((c=getopt(argc, argv,"k:i:m:a:v")) != EOF)
+                           ^
+

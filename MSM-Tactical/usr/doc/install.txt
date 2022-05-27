@@ -1,0 +1,43 @@
+                               INSTALL
+
+1. install lib
+cd lib/src
+edit compile.sh and choose MACHINE
+./compile.sh
+
+If you use the machine we don't support, you need install the following library manually.
+jasper-1.900.1 libpng-1.2.40 zlib-1.2.3 bacio w3lib-1.7 g2 
+
+1) install jasper-1.900.1
+assume WORK is your rsm trunk directory.
+./configure $WORK/lib
+make
+make install
+mv $WORK/lib/include/* $WORK/lib/incmod/
+mv $WORK/lib/lib/* $WORK/lib
+
+2) install libpng-1.2.40
+./configure $WORK/lib
+make
+make install
+mv $WORK/lib/include/* $WORK/lib/incmod/
+mv $WORK/lib/lib/* $WORK/lib
+
+2. compile utl
+cd utl
+vi compile
+change MACHINE
+./compile
+
+3. compile rsm_pgrb
+cd src/rsm_pgrb.fd
+make -f makefile_awips_XXX
+
+4. set up a case
+you can follow the test cases under exp to set up your case.
+Now we only test gfsp2rsm gfss2rsm and rsm2msm.
+
+gfsp2rsm  preprocess GFS pressure level data to RSM background
+gfss2rsm  preprocess GFS sigma level data to RSM background
+rsm2msm   do RSM nonhydrostatic run using RSM backgroud 
+

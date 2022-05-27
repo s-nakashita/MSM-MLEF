@@ -1,0 +1,106 @@
+#!/bin/ksh
+
+# --------------- directory ------------------
+export USERID=` whoami `
+#export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISK=$HOME/Development/grmsm/MSM-Tactical   #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+export WORKUSR=$DISK/usr/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+ else
+   #export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+    export TEMP=$WORKUSR/${EXPN}_nomad
+    mkdir -p $TEMP
+ fi
+export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
+export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
+
+# --------------- machine/compile options ----------------
+# compile options with machine dependent can be
+# ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
+# linux_pgi, linux_intel, linux_gfortran
+
+export MACHINE=freebsd_gfortran
+
+# machine dependent cpp
+export IBMSP=no
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# model parameter
+
+# compile model option
+export NEST=P2R   # G2R C2R P2R N2R
+export NONHYD=no 
+export GTOPO30=yes
+export NCLDB=1
+export NCLD=1
+export BGF=2
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=no 
+
+# --------------- run option --------------------
+export ENDHOUR=168 
+export ENDHOUR=48                                # release_test
+export CLIM=1
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNRINP2=yes
+export RUNFCST=no 
+
+#### rsmlocation
+
+# d01 domain 70E-170W 22S-65N
+export  IGRD=384
+export  JGRD=324
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=120.0
+export  RDELX=27000.
+export  RDELY=27000.
+export  RCENLAT=23.5
+export  RCENLON=120.0
+export  RLFTGRD=163.
+export  RBTMGRD=139.
+# d01 domain 170W-40W 22S-65N
+#export  RORIENT=250.0
+#export  RCENLON=250.0
+#export  RCENLAT=39.0
+# test dimension and shift
+#export  IGRD=128                             # release_test
+#export  JGRD=108                             # release_test
+#export  RLFTGRD=57.                          # release_test
+#export  RBTMGRD=63.                          # release_test
+
+# ---- get data from NCEP operational NOMAD with selected domain ----
+export  RDA=no            # use RDA historical data
+export  DTOOL=curl         # wget or curl
+export  CPROJ=4.           # equal latitude longitude
+export  CLAT1=-25 
+export  CLAT2=70
+export  CLON1=60 
+export  CLON2=200
+export  LEVS=47
+export  LEVS=33            # modified
+export  PGBRES=0.25        # 0.50 or 0.25
+export  INCBASE=3        # 3 or 6 hours
+export  INCHOUR=$INCBASE
+export  CIGRD=$(echo "($CLON2-($CLON1))/$PGBRES" | bc)
+export  CJGRD=$(echo "($CLAT2-($CLAT1))/$PGBRES" | bc)
+
+# load default configure file which include all options and comments
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+

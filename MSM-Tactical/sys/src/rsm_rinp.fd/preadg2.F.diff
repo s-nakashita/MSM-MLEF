@@ -1,0 +1,60 @@
+--- preadg2.F.orig	2022-04-14 14:34:45.273608000 +0900
++++ preadg2.F	2022-04-28 15:31:46.202477000 +0900
+@@ -1,5 +1,5 @@
+       subroutine preadg2(ifile,ijmax,kdim,plevels,iqvar,                &
+-     &                   nfld,out,fhour,idate,iflip)
++     &                   nfld,out,fhour,idate,iflip,iscale)
+       use grib_mod
+ #include <paramodel.h>
+ #include <rscomloc.h>
+@@ -14,10 +14,13 @@
+       integer :: lugi,j
+       integer :: jpdt2(nfld),jpdt3(nfld),jpdt13(kdim)
+       integer :: jdisc,jpdtn,jgdtn
+-      integer :: nterr,iflip,iqvar
++      integer :: nterr,iflip,iqvar,iscale
+       real    :: fhour
+       integer :: idate(4)
+       integer :: n,k,kk
++! scaling level
++      integer :: tmplev, iscl
++! 
+ ! gz
+       jpdt2(1)=3
+       jpdt3(1)=5
+@@ -68,8 +71,20 @@
+          jpdt(1)=jpdt2(n)
+          jpdt(2)=jpdt3(n)
+          jpdt(10)=100
+-         jpdt(11)=0
+-         jpdt(12)=jpdt13(k)*100
++         if ( iscale.eq.0 ) then
++             jpdt(11)=0
++             jpdt(12)=jpdt13(k)*100
++         else
++             tmplev=jpdt13(k)*100
++             iscl=0
++             do while ( mod(tmplev,10).eq.0 )
++                iscl=iscl-1
++                tmplev=tmplev/10
++             enddo
++             write(6,'(I4)') iscl, tmplev
++             jpdt(11)=iscl
++             jpdt(12)=tmplev
++         endif
+ 
+ ! Get field from file
+          call getgb2(ifile,lugi,j,jdisc,jids,jpdtn,jpdt,jgdtn,jgdt,      &
+@@ -98,7 +113,11 @@
+             write(6,*) 'cannot find var ',jpdt2(n),jpdt3(n),' in ',      &
+      &                 plevels(k),' level'
+             write(6,*) 'iret= ',iret
+-            out(:,k,n)=0.0
++            if (k.eq.1) then
++               out(:,k,n)=0.0
++            else
++               out(:,k,n)=out(:,k-1,n)
++            end if
+          endif
+       enddo
+       enddo

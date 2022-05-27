@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+set -x
+#export SDATE=2022042700
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure 
+echo $RUNDIR
+#
+#export RUNENV='mpiexec -s all -n '${NPES}
+ export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}
+$JSHDIR/rsm_fcst.sh  

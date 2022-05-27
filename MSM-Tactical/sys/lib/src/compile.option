@@ -1,0 +1,112 @@
+#!/bin/sh
+# compile options for ibm_xlf, linux_intel, linux_pgi, linux_gfortran
+#                     mac_intel, mac_gfortran
+
+if [ $MACHINE = ibm_xlf ]; then
+#### compile option for IBM SP ########################################
+   export CPP="cpp -P"
+   export CC=xlc
+   export FC=xlf
+   export FFLAGS_4=" -q64 -O3 -qnosave"
+   export FFLAGS_8=" -q64 -O3 -qnosave -qintsize=8 -qrealsize=8"
+   export FFLAGS_d=" -q64 -O3 -qnosave -qrealsize=8"
+   export ARFLAGS_R=" -X64"
+   export CFLAGS_R=" -q64 -O3 -DIBM4"
+   export DEFS="-DAIX -DHAVE_SYS_TYPES_H=1"
+#   export DEFS="-DHAVE_SYS_TYPES_H=1"
+
+elif [ $MACHINE = mac_gfortran ]; then
+
+######### Mac mini INTEL FORTRAN compiler for INTEL CORE DUO #######
+   export CPP="cpp -P -C"
+#  export CC=cc
+#  export FC=gfortran
+   export CC="cc -fPIC"
+   export FC="gfortran -fPIC"
+   export FFLAGS_4=" -fconvert=big-endian "
+   export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian "
+   export FFLAGS_d=" -fdefault-real-8 -fconvert=big-endian "
+   export ARFLAGS_R="  "
+   export CFLAGS_R=" -DMACOS "
+   export DEFS=-DMACOS
+
+elif [ $MACHINE = mac_intel ]; then
+
+######### Mac mini INTEL FORTRAN compiler for INTEL CORE DUO #######
+   export CPP="cpp -P -C"
+   export CC=cc
+   export FC=ifort
+   export FFLAGS_4=" -O3 -convert big_endian "
+   export FFLAGS_8=" -O3 -i8 -r8 -convert big_endian "
+   export FFLAGS_d=" -O3 -r8 -convert big_endian "
+   export ARFLAGS_R="  "
+   export CFLAGS_R=" -O3 -DMACOS "
+   export DEFS=-DMACOS
+
+elif [ $MACHINE = linux_intel ]; then
+
+######### Mac mini INTEL FORTRAN compiler for INTEL CORE DUO #######
+   export CPP="cpp -P -C"
+   export CC=cc
+   export FC=ifort
+   export FFLAGS_4=" -O3 -convert big_endian "
+   export FFLAGS_8=" -O3 -i8 -r8 -convert big_endian "
+   export FFLAGS_d=" -O3 -r8 -convert big_endian "
+   export ARFLAGS_R="  "
+   export CFLAGS_R=" -O3 -DLINUX -D__64BIT__ "
+   export DEFS=-DLINUX
+
+elif [ $MACHINE = linux_pgi ]; then
+
+########### compile option for LINUX PGI compiler ##################
+   export CPP="cpp -P -C"
+   export CC=cc
+   export FC=pgf90
+   export FFLAGS_4=" -O3 -byteswapio "
+   export FFLAGS_8=" -O3 -i8 -r8 -byteswapio "
+   export FFLAGS_d=" -O3 -r8 -byteswapio "
+   export ARFLAGS_R="  "
+   export CFLAGS_R=" -O3 -DLINUX "
+   export DEFS=-DLINUX
+
+elif [ $MACHINE = linux_gfortran ]; then
+
+######### gfortran #######
+   export CPP="cpp -P -C"
+   export CC=gcc     
+   export FC=gfortran
+## export FFLAGS_4=" -fconvert=big-endian -fno-range-check"
+## export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian -fno-range-check"
+## export FFLAGS_d=" -fdefault-real-8 -fconvert=big-endian -fno-range-check"
+   export FFLAGS_4=" -fno-range-check -fconvert=big-endian"
+   export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian -fno-range-check"
+   export FFLAGS_d=" -fdefault-real-8 -fno-range-check -fconvert=big-endian"
+   export ARFLAGS_R="  "
+#   export CFLAGS_R=" -g -m32 -DLINUX"
+   export CFLAGS_R=" -g -DLINUX"
+   export DEFS=-DLINUX
+
+elif [ $MACHINE = freebsd_gfortran ]; then
+
+######### gfortran #######
+## export CPP="cpp -P -C"
+   export CPP="gcc -E"
+   export CC=gcc     
+   export FC=gfortran
+## export FFLAGS_4=" -fconvert=big-endian -fno-range-check"
+## export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian -fno-range-check"
+## export FFLAGS_d=" -fdefault-real-8 -fconvert=big-endian -fno-range-check"
+   export FFLAGS_4=" -fno-range-check -fconvert=big-endian -fallow-argument-mismatch"
+   export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian -fno-range-check -fallow-argument-mismatch"
+   export FFLAGS_d=" -fdefault-real-8 -fno-range-check -fconvert=big-endian -fallow-argument-mismatch"
+   export ARFLAGS_R="  "
+#   export CFLAGS_R=" -g -m32 -DLINUX"
+   export CFLAGS_R=" -g -DLINUX"
+   export DEFS=-DLINUX
+
+else
+   echo " can't support your machine "
+   echo " only support aix_xlf, linux_intel, linux_pgi, linux_gfortran "
+   echo " you need edit ${LIB}/src/compile.option "
+   exit
+fi

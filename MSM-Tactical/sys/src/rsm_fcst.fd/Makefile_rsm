@@ -1,0 +1,113 @@
+EXEC = rsm.x
+
+SHELL = /bin/sh
+CP = cp
+RM = rm
+CD = cd
+CHMOD = chmod
+
+CPP             =$(C_PREP_FCST)
+F90             =$(F_COMP_FCST)
+LIBS            =$(F_LIBS_FCST)
+FORT_FLAGS      =$(F_FLAG_FCST)
+W3LB            =$(F_W3LB_FCST)
+INCLUDE_DIR     =-I.
+
+OBJ_MOD = machine.o  istack.o cnttime.o physcons.o funcphys.o module.o module_progtm.o \
+        module_sw.o module_ras.o module_rascnv.o physics_module.o \
+        radlw_rrtm_param.o radlw_rrtm_datatb.o radlw_rrtm_main.o  radiation_module.o \
+        phys_mps_wsm3_p.o phys_mps_wsm5_p.o phys_mps_wsm6_p.o \
+	module_bfmicrophysics.o write_to_grads.o
+
+OBJ_FFT99M= fax.o fftrig.o vpassm.o fft99m.o fft99a.o fft99b.o rfftmlt.o
+
+OBJ_RSM = mainrsmf_mrg.o rgetcon_mrg.o gncpus.o rsmini_mpi.o rzerout.o rsminp.o rsmltb.o \
+        rloopmp.o rloopsp.o \
+        rsmsmf.o rfwdstep.o rsmstep.o rsmdfi.o rdfini.o rwrtout.o rsmsav.o gsm2bgd.o \
+        sphpt1.o sphpt2.o sphqk1.o sphqk1mp.o sphqk2.o rpln2i.o ggtorg.o ggtobg.o \
+        gtobini.o g2bini.o fplfml.o flpflm.o setbgd.o setg2b.o pint1.o pint3.o getwt.o getwl.o \
+        c2bini.o ctobini.o cgtobg.o rsm2bgd.o ll2xy.o xy2ll.o \
+        ilagw.o bspline.o tay.o rsetsig.o rsetmap.o rsetsfc.o rfixio.o rsfcmrg.o \
+        g2rini_mpi.o c2rini_mpi.o gg2rg_mpi.o cg2rg_mpi.o sread.o sread2.o \
+        swrite.o swrite2.o getptb.o getful.o gdtocc.o gdtocs.o gdtosc.o cctogd.o cstogd.o \
+        sctogd.o cread.o readoz_disprd.o sgl2ful.o ful2sgl.o rwrtsfc.o \
+        idsdef.o rbmcm.o ramtm.o rprntb.o          rfidi.o rdeldif.o rsicdif.o rgetcd.o \
+        matinv.o rfilt1.o rfilt2.o rlatbnd.o rltbini.o rupdate.o epslxy.o dellcc.o \
+        dellsc.o dellcs.o dz2uv.o uv2dz.o plnini.o sumfcs1.o sumffc1.o sumffs1.o sumggs1.o \
+        sumggc1.o sumgcs1.o rmsgtr.o rbartr.o rftini.o \
+        ffsncsy1.o ffsncsx1.o ffancsy1.o ffancsx1.o ffscosy1.o ffscosx1.o \
+        ffacosy1.o ffacosx1.o \
+        ffssiny1.o ffssinx1.o ffasiny1.o ffasinx1.o \
+        ffsncsy.o ffsncsx.o ffsncs.o ffancs.o \
+        ffacos.o ffasin.o ffscos.o ffssin.o  \
+        rimpadj.o rbphys.o extrm2.o setindxoz.o expnd.o\
+        ozinterpol.o rsetbgt.o rbgt000.o rbgtlpa.o \
+        rbgtsic.o rbgtlpd.o rbgtdif.o rbgtlpb.o rbgtzero.o rbgtini.o rbgtio.o rwrtbgt.o \
+        maxmin.o sums2i.o sums2imp.o fl2i.o fl2ic.o fl2imp.o fti_lonf.o gft_lonf.o ggozrm.o \
+        sumtop.o sumtopmp.o dzuvle.o dzuvlemp.o dellnp.o pln2i.o gpln2i.o epsilo.o \
+        glats.o poly.o cmpind.o transo.o tridi2.o tridin.o tridit.o tridi2t3.o omegast3.o \
+        get_prs.o get_phi.o cdefghm.o rloopw.o nfidi.o nsicdif.o hydrow.o nsicini.o
+
+OBJ_RAD= albaer.o gcljms.o astronomy.o cdate.o compjd.o coszmn.o fcstim.o prtime.o \
+        solar.o o3intpnasa.o grrad.o conrad.o crhtab.o rdlwsw.o clo89.o e1e290.o fst88.o \
+        lwr88.o e290.o hconst.o spa88.o lwtable.o swr95.o swr95a.o soluv.o solir.o swflux.o \
+        flxco2.o aeros.o getaer.o ralsct.o gaeros.o getozn.o ozphys.o \
+        getclds.o cldjms.o cldprp.o
+
+OBJ_PHY= progtm.o progt2.o dcyc2t3.o cnvc90.o \
+        lrgscl.o moninp.o sascnv.o shalcv.o mstadbt3.o gscond.o precpd.o \
+        gwdps.o mstcnv.o gsmdrive.o micro_init.o 
+
+OBJ_RAS= setras.o rascnv.o cloud.o crtwrk.o ddrft.o qsatcn.o angrad.o setqrp.o \
+        qrabf.o setvtp.o clf.o
+
+OBJ_FUNC= qrpf.o vtpf.o ktsoil.o funcdf.o funckt.o thsat.o twlt.o condense.o deposit.o
+
+OBJ_RMPI = dimset.o mpdimset.o mpgp2f.o mpn2nn.o mpnk2nn.o mpnk2nx.o \
+mpnl2ny.o mpnn2n.o mpnn2nk.o mpny2nl.o mpsf2p.o mpsp2f.o mpx2nx.o \
+spcshfli.o spcshflo.o \
+rdimset.o rmpbcasti.o rmpnk2nn.o rmpsynrow.o rmpbcastc.o \
+equdis.o equdiv.o rmpbcastr.o rmpbcastl.o rmpgf2p.o rmpnk2nx.o rmpny2nl.o  \
+rmpgp2f.o rmpnl2ny.o \
+rmpfine.o rmpinit.o \
+rmpabort.o rmpnn2nk.o rmpsynall.o \
+rmpnx2nk.o rmpsyncol.o \
+rmpsf2p.o rmpsp2f.o rmpgetspd.o \
+rmpdimset.o rmpnx2x.o rmpn2nn.o rmpnn2n.o rmpx2nx.o rmpkencollect.o
+
+OBJ_RKEN = rkenpre.o rgetij.o rkenput.o rkenputr.o rkenwrt.o rsmkenprof.o
+
+OBJ_W3 = w3movdat.o w3fs26.o iw3jdn.o w3reddat.o
+
+OBJS = ${OBJ_MOD} ${OBJ_FFT99M} ${OBJ_RSM} ${OBJ_RAD} ${OBJ_PHY} ${OBJ_RAS} ${OBJ_FUNC} \
+        ${OBJ_RMPI} ${OBJ_RKEN} ${OBJ_W3}
+
+SRCS = ${OBJS:.o=.F}
+#
+# *****************************************************************
+#
+all: model-rmpi
+
+model-rmpi: ${OBJS}
+	${F90} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${W3LB} ${LIBS}
+
+clean:
+	rm -f *.o *.$(F_SUBF) *.mod core
+
+.SUFFIXES : .o .$(F_SUBF) .F
+
+.F.$(F_SUBF) : *.h
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+
+.F.o : *.h
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+
+.$(F_SUBF).o : *.h
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+
+#
+# *****************************************************************
+

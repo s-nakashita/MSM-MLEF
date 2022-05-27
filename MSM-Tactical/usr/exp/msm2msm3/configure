@@ -1,0 +1,142 @@
+#!/bin/ksh
+# check all config term and comment in utl/rsm_default.option
+
+# --------------- directory ------------------
+export USERID=` whoami `
+export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+export WORKUSR=$DISK/usr/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+else
+#   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+   export TEMP=$WORKUSR/${EXPN}_jpn          #output top directory
+fi
+
+export BASEDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}
+#export BASEDIR=$WORKUSR/rsm2msm9_3nest/${SDATE}
+
+# --------------- compile options ----------------
+# machine dependent
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, linux_pgi, linux_gfortran
+export MACHINE=freebsd_gfortran
+export MARCH=mpi
+export LAMMPI=no
+export MPICH=yes
+export KINDMPI=4
+export NCOL=6
+export NROW=4
+export NODES=32   
+
+# machine dependent cpp
+export MP=yes
+export THREAD=no 
+export IBMSP=no 
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# model parameter
+
+# compile model option
+export NEST=N2R   # G2R C2R P2R N2R
+export NONHYD=yes
+export INTDTB=yes           # internal evolved base field T
+export RKN=no
+export RAS=no
+export SAS=yes
+export NCLDB=1
+export NCLD=1
+export GTOPO30=yes
+export PERCMTN=0.0
+export CHGTLEV=no 
+export BGF=3 
+export MBC=yes 
+export LBC=no 
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=yes
+
+# --------------- run option --------------------
+export RUNENV='mpiexec -s all -n 2 '
+export LENMON=1  
+export ENDHOUR=48 
+export TIMESTEP=10
+export INCBASE=1
+export INCHOUR=1
+export PRTHOUR=1
+export CLIM=0
+export RSFC_MERGE=yes
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNFCST=yes
+
+#### rsmlocation
+
+# d03 120E-134E 24N-34N
+export  IGRD=384
+export  JGRD=324
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=120.0
+export  RDELX=3000.
+export  RDELY=3100.
+export  RCENLAT=29.0
+export  RCENLON=125.0
+#export  RCENLAT=31.0
+#export  RCENLON=130.0
+export  RLFTGRD=132.
+export  RBTMGRD=153. 
+
+# ------------------- MSM9
+#export  CIGRD=384
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=9000.
+#export  CDELY=9300.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=183.0
+#export  CBTMGRD=190.0
+# Japan domain 115E-157E 18N-48N
+export  CIGRD=384
+export  CJGRD=324
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=140.0
+export  CDELX=9000.
+export  CDELY=9300.
+export  CCENLAT=35.0
+export  CCENLON=130.0
+#export  CCENLAT=37.0
+#export  CCENLON=135.0
+export  CLFTGRD=183.0
+export  CBTMGRD=190.0
+## test dimension and shift
+# export  CIGRD=128                            # release_test
+# export  CJGRD=108                            # release_test
+# export  CLFTGRD=57.                         # release_test
+# export  CBTMGRD=63.                         # release_test
+
+export  CLAT1=0. 
+export  CLAT2=0.
+export  CLON1=0.
+export  CLON2=0.
+#
+# load default configure file
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+

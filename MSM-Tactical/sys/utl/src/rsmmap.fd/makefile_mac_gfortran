@@ -1,0 +1,14 @@
+# ------------- INTEL FORTRAN ------
+FORT=	gfortran
+OPTN=	-fconvert=big-endian
+
+SRCS=	rsmmap.f
+OBJS=	rsmmap.o
+EXEC=	../../rsmmap.x
+
+$(EXEC):	$(OBJS)
+	$(FORT) -o $(EXEC) $(OPTN) $(OBJS) 
+$(OBJS):	$(SRCS)
+	$(FORT) -c $(OPTN) $(SRCS)
+clean:
+	rm $(OBJS) $(EXEC)

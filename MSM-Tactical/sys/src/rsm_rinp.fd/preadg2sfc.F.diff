@@ -1,0 +1,158 @@
+--- preadg2sfc.F.orig	2022-03-23 13:23:00.955871000 +0900
++++ preadg2sfc.F	2022-04-14 16:31:21.398431000 +0900
+@@ -1,4 +1,4 @@
+-      subroutine preadg2sfc(ifile,ijmax,nfld,out)
++      subroutine preadg2sfc(ifile,ijmax,nfld,out,iscale)
+       use grib_mod
+ #include <paramodel.h>
+ #include <rscomloc.h>
+@@ -6,7 +6,7 @@
+       integer,dimension(200) :: jids,jpdt,jgdt
+       logical :: unpack=.true.
+ !
+-      integer :: ijmax,iret
++      integer :: ijmax,iret,iscale
+       integer :: nfld
+       real    :: out(ijmax,nfld)
+       integer :: lugi,j
+@@ -14,7 +14,10 @@
+       integer :: jpdt10(nfld),jpdt11(nfld),jpdt12(nfld)
+       integer :: jpdtn,jgdtn,n,jdisc,ifile
+       integer :: nterr
++! scaling level
++      integer :: tmplev, iscl
+ ! 
++! 
+       jpdt1=-9999
+       jpdt2=-9999
+       jpdt10=-9999
+@@ -32,29 +35,48 @@
+       jpdt1(2)=0
+       jpdt2(2)=192
+       jpdt10(2)=106
+-      jpdt11(2)=2
++      if ( iscale.eq.0 ) then
++          jpdt11(2)=2
++      else
++          jpdt11(2)=0
++      endif
+       jpdt12(2)=0
+ ! smc(10-40cm)
+       jdisc0(3)=2
+       jpdt1(3)=0
+       jpdt2(3)=192
+       jpdt10(3)=106
+-      jpdt11(3)=2
+-      jpdt12(3)=10
++      if ( iscale.eq.0 ) then
++          jpdt11(3)=2
++          jpdt12(3)=10
++      else
++          jpdt11(3)=1
++          jpdt12(3)=1
++      endif
+ ! smc(40-100cm) 
+       jdisc0(4)=2
+       jpdt1(4)=0
+       jpdt2(4)=192
+       jpdt10(4)=106
+-      jpdt11(4)=2  
+-      jpdt12(4)=40 
++      if ( iscale.eq.0 ) then
++          jpdt11(4)=2  
++          jpdt12(4)=40 
++      else
++          jpdt11(4)=1  
++          jpdt12(4)=4 
++      endif
+ ! smc(100-200cm)
+       jdisc0(5)=2
+       jpdt1(5)=0
+       jpdt2(5)=192
+       jpdt10(5)=106
+-      jpdt11(5)=2  
+-      jpdt12(5)=100
++      if ( iscale.eq.0 ) then
++          jpdt11(5)=2  
++          jpdt12(5)=100
++      else
++          jpdt11(5)=0  
++          jpdt12(5)=1
++      endif
+ ! sheleg
+       jdisc0(6)=0
+       jpdt1(6)=1
+@@ -67,36 +89,62 @@
+       jpdt1(7)=0
+       jpdt2(7)=2    ! for new GFS
+       jpdt10(7)=106
+-      jpdt11(7)=2
+-      jpdt12(7)=0
++      if ( iscale.eq.0 ) then
++          jpdt11(7)=2
++          jpdt12(7)=0
++      else
++          jpdt11(7)=0
++          jpdt12(7)=0
++      endif
+ ! stc(10-40cm)
+       jdisc0(8)=2    
+       jpdt1(8)=0
+       jpdt2(8)=2
+       jpdt10(8)=106
+-      jpdt11(8)=2  
+-      jpdt12(8)=10 
++      if ( iscale.eq.0 ) then
++          jpdt11(8)=2  
++          jpdt12(8)=10 
++      else
++          jpdt11(8)=1  
++          jpdt12(8)=1
++      endif 
+ ! stc(40cm-100cm)
+       jdisc0(9)=2
+       jpdt1(9)=0
+       jpdt2(9)=2
+       jpdt10(9)=106
+-      jpdt11(9)=2  
+-      jpdt12(9)=40 
++      if ( iscale.eq.0 ) then
++          jpdt11(9)=2  
++          jpdt12(9)=40
++      else
++          jpdt11(9)=1  
++          jpdt12(9)=4
++      endif 
+ ! stc(100cm-200cm)
+       jdisc0(10)=2
+       jpdt1(10)=0
+       jpdt2(10)=2
+       jpdt10(10)=106
+-      jpdt11(10)=2  
+-      jpdt12(10)=100
++      if ( iscale.eq.0 ) then
++          jpdt11(10)=2  
++          jpdt12(10)=100
++      else
++          jpdt11(10)=0  
++          jpdt12(10)=1
++      endif
+ ! cv
+       jdisc0(11)=0
+       jpdt1(11)=6
+       jpdt2(11)=1
+-      jpdt10(11)=244
+-      jpdt11(11)=0
+-      jpdt12(11)=0
++      if ( iscale.eq.0 ) then
++          jpdt10(11)=244
++          jpdt11(11)=0
++          jpdt12(11)=0
++      else
++          jpdt10(11)=10
++          jpdt11(11)=0
++          jpdt12(11)=0
++      endif
+ ! land
+       jdisc0(12)=2
+       jpdt1(12)=0

@@ -1,0 +1,489 @@
+#!/bin/sh
+# compile options with machine dependent can be
+# machine ibm as for ibm_xlf
+# machine mac as  mac_intel, mac_absoft, mac_xlf, mac_gfortran
+# machine linux as  linux_pgi, linux_intel, linux_gfortran
+
+   export DEBUG=${DEBUG:-no}
+
+# -----------------------------------------------------------------------
+if [ $MACHINE = ibm_xlf ]; then
+#### run option for IBM SP #######################################################
+   export MP_PULSE=0
+   export MP_TIMEOUT=600
+   export XLFRTEOPTS="namelist=old"
+
+#### compile option for IBM SP ########################################
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=/usr/ccs/lib/cpp
+   export F_COMP_RMTN=xlf
+   export F_FLAG_RMTN='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LINK_RMTN='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LIBS_RMTN='-l essl -l mass '
+
+   export C_PREP_MOVE=/usr/ccs/lib/cpp
+   export F_COMP_MOVE=xlf
+   export F_FLAG_MOVE='-qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LINK_MOVE='-qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LIBS_MOVE='-l essl -l mass '
+
+   export C_PREP_RINP=/usr/ccs/lib/cpp
+   export F_COMP_RINP=xlf90_r
+   export F_COMP_RINP90=xlf90_r
+   export F_LINK_RINP='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave'
+
+   mach_name=`uname -a | cut -c5`
+# cirrus
+   if [ $mach_name = c ]; then
+     export F_FLAG_RINP='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave -I/nwprod/lib/incmod/g2_4'
+     export F_LIBS_RINP='-l essl -l mass  -L/nwprod/lib -lg2_4 -lw3_d -lbacio_4 -L/usrx/local/64bit.cirrus/lib -ljasper -lpng -lz'
+   fi
+# stratus
+   if [ $mach_name = s ]; then
+     export F_FLAG_RINP='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave -I/nwprod/lib/incmod/g2_4'
+     export F_LIBS_RINP='-l essl -l mass  -L/nwprod/lib -lg2_4 -lw3_d -lbacio_4 -L/usrx/local/64bit.cirrus/lib -ljasper -lpng -lz'
+   fi
+# vapor  
+   if [ $mach_name = v ]; then
+     export F_FLAG_RINP='-qrealsize=8 -qxlf77=leadzero -qmaxmem=-1 -qnosave -I${DISKSYS}/lib/incmod/g2_4'
+     export F_LIBS_RINP='-l essl -l mass  -L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz'
+   fi
+
+   export C_PREP_FCST=/usr/ccs/lib/cpp
+   export F_COMP_FCST=mpxlf90
+   export F_COMP_FCST90=mpxlf90
+   export F_FLAG_FCST='-O3 -qsource -qrealsize=8 -qstrict -qxlf77=leadzero -qmaxmem=-1 -qnosave -qsmp=noauto -bloadmap:rsm_err'
+   export F_LINK_FCST='-O3 -qsource -qrealsize=8 -qstrict -qxlf77=leadzero -qmaxmem=-1 -qnosave -qsmp=noauto -bloadmap:rsm_err'
+   export F_LIBS_FCST='-lessl -lmass -L/usrx/local/mpi_trace/lib -lmpitrace_smp'
+
+   export C_PREP_POST=/usr/ccs/lib/cpp
+   export F_COMP_POST=xlf
+   export F_FLAG_POST='-Q -O3   -qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LINK_POST='-Q -O3   -qxlf77=leadzero -qmaxmem=-1 -qnosave'
+   export F_LIBS_POST='-l essl -l mass -L/nwprod/lib -lbacio_4 -lw3_4'
+
+   export C_PREP=/usr/ccs/lib/cpp
+   export F_COMP=xlf
+   export F_FLAG_r8='-qrealsize=8'
+   export F_FLAG=' '
+   if [ $DEBUG = yes ]; then
+   export F_FLAG='-O -qieee -qstrict -qsource -qxref=full -qattr=full -qflttrap=ov:und:zero:inv:en -qsigtrap -qcheck -qextchk -qinitauto=FF'
+   fi
+#   export F_FLAG='-qrealsize=8 -O -qieee -qstrict -qsource -qxref=full -qattr=full -qflttrap=ov:und:nanq:zero:inv:en -qsigtrap -qcheck -qextchk -qinitauto=FF'
+   export F_LIBS='-lessl'
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = mac_intel ]; then
+
+######### Mac mini INTEL FORTRAN compiler for INTEL CORE DUO #######
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=cpp
+   export F_COMP_RMTN=ifort
+   export F_FLAG_RMTN='-r8 -convert big_endian -auto '
+   export F_LINK_RMTN='-r8 -convert big_endian -auto '
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE=cpp
+   export F_COMP_MOVE=ifort
+   export F_FLAG_MOVE='-convert big_endian -auto '
+   export F_LINK_MOVE='-convert big_endian -auto '
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP=cpp
+   export F_COMP_RINP=ifort
+   export F_COMP_RINP90=ifort
+   export F_FLAG_RINP='-r8 -convert big_endian -auto -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-r8 -convert big_endian -auto -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LIBS_RINP=
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -L/usr/local -ljasper -lpng -lz'
+
+   export C_PREP_FCST=cpp
+   export F_COMP_FCST=ifort
+   export F_COMP_FCST=mpif77
+   export F_COMP_FCST90=ifort
+   export F_COMP_FCST90=mpif77
+   export F_FLAG_FCST='-r8 -convert big_endian -auto '
+   export F_LINK_FCST='-r8 -convert big_endian -auto '
+   export F_LIBS_FCST=
+
+   export C_PREP_POST=cpp
+   export F_COMP_POST=ifort
+   export F_FLAG_POST='-convert big_endian -auto '
+   export F_LINK_POST='-convert big_endian -auto '
+   export F_LIBS_POST=
+
+   export C_PREP=cpp
+   export F_COMP=ifort
+   export F_FLAG_r8='-r8 -convert big_endian -auto '
+   export F_FLAG='-convert big_endian -auto '
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = linux_intel ]; then
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN='icc -C -E'
+   export F_COMP_RMTN=ifort
+   export F_FLAG_RMTN='-r8 -O3 -convert big_endian '
+   export F_LINK_RMTN='-r8 -O3 -convert big_endian '
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE='icc -C -E'
+   export F_COMP_MOVE=ifort
+   export F_FLAG_MOVE='-O3 -convert big_endian '
+   export F_LINK_MOVE='-O3 -convert big_endian '
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP='icc -C -E'
+   export F_COMP_RINP=ifort
+   export F_COMP_RINP90=ifort
+   export F_FLAG_RINP='-r8 -O3 -convert big_endian -mcmodel=large -shared-intel -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-r8 -O3 -convert big_endian -mcmodel=large -shared-intel -I${DISKSYS}/lib/incmod/g2_4'
+   #export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -L/usr/local -ljasper -lpng -lz'
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -L/usr/lib64 -ljasper -lpng -lz'
+
+   export C_PREP_FCST='icc -C -E'
+   export F_COMP_FCST=ifort
+   export F_COMP_FCST='mpiifort'
+   export F_COMP_FCST90=ifort
+   export F_COMP_FCST90='mpiifort'
+#   export F_FLAG_FCST='-r8 -convert big_endian -fpic -mcmodel=medium -shared-intel'
+#  export F_FLAG_FCST='-r8 -O3 -xAVX -convert big_endian -mcmodel=large -shared-intel'
+#  export F_LINK_FCST='-r8 -O3 -xAVX -convert big_endian -mcmodel=large -shared-intel -mkl=parallel'
+   export F_FLAG_FCST='-r8 -O3 -xAVX -ftz -convert big_endian -mcmodel=large -shared-intel'
+   export F_LINK_FCST='-r8 -O3 -xAVX -ftz -convert big_endian -mcmodel=large -shared-intel -mkl=parallel'
+    #  export F_LINK_FCST='-r8 -convert big_endian -Bdynamic '
+   export F_LIBS_FCST=
+
+   export C_PREP_POST='icc -C -E'
+   export F_COMP_POST=ifort
+   export F_FLAG_POST='-O3 -convert big_endian  '
+   export F_LINK_POST='-O3 -convert big_endian  '
+   export F_LIBS_POST=
+
+   export C_PREP='icc -C -E'
+   export F_COMP=ifort
+   export F_FLAG_r8='-r8 -O3 -convert big_endian  '
+   export F_FLAG='-O3 -convert big_endian  '
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = mac_gfortran ]; then
+
+######### gfortran #######
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=cpp 
+   export F_COMP_RMTN=gfortran
+   export F_FLAG_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LINK_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LIBS_RMTN='-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+
+   export C_PREP_MOVE=cpp
+   export C_PREP_MOVE=cpp 
+   export F_COMP_MOVE=gfortran
+   export F_FLAG_MOVE='-O3 -fconvert=big-endian'
+   export F_LINK_MOVE='-O3 -fconvert=big-endian'
+   export F_LIBS_MOVE='-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+
+   export C_PREP_RINP=cpp
+   export F_COMP_RINP=gfortran
+   export F_COMP_RINP90=gfortran
+# ---- without mcmodel ----
+   export F_FLAG_RINP='-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-O3 -fdefault-real-8 -fconvert=big-endian'
+# ---- with mcmodel ----
+#  export F_FLAG_RINP='-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
+#  export F_LINK_RINP='-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian'
+
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+
+   export C_PREP_FCST=cpp
+   export F_COMP_FCST=gfortran
+   export F_COMP_FCST=mpif90
+   export F_COMP_FCST90=gfortran
+   export F_COMP_FCST90=mpif90
+# ---- without mcmodel ----
+   export F_FLAG_FCST='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LINK_FCST='-O3 -fdefault-real-8 -fconvert=big-endian'
+# ---- wit mcmodel ----
+#  export F_FLAG_FCST='-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian'
+#  export F_LINK_FCST='-O3 -fdefault-real-8 -mcmodel=medium -fno-range-check -fstack-arrays -fconvert=big-endian'
+
+   export F_LIBS_FCST='-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+
+   export C_PREP_POST=cpp
+   export F_COMP_POST=gfortran
+   export F_FLAG_POST='-O3 -fconvert=big-endian'
+   export F_LINK_POST='-O3 -fconvert=big-endian'
+   export F_LIBS_POST='-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+
+   export C_PREP=cpp
+   export F_COMP=gfortran
+   export F_FLAG_r8='-O3 -fdefault-real-8 -fconvert=big-endian -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+   export F_FLAG='-g -O3 -fconvert=big-endian -L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/'
+   if [ $DEBUG = yes ]; then 
+   export F_FLAG='-g -fbounds-check -Wuninitialized -O -finit-real=nan -ffpe-trap=invalid,zero,overflow -fconvert=big-endian'
+   fi
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = mac_absoft ]; then
+
+######### Mac ProFORTRAN compiler for G4 ###############
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=cpp
+# export C_PREP_RMTN="$DISKSYS/utl/cppmac -E"
+   export F_COMP_RMTN=f90
+   export F_FLAG_RMTN='-O -N113 -YNO_CDEC -m4 -cpu:g5 -lU77'
+   export F_LINK_RINP="-O -N113 -YNO_CDEC -m4 -cpu:g5 "
+   export F_LIBS_RMTN='-lU77'
+
+   export C_PREP_MOVE=cpp
+   export F_COMP_MOVE=f90
+   export F_FLAG_MOVE='-O -N113 -YNO_CDEC -m4 -cpu:g5 -lU77'
+   export F_LINK_MOVE="-O -N113 -YNO_CDEC -m4 -cpu:g5 "
+   export F_LIBS_MOVE='-lU77'
+
+   export C_PREP_RINP=cpp
+   export F_COMP_RINP=f90
+   export F_FLAG_RINP='-O -N113 -YNO_CDEC -m4 -cpu:g5 -lU77 -p${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP="-O -N113 -YNO_CDEC -m4 -cpu:g5 "
+   export F_LIBS_RINP="-lU77 -L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz"
+
+   export C_PREP_FCST=cpp
+   export F_COMP_FCST=mpif77
+   export F_FLAG_FCST='-O3 -N113 -YNO_CDEC -m4 -cpu:g5 '
+   export F_LINK_FCST=' -O3 -N113 -YNO_CDEC -m4 -cpu:g5 '
+   export F_LIBS_FCST_SGL=
+   export F_LIBS_FCST=
+   export F_LIBS_FCST="-L$DISKSYS/lib -lbacio_4 -lw3_d"
+   export F_W3LB_FCST=" "
+
+   export C_PREP_POST=cpp
+   export F_COMP_POST=f90
+   export F_FLAG_POST="-O -YNO_CDEC -m4 -cpu:g5 -lU77"
+   export F_LINK_POST="-O -YNO_CDEC -m4 -cpu:g5 -lU77"
+   export F_LIBS_POST="-L$DISKSYS/lib -lbacio_4 -lw3_4"
+
+   export C_PREP=cpp
+   export F_COMP=f90
+   export F_FLAG_r8='-N113 -YNO_CDEC -m4 -cpu:g5 -lU77'
+   export F_FLAG='-YNO_CDEC -m4 -cpu:g5 -lU77'
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = mac_xlf ]; then
+
+######### Mac ibm xlf FORTRAN compiler for G4 ###############
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=/opt/ibmcmp/xlf/8.1/exe/cpp
+   export F_COMP_RMTN=xlf90
+   export F_FLAG_RMTN='-qsuffix=f=f90 -qrealsize=8'
+   export F_LINK_RMTN='-qsuffix=f=f90 -qrealsize=8'
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE=/opt/ibmcmp/xlf/8.1/exe/cpp
+   export F_COMP_MOVE=xlf90
+   export F_FLAG_MOVE='-qsuffix=f=f90'
+   export F_LINK_MOVE='-qsuffix=f=f90'
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP=/opt/ibmcmp/xlf/8.1/exe/cpp
+   export F_COMP_RINP=xlf90
+   export F_FLAG_RINP='-qsuffix=f=f90 -qrealsize=8 -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-qsuffix=f=f90 -qrealsize=8'
+   export F_LIBS_RINP="-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz"
+
+   export C_PREP_FCST=/opt/ibmcmp/xlf/8.1/exe/cpp
+#  export F_COMP_FCST=xlf90
+   export F_COMP_FCST=mpif77
+   export F_FLAG_FCST='-qsuffix=f=f90 -qrealsize=8'
+   export F_LINK_FCST='-qsuffix=f=f90 -qrealsize=8'
+   export F_LIBS_FCST=
+
+   export C_PREP_POST=/opt/ibmcmp/xlf/8.1/exe/cpp
+   export F_COMP_POST=xlf90
+   export F_FLAG_POST='-qsuffix=f=f90'
+   export F_LINK_POST='-qsuffix=f=f90'
+   export F_LIBS_POST=
+
+   export C_PREP=/opt/ibmcmp/xlf/8.1/exe/cpp
+   export F_COMP=xlf90
+   export F_FLAG_r8='-qrealsize=8'
+   export F_FLAG=
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = linux_pgi ]; then
+
+   export F_SUBF=f90
+
+########### compile option for LINUX PGI compiler ##################
+
+   export C_PREP='cc -E'
+   export F_COMP=pgf90
+   export F_FLAG_r8='-g -r8 -byteswapio '
+   export F_FLAG='-O3 -g -byteswapio '
+   export F_LINK='-O3 -g -byteswapio '
+   export F_LIBS='-llapack -lblas'
+
+   export C_PREP_RMTN=' cpp -C '
+   export F_COMP_RMTN=pgf90
+   export F_FLAG_RMTN='-r8 -byteswapio '
+   export F_LINK_RMTN='-r8 -byteswapio '
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE=' cpp -C '
+   export F_COMP_MOVE=pgf90
+   export F_FLAG_MOVE='-byteswapio '
+   export F_LINK_MOVE='-byteswapio '
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP=' cpp -C '
+   export F_COMP_RINP=pgf90
+   export F_COMP_RINP90=pgf90
+   export F_FLAG_RINP='-r8 -byteswapio -I${DISKSYS}/lib/incmod/g2_4 '
+   export F_LINK_RINP='-r8 -byteswapio '
+   export F_LIBS_RINP=
+   export F_LIBS_RINP="-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz"
+
+   export C_PREP_FCST=' cpp -C '
+   export F_COMP_FCST=pgf90
+   export F_COMP_FCST=mpif90
+   export F_COMP_FCST90=pgf90
+   export F_COMP_FCST90=mpif90
+   export F_FLAG_FCST='-r8 -byteswapio '
+   export F_LINK_FCST='-r8 -byteswapio '
+   export F_LIBS_FCST=
+
+   export C_PREP_POST=' cpp -C '
+   export F_COMP_POST=pgf90
+   export F_FLAG_POST='-byteswapio '
+   export F_LINK_POST='-byteswapio '
+   export F_LIBS_POST=
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = linux_gfortran ]; then
+
+######### gfortran #######
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN='cpp -C'
+   export F_COMP_RMTN=gfortran
+   export F_FLAG_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LINK_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE='cpp -C'
+   export F_COMP_MOVE=gfortran
+   export F_FLAG_MOVE='-O3 -fconvert=big-endian'
+   export F_LINK_MOVE='-O3 -fconvert=big-endian'
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP='cpp -C'
+   export F_COMP_RINP=gfortran
+   export F_COMP_RINP90=gfortran
+   export F_FLAG_RINP='-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-O3 -fdefault-real-8 -fconvert=big-endian'
+#   export F_FLAG_RINP='-O3 -fdefault-real-8 -I${DISKSYS}/lib/incmod/g2_4'
+#   export F_LINK_RINP='-O3 -fdefault-real-8 '
+#export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng${DISKSYS}/lib/libpng12.a -lz'
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz'
+
+   export C_PREP_FCST='cpp -C'
+   export F_COMP_FCST=gfortran
+   export F_COMP_FCST=mpif90
+   export F_COMP_FCST90=gfortran
+   export F_COMP_FCST90=mpif90
+   export F_FLAG_FCST='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LINK_FCST='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LIBS_FCST=
+
+   export C_PREP_POST='cpp -C'
+   export F_COMP_POST=gfortran
+   export F_FLAG_POST='-O3 -fconvert=big-endian'
+   export F_LINK_POST='-O3 -fconvert=big-endian'
+   export F_LIBS_POST=
+
+   export C_PREP='cpp -C'
+   export F_COMP=gfortran
+   export F_FLAG_r8='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_FLAG='-g -O3 -fconvert=big-endian'
+   if [ $DEBUG = yes ]; then 
+      export F_FLAG='-g -fbounds-check -Wuninitialized -O -finit-real=nan -ffpe-trap=invalid,zero,overflow -fconvert=big-endian'
+   fi
+   export F_LIBS='-llapack -lblas'
+
+
+# -----------------------------------------------------------------------
+elif [ $MACHINE = freebsd_gfortran ]; then
+
+######### gfortran #######
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN='gcc10 -E'
+   export F_COMP_RMTN=gfortran10
+   export F_FLAG_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LINK_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE='gcc10 -E'
+   export F_COMP_MOVE=gfortran10
+   export F_FLAG_MOVE='-O3 -fconvert=big-endian'
+   export F_LINK_MOVE='-O3 -fconvert=big-endian'
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP='gcc10 -E'
+   export F_COMP_RINP=gfortran10
+   export F_COMP_RINP90=gfortran
+   export F_FLAG_RINP='-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-O3 -fdefault-real-8 -fconvert=big-endian'
+#   export F_FLAG_RINP='-O3 -fdefault-real-8 -I${DISKSYS}/lib/incmod/g2_4'
+#   export F_LINK_RINP='-O3 -fdefault-real-8 '
+#export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng${DISKSYS}/lib/libpng12.a -lz'
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz'
+
+   export C_PREP_FCST='gcc10 -E'
+   export F_COMP_FCST=gfortran10
+   export F_COMP_FCST=/usr/local/mpi/openmpi/bin/mpif90
+   export F_COMP_FCST90=gfortran10
+   export F_COMP_FCST90=/usr/local/mpi/openmpi/bin/mpif90
+## without mcmodel
+   export F_FLAG_FCST='-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
+   export F_LINK_FCST='-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
+## with mcmodel
+   export F_FLAG_FCST='-O3 -fdefault-real-8 -mcmodel=large -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
+   export F_LINK_FCST='-O3 -fdefault-real-8 -mcmodel=large -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
+   export F_LIBS_FCST=
+
+   export C_PREP_POST='gcc10 -E'
+   export F_COMP_POST=gfortran10
+   export F_FLAG_POST='-O3 -fconvert=big-endian'
+   export F_LINK_POST='-O3 -fconvert=big-endian'
+   export F_LIBS_POST=
+
+   export C_PREP='gcc10 -E'
+   export F_COMP=gfortran10
+   export F_FLAG_r8='-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
+   export F_FLAG='-g -O3 -fconvert=big-endian -fallow-argument-mismatch'
+   if [ $DEBUG = yes ]; then 
+      export F_FLAG='-g -fbounds-check -Wuninitialized -O -finit-real=nan -ffpe-trap=invalid,zero,overflow -fconvert=big-endian'
+   fi
+   export F_LIBS='-llapack -lblas'
+
+
+# -----------------------------------------------------------------------
+else
+   echo " can't support your machine "
+   echo " only support ibm_xlf, mac_intel, mac_absoft, mac_xlf, linux_pgi, linux_gfortran linux_intel "
+   echo " you need edit ${UTL}/compile.option "
+   exit
+fi

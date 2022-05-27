@@ -1,0 +1,49 @@
+EXEC = rmove.x
+
+SHELL = /bin/sh
+CP = cp
+RM = rm
+CD = cd
+CHMOD = chmod
+
+CPP             =$(C_PREP_MOVE)
+F90             =$(F_COMP_MOVE)
+LIBS            =$(F_LIBS_MOVE)
+FORT_FLAGS      =$(F_FLAG_MOVE)
+INCLUDE_DIR     =-I.
+
+OBJ_MOD = machine.o 
+
+OBJ_MOVE= mainmove.o rmapindx.o rmappert.o rmapover.o 
+
+OBJS = ${OBJ_MOD} ${OBJ_MOVE}
+
+SRCS = ${OBJS:.o=.F}
+#
+# *****************************************************************
+#
+all: model-MOVE
+
+model-MOVE: ${OBJS}
+	${F90} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${LIBS}
+
+clean:
+	rm -f *.o *.$(F_SUBF) *.mod core
+
+#${EXECUTABLE} : ${SRCS} ${OBJS}
+#	${F90} ${FORT_FLAGS} -o $@ ${OBJS} ${OBJ_MOD} 
+
+.SUFFIXES : .o .$(F_SUBF) .F
+
+.F.$(F_SUBF) :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+
+.F.o :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+
+.$(F_SUBF).o :
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+

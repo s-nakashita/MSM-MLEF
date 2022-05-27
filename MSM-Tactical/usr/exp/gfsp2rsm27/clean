@@ -1,0 +1,7 @@
+#!/bin/sh
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure 
+rm -rf ${WDIR}/exe
+
+cd ${TEMP}
+rm -rf dir_cmp

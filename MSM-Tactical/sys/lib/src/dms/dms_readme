@@ -1,0 +1,7 @@
+
+steps to build librdms.a for CWB gfs
+
+1. vi src/makefile, change the DMS_DEF path
+2. make all
+3. then librdms.a will be created under LINUX/lib
+

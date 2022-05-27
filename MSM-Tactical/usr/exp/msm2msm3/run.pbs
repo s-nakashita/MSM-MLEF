@@ -1,0 +1,27 @@
+#!/bin/sh
+#PBS -l select=4:ncpus=32:mpiprocs=32
+#PBS -N rsm2msm3
+#PBS -q workq
+
+#cd $PBS_O_WORKDIR
+#pwd
+
+set -ex
+
+source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/impi/2017.2.174/intel64/bin/mpivars.sh
+
+cd /work2/juang/MSM-Tft/usr/exp/msm_taiping
+export SDATE=2017052500
+. ./configure 
+
+ NPES=128
+#
+export RUNENV='mpirun'
+
+echo "JSHDIR>> :" $JSHDIR
+$JSHDIR/rsm_fcst.sh  
+
+
+
+

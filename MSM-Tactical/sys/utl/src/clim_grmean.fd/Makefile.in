@@ -1,0 +1,61 @@
+EXECUTABLES = grmap.x grmean.x grsplit.x grtran.x ibm2ie3.x cray2ie3.x grvar.x
+OBJS = ${EXECUTABLES:.x=.o}
+
+SHELL = @SHELL@
+CP = @CP@
+RM = @RM@
+CD = @CD@
+CHMOD = @CHMOD@
+CC = @CC@
+CPP = @CPP@
+
+LIB_DIR = @LIB_DIR@
+ETC_DIR = @ETC_DIR@
+F77 = @UTIL_F77@
+FORT_FLAGS = @UTIL_FORT_FLAGS@
+LOAD_FLAGS = @UTIL_LOAD_FLAGS@
+INCLUDE_DIR = @UTIL_INCLUDE_DIR@
+
+LIB = ${LIB_DIR}/w3lib.a 
+
+${EXECUTABLES} : ${OBJS}
+	${F77} ${LOAD_FLAGS} -o $@ $? ${LIB}
+	${CP} $@ ${ETC_DIR}
+	${CD} ${ETC_DIR}; \
+	${CHMOD} 755 $@
+
+.SUFFIXES : .x .o .f .F
+
+.F.f :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.f ; rm $*.i
+
+.F.o :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.f ; rm $*.i
+	${F77} ${FORT_FLAGS} -c $*.f
+
+.F.x :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.f ; rm $*.i
+	${F77} ${FORT_FLAGS} -c $*.f
+	${F77} ${LOAD_FLAGS} -o $@ $< ${LIB}
+
+.o.x :
+	${F77} ${LOAD_FLAGS} -o $@ $< ${LIB}
+
+.f.x :
+	${F77} ${FORT_FLAGS} -c $<
+	${F77} ${LOAD_FLAGS} -o $@ $*.o ${LIB}
+
+.f.o :
+	${F77} ${FORT_FLAGS} -c $<
+
+clean :
+	- ${RM} -rf *.f *.o ${EXECUTABLES} core rii_files
+
+dist_clean :
+	- ${CD} ${ETC_DIR}; \
+	${RM} -f ${EXECUTABLES}
+
+# DO NOT DELETE

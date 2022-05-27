@@ -1,0 +1,27 @@
+                                       gfsp2rsm
+
+Download a subset of GFS pressure data and preprocess it into RSM domain.
+
+1. How to compile
+1) edit configure
+   At least, you need change the following terms.
+   MACHINE       # machine and compiler
+   You can find all config term and comment in utl/rsm_default.option
+2) execute ./clean and ./compile
+   
+2. How to run
+1) edit configure
+   At least, you need change the following terms.
+   BASEDIR       # data dir
+2) edit down_gfs.sh
+   choose the download tool, it can be wget or curl
+3) edit run.s or run.sh
+   change SDATE
+   run.s is for ibm_xlf
+   run.sh is for linux
+4) execute run 
+
+This deck is to prepare base field from NCEP pgb file
+When we get 0.5 degree data, we prepare 55km grid-space for base field
+When we get 0.25 degree data, we prepare 27.5km grid-space for base field.
+And the domain will cover more than contract needed for d01.

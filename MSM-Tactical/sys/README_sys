@@ -1,0 +1,58 @@
+
+                        README for sys/
+
+This sys/ directory contains all the required scripts, source codes, and
+constant dataset used for model pre-processing, integration, and post
+processing. This sys/ has to be configured and its libraries and utilities
+have to be installed. Once it has be installed with success, then it can 
+be used for multiple users and multiple experiments under usr/. Based on
+this concern, this sys/ should be installed by much more experienced 
+users or called sytem user.
+
+To install this system, under sys/, one can issue ./job/install_sys,
+then the script will ask for machine type with lists for you to type in.
+After you type the correct selection, the installation will start by its
+own and showing its procedures, and finally give you normal end response. 
+
+The purpose of each sub-directory can be described as following:
+
+fix/	contains all necessary fixed/constant dataset 
+	GTOPO30/	conatins 30 second topography data
+inp/	contains some examples initial conditions
+job/	contains some job scripts for installation and others
+jsh/	contains scripts for job or experiments to call
+lib/	contains necessary library for model, especially postprocessor
+	incmod/
+	src/		all library source codes
+			bacio/		for binary IO
+			ccsm/		interpolation by cubic spline
+			cubic/		interpolation by cubic 
+			g2/		grib2 encoder
+			ip/		Gaussian related library
+			jasper-1.900.1/	jasper packing
+			libpng-1.2.40/	png packing
+			sp/		spectral transform
+			w3/		package utility
+			w3lib-1.7/	adding package
+			zlib-1.2.3/	another packing		
+			dms/		CWB DMS package v4 intel version
+opt/	contains all default options for compilation and model integral
+src/	contains all source codes subdirectories
+	prepare_terrain.fd/	prepare terrain for high resolution
+	rsm_bpost.fd/		post processor for surface data
+	rsm_fcst.fd/		model integration/forecast code
+	rsm_pgrb.fd/		postprocessor in pressure surfaces
+	rsm_rinp.fd/		model input preprocessor
+	rsm_rmtn.fd/		model terrain preprocessor
+	rsm_sgrb.fd/		post processor for sigma layer data
+        rsm_move.fd/		move domain with previous perturbation
+ush/	contains default scripts called by jsh/
+utl/	contains all necessary utilities for model integration
+	src/	some utilitoes source code in sub-directories
+		clim_grmean.fd/	grib mean source code
+		cnvgrib.fd/	converting gribs
+		ndate.fd/	get data set date
+		nhour.fd/	get data set forecast hours
+		rsmmap.fd/	use configure to plot regional domain
+
+

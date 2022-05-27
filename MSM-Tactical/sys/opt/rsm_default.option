@@ -1,0 +1,261 @@
+#!/bin/ksh
+
+# directory
+export USERID=${USERID:-` whoami `}
+export DISK=${DISK:-` cd ../../.. ; pwd `}     		#working top directory
+export DISKSYS=${DISKSYS:-` cd ../../../sys ; pwd `}     		#working top directory
+export DISKUSR=${DISKUSR:-` cd ../.. ; pwd `}     		#working top directory
+export WORK=${WORK:-$DISKUSR/exp/rsm2msm}         		#working directory
+export EXPN=${EXPN:-rsm2msm}                     	#experimental subdirectory
+export TEMP=${TEMP:-/tmp/$USERID/$EXPN}
+export RUNDIR=${RUNDIR:-$TEMP/$SDATE}
+export SRCDIR=${SRCDIR:-$DISKSYS/src}
+export JSHDIR=${JSHDIR:-$DISKSYS/jsh}
+export UTLDIR=${UTLDIR:-$DISKSYS/utl}
+export USHDIR=${USHDIR:-$DISKSYS/ush}
+export FIXDIR=${FIXDIR:-$DISKSYS/fix}
+export AERDIR=${AERDIR:-$DISKSYS/fix}
+export EXEDIR=${EXEDIR:-$DISKSYS/utl}
+export EXPDIR=${EXPDIR:-$DISKUSR/exp/$EXPN}
+export EXPEXE=${EXPEXE:-$EXPDIR/exe}
+export CMPDIR=${CMPDIR:-$TEMP/dir_cmp}
+export INCDIR=${INCDIR:-$CMPDIR/include}
+export ARCDIR=${ARCDIR:-/hpssuser/g01/$USERID}
+export BASEDIR=${BASEDIR:-$DISKSYS/inp/gfsp/$SDATE}  
+
+# machine dependent
+export MACHINE=${MACHINE:-ibm_xlf}
+export RUNENV=${RUNENV:-}                                # execute command
+export MARCH=${MARCH:-mpi}                               # no use now
+export LAMMPI=${LAMMPI:-no}
+export MPICH=${MPICH:-yes}                               # define mpikind for linux mpich and aix pe
+export NCPUS=${NCPUS:-1}                                 # only 1 now
+export NCOL=${NCOL:-4}
+export NROW=${NROW:-8}
+export NPES=${NPES:-` expr $NCOL \* $NROW `}                #equal to the total_task in run.q
+export NODES=${NODES:-1}                                    
+export TASKPERNODE=${TASKPERNODE:-` expr $NPES / $NODES `}  
+
+# machine dependent cpp
+export MP=${MP:-yes}                                       # mpi
+export MPIO=${MPIO:-no}
+if [ $MACHINE = ibm_xlf ] ; then
+   export IBMSP=yes
+else
+   export IBMSP=no
+fi
+export CRA=${CRA:-no}
+export DEC=${DEC:-no}
+export ORIGIN=${ORIGIN:-no}
+export THREAD=${THREAD:-no}                                # openmp
+export HYBRID=${HYBRID:-no}
+export SINGLE=${SINGLE:-no}
+export FFT99M=${FFT99M:-yes}
+export DCRFT=${DCRFT:-no}
+
+# debug related
+# cpp flag A T Q U V P 
+export CNT=${CNT:-no}
+export CNT_1=${CNT_1:-no}
+export CNT_2=${CNT_2:-no}
+export CNT_5=${CNT_5:-no}
+export CNT_6=${CNT_6:-no}
+export DBG=${DBG:-no}
+
+# model parameter
+export JCAP=${JCAP:-62}                         # use it if input global data
+export LEVS=${LEVS:-47}                         # input data level
+export LONF=${LONF:-192}                        # use it if input global data
+export LATG=${LATG:-94}                         # use it if input global data
+export CIGRD=${CIGRD:-64}                    # use it if input regional data
+export CJGRD=${CJGRD:-64}                     # use it if input regional data
+export CIGRD1=$(echo "$CIGRD+1" | bc)
+export CJGRD1=$(echo "$CJGRD+1" | bc)
+export IGRD=${IGRD:-64}
+export JGRD=${JGRD:-64} 
+export LEVR=${LEVR:-42}                         # model level
+export PGBRES=${PGBRES:-0.5}                    # pressure input file resolution
+
+# compile model option
+export NEST=${NEST:-C2R}                  # G2R C2R P2R N2R
+# G2R means preprocess global sigma data into RSM
+# P2R means preprocess global pressure data into RSM
+# C2R means preprocess RSM coarse data into RSM
+# N2R means preprocess MSM coarse data into RSM
+if [ do$NEST = doG2R ] ; then
+   export G2R=yes
+else
+   export G2R=no 
+fi
+if [ do$NEST = doC2R ] ; then
+   export C2R=yes
+else
+   export C2R=no 
+fi
+if [ do$NEST = doP2R ] ; then
+   export P2R=yes
+   export C2R=yes
+else
+   export P2R=no 
+fi
+if [ do$NEST = doN2R ] ; then
+   export N2R=yes
+   export C2R=yes
+else
+   export N2R=no 
+fi
+export NONHYD=${NONHYD:-no}
+export RKN=${RKN:-no} 
+export RAS=${RAS:-no}
+export SAS=${SAS:-yes}
+export NUMP3D=${NUMP3D:-3}                 # 3 ferrier 4 zhao
+export NUMP2D=${NUMP2D:-1}                 # 1 ferrier 3 zhao
+export GTOPO30=${GTOPO30:-no}              # if use GTOPO30, MTNRES should be 30 
+export CHGTLEV=${CHGTLEV:-no}              # top level damping
+export INTDTB=${INTDTB:-no}                # internal evolved base-field T 
+export MBC=${MBC:-no}
+export LBC=${LBC:-no}
+export SQK=${SQK:-yes}
+export SPT=${SPT:-no}
+export SEMI=${SEMI:-yes}
+
+# compile exec option
+export RMTN=${RMTN:-yes}
+export RINP=${RINP:-yes}
+export FCST=${FCST:-yes} 
+
+# model run parameter
+export JOBS=${JOBS:-hindcast}
+export SDATE=${SDATE:-2008100100}
+export CLASS=${CLASS:-dev}
+export CASE=${CASE:-05}             ## ensemble member  number
+export LENMON=${LENMON:-1}          # if without ENDHOUR
+export ENDHOUR=${ENDHOUR:-48} 
+export TIMESTEP=${TIMESTEP:-60}
+export DELTAT_REG=${TIMESTEP:-120}
+export INCHOUR=${INCHOUR:-6}
+export INCBASE=${INCBASE:-6}
+export PRTHOUR=${PRTHOUR:-6}
+export FHMAX=${FHMAX:-10000}
+export RSWRHOUR=${RSWRHOUR:-1}              # run short wave in hour
+export RLWRHOUR=${RLWRHOUR:-1}              # run long wave in hour
+export RDFISEC=${RDFISEC:-0.}               # run digital filter initial
+export RLXHSEC=${RLXHSEC:-1800.}            # lateral boundary relax for T Q
+export RLXMSEC=${RLXMSEC:-1800.}            # lateral boundary relax for U V
+export RLXZSEC=${RLXZSEC:-1800.}            # top boundary relax for nonhyd p t 
+export DIFH=${DIFH:-3}                      # horizontal diffusion in time
+export DIFM=${DIFM:-2}                      # steps, H for T Q, M for U V
+export BGF=${BGF:-3}                        # delx base = bgf * delx
+export ISEMIMP=${ISEMIMP:-1}                # semi-implicit 1:on 0:off
+export IIMPRLX=${IIMPRLX:-1}                # implecit relaxation 1:on 0:off
+export IDMPJET=${IDMPJET:-0}                # damp strong wave
+export IMDLPHY=${IMDLPHY:-1}                # 1: run model physics, 0: off
+export IGRIBVERSION=${IGRIBVERSION:-2}      # input pgb gribversion
+export IQVAR=${IQVAR:-1}                    # input q is rh (2) or spfh (1)
+export IVS=${IVS:-1997}                     # input gfs io version
+                                            # 1997 2000 200501 200509
+export CLIM=${CLIM:-0}                      # use climatology surface data
+export KO=${KO:-19}
+export NEWSLM=${NEWSLM:-0}
+export NEWSST=${NEWSST:-.FALSE.}
+export DELX=${DELX:-26}
+if [ $GTOPO30 = yes ] ; then
+   export MTNRES=30                         # terrain resolution
+else
+   export MTNRES=${MTNRES:-4}               # terrain resolution
+fi
+                                            # (=(1,30), 2, 4 and 8) orography 
+                                            # resolution in min or second 
+                                            # (30 seconds)
+export RSFC_MERGE=${RSFC_MERGE:-yes}
+if [ $LEVR = $LEVS ] ; then
+   export NEWSIG=.FALSE.
+else
+   export NEWSIG=.TRUE.
+fi
+export NCLDB=${NCLDB:-1}                             # coarse model cloud
+export NCLD=${NCLD:-1}                               # model cloud
+#  ncldb should be 0 or equal ncld
+#  when ncld = 2,4,5, use num_p3d=4 num_p2d=3 
+#
+export PERCMTN=${PERCMTN:-0.2}
+export POSTTYPE=${POSTTYPE:-sync}                    # do pgb sync or async
+export RUNRMTN=${RUNRMTN:-no}                       # run rmtn
+export RUNRINP=${RUNRINP:-no}                       # run rinp at 00
+export RUNRINP2=${RUNRINP2:-no}                     # run rinp at $fh
+export RUNMOVE=${RUNMOVE:-no}                        # run movable domain
+export RUNFCST=${RUNFCST:-no}                       # run fcst
+
+# rsmlocation
+export  RPROJ=${RPROJ:-0.}
+export  RTRUTH=${RTRUTH:--37.0}
+export  RORIENT=${RORIENT:--118.0}
+export  RDELX=${RDELX:-26000.}
+export  RDELY=${RDELY:-26000.}
+export  RCENLAT=${RCENLAT:-37.0}
+export  RCENLON=${RCENLON:--118.0}
+export  RLFTGRD=${RLFTGRD:-33.}
+export  RBTMGRD=${RBTMGRD:-33.}
+export  CPROJ=${CPROJ:-0.}               # 0:Mercater; 4 means latlon grid
+export  CTRUTH=${CTRUTH:-0.}
+export  CORIENT=${CORIENT:-0.}
+export  CDELX=${CDELX:-0.}
+export  CDELY=${CDELY:-0.}
+export  CCENLAT=${CCENLAT:-0.}
+export  CCENLON=${CCENLON:-0.}
+export  CLFTGRD=${CLFTGRD:-0.}
+export  CBTMGRD=${CBTMGRD:-0.}
+export  CLAT1=${CLAT1:-0}
+export  CLAT2=${CLAT2:-0}
+export  CLON1=${CLON1:-0}
+export  CLON2=${CLON2:-0}
+
+# fix filename
+export CO2CON=${CO2CON:-$FIXDIR/global_co2con.l$LEVR.f77}
+export TUNE1=${TUNE1:-$FIXDIR/global_cldtune.f77}
+export O3CLIM=${O3CLIM:-$FIXDIR/global_o3clim.txt}
+export O3PROD=${O3PROD:-$FIXDIR/global_o3prod.f77}
+export O3LOSS=${O3LOSS:-$FIXDIR/global_o3loss.f77}
+export STTPRM=${STTPRM:-$FIXDIR/nam_staids.parm}
+export GRIBKPDS5=${GRIBKPDS5:-$FIXDIR/clim_grib1.kpds5.vsn21}
+export GRIBKPDS6=${GRIBKPDS6:-$FIXDIR/clim_grib1.kpds6.vsn21}
+export FNZORC=${FNZORC:-global_zorclim.1x1.grb}
+export FNALBC=${FNALBC:-global_albedo4.1x1.grb}
+export FNTG3C=${FNTG3C:-global_tg3clim.2.6x1.5.grb}
+export FNVEGC=${FNVEGC:-global_vegfrac.0.144.decpercent.grb}
+export FNVETC=${FNVETC:-global_vegtype.1x1.grb}
+export FNSOTC=${FNSOTC:-global_soiltype.1x1.grb}
+export FNMSKH=${FNMSKH:-seaice_newland.grb}
+
+#
+# add some check condition
+if [ do$NEST = doP2R ] ; then
+   ci1=$(echo "($CLON2-($CLON1))/$PGBRES+1" | bc)
+   cj1=$(echo "($CLAT2-($CLAT1))/$PGBRES+1" | bc)
+   if [ $ci1 -ne $CIGRD1 ] ; then
+      echo 'CIGRD1 didnot consistent with CLON1 and CLON2'
+      exit
+   fi
+   if [ $cj1 -ne $CJGRD1 ] ; then
+      echo 'CJGRD1 didnot consistent with CLAT1 and CLAT2'
+      exit
+   fi
+fi
+if [ $NCLDB -ne $NCLD ] ; then
+   if [ $NCLDB -ne 0 ] ; then
+      echo ' NCLDB should be 0 or equal NCLD '
+      exit
+   fi
+fi
+if [ $NCLD = 2 ] ; then
+   export NUMP3D=4
+   export NUMP2D=3
+fi
+if [ $NCLD = 4 ] ; then
+   export NUMP3D=4
+   export NUMP2D=3
+fi
+if [ $NCLD = 5 ] ; then
+   export NUMP3D=4
+   export NUMP2D=3
+fi

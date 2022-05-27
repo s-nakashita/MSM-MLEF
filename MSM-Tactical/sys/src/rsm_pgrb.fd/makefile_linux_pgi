@@ -1,0 +1,12 @@
+LIBS=	
+W3LB=	-L../../lib -lbacio_4 -lw3_4 
+FORT=	pgf90
+OPTN=	-g -byteswapio
+SRCS=	rpgbnawips.f ismaxmin.f
+OBJS=	rpgbnawips.o ismaxmin.o
+EXEC=	../../utl/rpgbnawips.x
+
+$(EXEC):	$(OBJS)
+	$(FORT) -o $(EXEC) $(OPTN) $(OBJS) $(W3LB) $(LIBS) 
+$(OBJS):	$(SRCS)
+	$(FORT) -c $(OPTN) $(SRCS)

@@ -1,0 +1,60 @@
+EXEC = rinp.x
+
+SHELL = /bin/sh
+CP = cp
+RM = rm
+CD = cd
+CHMOD = chmod
+
+CPP             =$(C_PREP_RINP)
+F90             =$(F_COMP_RINP)
+LIBS            =$(F_LIBS_RINP)
+FORT_FLAGS      =$(F_FLAG_RINP)
+INCLUDE_DIR     =-I.
+
+OBJ_MOD = machine.o physcons.o istack.o cnttime.o funcphys.o
+
+OBJ_RINP= mainrinp.o gncpus.o g2rinp.o c2rinp.o s2rinp.o rchgr.o extrap.o newps.o newsig.o \
+	sigset.o sg2sg.o trispl.o valts.o setlatlon.o sphpt1.o sphpt2.o rpln2i.o \
+	sphqk1.o sphqk2.o gg2rg.o g2rini.o ggtorg.o gtorini.o ggtobg.o rread.o \
+	rwrite.o gdtocc.o cctogd.o sgl2ful.o ful2sgl.o ffacosy1.o ffscosy1.o \
+	plnini.o sumffc1.o sumggc1.o rftini.o ffscosx1.o ffacosx1.o fplfml.o maxmin.o \
+	glats.o poly.o fti_lonf.o gft_lonf.o pln2i.o gpln2i.o epsilo.o cmpind.o ggozrm.o \
+	transo.o sums2i.o fl2i.o sumtop.o dzuvle.o dellnp.o todxdy.o cgtorg.o ll2xy.o \
+	getspfh.o ana_sst.o\
+	l2rinp.o preadg1.o preadg2.o preadg1sfc.o preadg2sfc.o r2rini.o rtorini.o setcgrid.o \
+        xy2ll.o cg2rg.o c2rini.o ctorini.o expnd.o write_to_grads.o s2rinp_gfs.o sfcsub.o 
+
+OBJ_FFT99M= fax.o fftrig.o vpassm.o fft99m.o fft99a.o fft99b.o rfftmlt.o
+
+OBJS = ${OBJ_MOD} ${OBJ_RINP} ${OBJ_FFT99M}
+
+SRCS = ${OBJS:.o=.F}
+#
+# *****************************************************************
+#
+all: model-rinp
+
+model-rinp: ${OBJS}
+	${F90} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${LIBS}
+
+clean:
+	rm -f *.o *.$(F_SUBF) *.mod core
+
+#${EXECUTABLE} : ${SRCS} ${OBJS}
+#	${F90} ${FORT_FLAGS} -o $@ ${OBJS} ${OBJ_MOD} 
+
+.SUFFIXES : .o .$(F_SUBF) .F
+
+.F.$(F_SUBF) :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+
+.F.o :
+	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
+	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+
+.$(F_SUBF).o :
+	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+

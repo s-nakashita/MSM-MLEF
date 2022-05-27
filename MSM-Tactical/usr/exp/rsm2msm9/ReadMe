@@ -1,0 +1,23 @@
+                                      rsm2msm9
+
+Run MSM using RSM background data
+
+1. How to compile
+1) edit configure
+   At least, you need change the following terms.
+   MACHINE       # machine and compiler
+   You can find all config term and comment in utl/rsm_default.option
+2) execute ./compile
+
+2. How to run
+1) edit configure
+   At least, you need change the following terms.
+   BASEDIR       # data dir
+   RUNENV        # run command
+2) edit run
+   change SDATE
+3) execute ./run
+
+This deck is to run d02 domain of 9km grid spacing resolution over
+100E-142E and 2N-37N domain. And the base field is from d01 domain
+with 27 km gris spacing resolution.

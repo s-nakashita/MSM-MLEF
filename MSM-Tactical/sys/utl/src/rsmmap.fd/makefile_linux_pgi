@@ -1,0 +1,14 @@
+# ------------- INTEL FORTRAN ------
+FORT=	pgf90
+OPTN=	-byteswapio
+
+SRCS=	rsmmap.f
+OBJS=	rsmmap.o
+EXEC=	../../rsmmap.x
+
+$(EXEC):	$(OBJS)
+	$(FORT) -o $(EXEC) $(OPTN) $(OBJS) 
+$(OBJS):	$(SRCS)
+	$(FORT) -c $(OPTN) $(SRCS)
+clean:
+	rm $(OBJS) $(EXEC)

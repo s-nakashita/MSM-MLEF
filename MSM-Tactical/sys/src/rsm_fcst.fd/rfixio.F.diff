@@ -1,0 +1,30 @@
+--- rfixio.F.orig	2022-04-07 14:20:56.947528000 +0900
++++ rfixio.F	2022-04-21 17:29:38.195311000 +0900
+@@ -152,6 +152,10 @@
+       if( mype.eq.master ) then
+ #endif
+       read(nunit)  tmps
++      !tmps = tmps * 10 !cm->mm
++      !tmps = tmps * 0.1 !mm->cm
++      !tmps = tmps * 0.01 !mm->m
++      tmps = tmps * 0.0 !no snow
+ #ifdef MP
+       call sgl2ful(tmps,spec, lngrd)
+       endif
+@@ -476,10 +480,16 @@
+       call rmpgp2f(sheleg,igrd1p,jgrd1p,spec,igrd1,jgrd1,1)
+       if( mype.eq.master ) then
+         call ful2sgl(spec,  tmps,lngrd)
++        !tmps = tmps * 0.1 !mm->cm
++        !tmps = tmps * 10 !cm->mm
++        !tmps = tmps * 100 !m->mm
+         write(nunit) tmps
+       endif
+ #else
+       call ful2sgl(sheleg,tmps,lngrd)
++      !tmps = tmps * 0.1 !mm->cm
++      !tmps = tmps * 10 !cm->mm
++      !tmps = tmps * 100 !m->mm
+       write(nunit) tmps
+ #endif
+ !4.stc

@@ -1,0 +1,13 @@
+  This directory contains all possible documentations for this
+package or file system under svn.
+  We encourage file commit in following file types with the 
+proper extension:
+
+*.txt	file can be viewed by cat or view and viewed/edited by vi
+*.doc	file can be viewed and edited by Microsoft Word
+*.pdf	file can be viewed and edited by Acrobat Reader/Writer
+*.ppt	file can be viewed and edited by Power Point 
+
+Any files are growing into one group can be under subdirectory,
+
+
