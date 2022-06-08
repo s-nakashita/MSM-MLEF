@@ -5,13 +5,21 @@ LDFLAGS=
 LIBS=
 
 PARENT=${PWD}
-SRCS=$(PARENT)/src/read_sig.f90
-OBJS=read_sig.o
-EXEC=read_sig
+SRCSIG=$(PARENT)/src/read_sig.f90
+OBJSIG=read_sig.o
+EXECSIG=read_sig
+SRCSFC=$(PARENT)/src/read_sfc.f90
+OBJSFC=read_sfc.o
+EXECSFC=read_sfc
 
-$(EXEC):	$(OBJS)
-	$(LD) $(LDFLAGS) -o $(EXEC) $(OBJS) $(LIBS)
+$(EXECSIG):	$(OBJSIG)
+	$(LD) $(LDFLAGS) -o $(EXECSIG) $(OBJSIG) $(LIBS)
 
-$(OBJS):	$(SRCS)
-	$(FC) $(FFLAGS) -c $(SRCS)
+$(OBJSIG):	$(SRCSIG)
+	$(FC) $(FFLAGS) -c $(SRCSIG)
 
+$(EXECSFC):	$(OBJSFC)
+	$(LD) $(LDFLAGS) -o $(EXECSFC) $(OBJSFC) $(LIBS)
+
+$(OBJSFC):	$(SRCSFC)
+	$(FC) $(FFLAGS) -c $(SRCSFC)

@@ -6,7 +6,8 @@ export USERID=` whoami `
 export DISK=$HOME/Development/grmsm/MSM-Tactical   #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
-export WORKUSR=$DISK/usr/work
+#export WORKUSR=$DISK/usr/work
+export WORKUSR=/zdata/grmsm/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
@@ -17,7 +18,7 @@ if [ -s /ptmp ]; then
     mkdir -p $TEMP
  fi
 export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
-export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
+#export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
 
 # --------------- machine/compile options ----------------
 # compile options with machine dependent can be

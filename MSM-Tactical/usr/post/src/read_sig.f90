@@ -386,10 +386,10 @@ contains
     idy = idate(3)
     imo = idate(2)
     iyr = idate(4)
-    if (ihr .ge. 24) then
+    do while (ihr .ge. 24)
       idy=idy+1
       ihr=ihr-24
-    end if
+    end do
     if (mod(iyr,4).eq.0) then
       if(idy.gt.daysl(imo)) then
         imo=imo+1

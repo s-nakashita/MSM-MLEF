@@ -443,7 +443,7 @@ elif [ $MACHINE = freebsd_gfortran ]; then
 
    export C_PREP_RINP='gcc10 -E'
    export F_COMP_RINP=gfortran10
-   export F_COMP_RINP90=gfortran
+   export F_COMP_RINP90=gfortran10
    export F_FLAG_RINP='-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
    export F_LINK_RINP='-O3 -fdefault-real-8 -fconvert=big-endian'
 #   export F_FLAG_RINP='-O3 -fdefault-real-8 -I${DISKSYS}/lib/incmod/g2_4'

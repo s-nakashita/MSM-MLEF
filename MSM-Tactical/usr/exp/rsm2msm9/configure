@@ -6,7 +6,8 @@ export USERID=` whoami `
 export DISK=` cd ../../.. ; pwd `                 #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
-export WORKUSR=$DISK/usr/work
+#export WORKUSR=$DISK/usr/work
+export WORKUSR=/zdata/grmsm/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
