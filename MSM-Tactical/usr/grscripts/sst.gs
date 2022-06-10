@@ -6,6 +6,7 @@ function sst(fh)
 'open sfc.f'fh'.ctl'
 'set grads off'
 'set gxout shaded'
+'set clevs 280 282 284 286 288 290 292 294 296 298 300 302'
 'd maskout(tsea, -slmsk)'
 'cbarn'
 * draw date

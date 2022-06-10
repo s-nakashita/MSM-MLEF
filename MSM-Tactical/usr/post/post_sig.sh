@@ -2,10 +2,26 @@
 #
 # convert r_sig.fNN to GrADS file
 #
-SDATE=2022060800
+#SDATE=2022060812
+#IRES=9
+if [ $# != 2 ]; then
+  echo "Usage : ./post_sig.sh init(YYYYMMDDHH) res(9 or 3)"
+  exit 1
+fi
+SDATE=${1}
+IRES=${2}
+if [ $IRES -eq 9 ]; then
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-SRCDIR=${PWD}
+elif [ $IRES -eq 3 ]; then
+DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
+else
+echo "Invalid resolution. Specify 9 or 3."
+exit 2
+fi
+MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
+SRCDIR=${MSMDIR}/usr/post
 EXEC=read_sig
+cd $SRCDIR
 make ${EXEC}
 cd $DATADIR
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
@@ -23,10 +39,12 @@ ctl=sig.f${fh}.ctl
 ln -s $in fort.11
 ln -s $out fort.51
 ln -s $ctl fort.61
-./${EXEC} 2>&1
+./${EXEC} 1>>${EXEC}.log 2>&1
 sed -i -e 's/DATAFILE/'$out'/g' $ctl
 rm ${ctl}-e
 rm fort.*
+# binary -> netcdf
+cdo -f nc import_binary $ctl ${out%.*}.nc
 fh=`echo $fh + $inc_h | bc`
 done
 ls -ltr | tail -n 10

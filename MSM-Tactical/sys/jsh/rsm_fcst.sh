@@ -287,6 +287,13 @@ while [ $h -lt $FEND ]; do
       while [ $hr -le $hx ];do
         if [ $hr -lt 10 ];then hr=0$hr;fi
         $USHDIR/rpgb_post.sh $hr || exit 14
+#
+# panel plot (hr>=3)
+#
+        fh=`expr $hr + 0`
+        if [ $fh -ge 3 ];then
+        $DISKUSR/nclscripts/plot_panel6_each.sh ${IRES} ${fh} || exit 15
+        fi
         hr=`expr $hr + $PRTHOUR`
       done
 #
@@ -295,7 +302,7 @@ while [ $h -lt $FEND ]; do
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
-        $USHDIR/rpgb_post.sh $hx || exit 15
+        $USHDIR/rpgb_post.sh $hx || exit 16
       fi
 
     fi # r_pgb dosync

@@ -19,6 +19,7 @@ fi
 
 export BASEDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}
 #export BASEDIR=$WORKUSR/rsm2msm9_3nest/${SDATE}
+export IRES=3
 
 # --------------- compile options ----------------
 # machine dependent
