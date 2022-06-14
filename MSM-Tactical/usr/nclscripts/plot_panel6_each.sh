@@ -11,10 +11,10 @@ ODIR=/zdata/grmsm/fig/msm2msm3_jpn/${SDATE}
 fi
 echo $ODIR
 if [ ! -d $ODIR ]; then
-  mkdir -p $ODIR
+  mkdir -p -m 775 $ODIR
 fi
 echo $SDATE $fh
-${HOME}/.local/ncarg/bin/ncl -nQ init=\"${SDATE}\" fh=${fh} ires=${ires} ${CDIR}/panel6.ncl 1>/dev/null
+${HOME}/.local/ncarg/bin/ncl -nQ init=\"${SDATE}\" fh=${fh} ires=${ires} ${CDIR}/panel6_2.ncl 1>/dev/null
 if [ $fh -lt 10 ]; then
   fh=0$fh
 fi

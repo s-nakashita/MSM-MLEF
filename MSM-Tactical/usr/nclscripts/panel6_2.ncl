@@ -108,7 +108,7 @@ begin
   printVarSummary(r3h)
   printMinMax(r3h,0)
   end if
-  ;; SST+950hPa wind,v=0
+  ;; SST
   slmsk = a->LAND_GDS1_SFC(:,:)
   tsfc  = a->TMP_GDS1_SFC(:,:)
   tsea  = tsfc
@@ -118,6 +118,20 @@ begin
   tsea@units     = "degreeC"
   printVarSummary(tsea)
   printMinMax(tsea,0)
+  ;; 950hPa v=0
+  v950 = v({950},:,:)
+  gradLatLon = grad_latlon_cfd(v950,v950&g1_lat_0,v950&g1_lon_1,False,False)
+  dvdy = gradLatLon[0]
+  ;dvdx = gradlatLon[1] ;; not used
+  ;printVarSummary(dvdy)
+  v0mask = new(dimsizes(dvdy),integer)
+  v0mask = where(dvdy.lt.0, 1, 0)
+  ;printVarSummary(v0mask)
+  v0 = v950
+  v0 = mask(v0,v0mask,1)
+  printVarSummary(v0)
+  printMinMax(v0,0)
+  v0color = "magenta"
   ;; plot
   plots = new(6,graphic)
   wks = gsn_open_wks("png","panel6_fh"+sprinti("%0.2d",fh))
@@ -239,7 +253,8 @@ begin
   res2@cnFillPalette = newcmap2
   res2@cnLevelSelectionMode = "ExplicitLevels"
   res2@cnLevels = (/-70.0,-30.0,-10.0,0.0/)
-  res2@gsnCenterString = "700hPa OMG(hPa/h), T(~S~o~N~C), Wind(kt)"
+  ;res2@gsnCenterString = "700hPa OMG(hPa/h), T(~S~o~N~C), Wind(kt)"
+  res2@gsnCenterString = "700hPa OMG(hPa/h), Wind(kt)"
   plots(2) = gsn_csm_vector_scalar_map(wks,u({700},:,:),v({700},:,:),omg,res2)
   resc@cnLineColor = "red"
   resc@cnMinLevelValF = -6.0
@@ -252,8 +267,8 @@ begin
                              4.0,2.0,2.0,4.0,2.0,2.0,\
                              4.0,2.0,2.0,4.0,2.0,2.0,\
                              4.0/)
-  plot2c = gsn_csm_contour(wks,t({700},:,:),resc)
-  overlay(plots(2),plot2c)
+  ;plot2c = gsn_csm_contour(wks,t({700},:,:),resc)
+  ;overlay(plots(2),plot2c)
 
   res3@cnFillOn = True
   res3@cnLinesOn = False
@@ -343,20 +358,25 @@ begin
   res5@lbLabelAutoStride = False
   res5@lbLabelStride = 2
   res5@lbBoxLinesOn = False
-  res5@gsnCenterString = "SST(~S~o~N~C), 950hPa Wind(kt), V=0"
+  res5@gsnCenterString = "SST(~S~o~N~C), 950hPa Wind(kt)"
   plots(5) = gsn_csm_vector_scalar_map(wks,u({950},:,:),v({950},:,:),tsea(:,:),res5)
+  ;; v0 line
   resc@cnFillOn = False
   resc@cnLinesOn = True
-  resc@cnLineColor = "black"
+  resc@cnLineColor = v0color
   resc@cnLevelSelectionMode = "ExplicitLevels"
   resc@cnLevels = (/0.0/)
   delete(resc@cnLineThicknesses)
   resc@cnMonoLineThickness = True
   resc@cnLineThicknessF = 5.0
-  plot5c = gsn_csm_contour(wks,v({950},:,:),resc)
-  overlay(plots(5),plot5c)
-
+  ;overlay(plots(5),plotv0)
+  do k=0,5
+    plotv0 = gsn_csm_contour(wks,v0(:,:),resc)
+    overlay(plots(k),plotv0)
+    delete(plotv0)
+  end do
+  ;;
   resP = True
-  resP@gsnPanelMainString = z@initial_time + " FT="+sprinti("%d",fh)+"H Valid="+valid
+  resP@gsnPanelMainString = z@initial_time + " FT="+sprinti("%d",fh)+"H Valid="+valid ;+"  megenta:V950=0"
   gsn_panel(wks,plots,(/2,3/),resP)
 end

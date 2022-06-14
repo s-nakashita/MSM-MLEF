@@ -251,7 +251,8 @@ while [ $h -lt $FEND ]; do
 
   if [ do$RUNFCST = doyes ] ; then
     echo "Forecast starting from hour $h..." >>stdout
-    timeout 1800 $USHDIR/rfcst.sh $hx || exit 10
+    #timeout 1800 $USHDIR/rfcst.sh $hx || exit 10
+    $USHDIR/rfcst.sh $hx || exit 10
 
     if [ do$LAMMPI = doyes ]; then
        lamclean
