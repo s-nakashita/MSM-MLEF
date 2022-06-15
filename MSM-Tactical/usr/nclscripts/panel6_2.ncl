@@ -360,21 +360,21 @@ begin
   res5@lbBoxLinesOn = False
   res5@gsnCenterString = "SST(~S~o~N~C), 950hPa Wind(kt)"
   plots(5) = gsn_csm_vector_scalar_map(wks,u({950},:,:),v({950},:,:),tsea(:,:),res5)
-  ;; v0 line
-  resc@cnFillOn = False
-  resc@cnLinesOn = True
-  resc@cnLineColor = v0color
-  resc@cnLevelSelectionMode = "ExplicitLevels"
-  resc@cnLevels = (/0.0/)
-  delete(resc@cnLineThicknesses)
-  resc@cnMonoLineThickness = True
-  resc@cnLineThicknessF = 5.0
-  ;overlay(plots(5),plotv0)
-  do k=0,5
-    plotv0 = gsn_csm_contour(wks,v0(:,:),resc)
-    overlay(plots(k),plotv0)
-    delete(plotv0)
-  end do
+  ;;; v0 line
+  ;resc@cnFillOn = False
+  ;resc@cnLinesOn = True
+  ;resc@cnLineColor = v0color
+  ;resc@cnLevelSelectionMode = "ExplicitLevels"
+  ;resc@cnLevels = (/0.0/)
+  ;delete(resc@cnLineThicknesses)
+  ;resc@cnMonoLineThickness = True
+  ;resc@cnLineThicknessF = 5.0
+  ;;overlay(plots(5),plotv0)
+  ;do k=0,5
+  ;  plotv0 = gsn_csm_contour(wks,v0(:,:),resc)
+  ;  overlay(plots(k),plotv0)
+  ;  delete(plotv0)
+  ;end do
   ;;
   resP = True
   resP@gsnPanelMainString = z@initial_time + " FT="+sprinti("%d",fh)+"H Valid="+valid ;+"  megenta:V950=0"
