@@ -10,9 +10,11 @@ begin
   valid = cd_string(vhour,"%D%HJST")
   print(valid)
   if (ires.eq.9) then
-    wdir = "rsm2msm9_jpn"
+    ;wdir = "rsm2msm9_jpn"
+    wdir = "rsm2msm9_tparc"
   else
-    wdir = "msm2msm3_jpn"
+    ;wdir = "msm2msm3_jpn"
+    wdir = "msm2msm3_tparc"
   end if
   a = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh), "r")
   dNames = getfiledimnames(a)
@@ -95,16 +97,17 @@ begin
   printVarSummary(v10)
   printMinMax(v10,0)
   if (fh.ge.3) then
-  r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
-  r3h = r1h
-  atmp = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh-1), "r")
-  r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
-  r3h = r3h + r1h
-  delete(atmp)
-  atmp = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh-2), "r")
-  r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
-  r3h = r3h + r1h
-  delete(atmp)
+  ;r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
+  ;r3h = r1h
+  ;atmp = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh-1), "r")
+  ;r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
+  ;r3h = r3h + r1h
+  ;delete(atmp)
+  ;atmp = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh-2), "r")
+  ;r1h  = a->A_PCP_GDS1_SFC_acc1h(:,:)
+  ;r3h = r3h + r1h
+  ;delete(atmp)
+  r3h  = a->A_PCP_GDS1_SFC_acc3h(:,:)
   printVarSummary(r3h)
   printMinMax(r3h,0)
   end if
@@ -134,7 +137,7 @@ begin
   v0color = "magenta"
   ;; plot
   plots = new(6,graphic)
-  wks = gsn_open_wks("png","panel6_fh"+sprinti("%0.2d",fh))
+  wks = gsn_open_wks("png","panel6_fh"+sprinti("%0.3d",fh))
   ;; plot(0)=300hPa ISTC(kt), Z(m), T(degreeC), Windbarb 
   ;; plot(1)=500hPa VOR(10^-6/s), Z(m), Windbarb 
   ;; plot(2)=700hPa OMG(hPa/h), T(degreeC), Windbarb 
@@ -316,14 +319,21 @@ begin
   resc@cnFillOn = False
   resc@cnLinesOn = True
   resc@cnLineColor = "black"
-  resc@cnLevelSelectionMode = "ManualLevels"
-  resc@cnMinLevelValF = 990.0
-  resc@cnMaxLevelValF = 1020.0
-  resc@cnLevelSpacingF = 2.0
+  ;resc@cnLevelSelectionMode = "ManualLevels"
+  ;resc@cnMinLevelValF = 990.0
+  ;resc@cnMaxLevelValF = 1020.0
+  ;resc@cnLevelSpacingF = 2.0
+  resc@cnLevelSelectionMode = "ExplicitLevels"
+  resc@cnLevels = (/ 965., 970., 975., 980., 985.,\
+                     990., 992., 994., 996., 998.,\
+                    1000.,1002.,1004.,1006.,1008.,\
+                    1010.,1012.,1014.,1016.,1018.,\
+                    1020./)
   resc@cnLineLabelInterval = 5
   resc@cnMonoLineThickness = False
   delete(resc@cnLineThicknesses)
-  resc@cnLineThicknesses = (/4.0,2.0,2.0,2.0,2.0,\
+  resc@cnLineThicknesses = (/2.0,4.0,2.0,4.0,2.0,\
+                             4.0,2.0,2.0,2.0,2.0,\
                              4.0,2.0,2.0,2.0,2.0,\
                              4.0,2.0,2.0,2.0,2.0,\
                              4.0/)
@@ -333,13 +343,20 @@ begin
   res4@cnFillOn = False
   res4@cnLinesOn = True
   res4@cnLineColor = "black"
-  res4@cnLevelSelectionMode = "ManualLevels"
-  res4@cnMinLevelValF = 990.0
-  res4@cnMaxLevelValF = 1020.0
-  res4@cnLevelSpacingF = 2.0
+  ;res4@cnLevelSelectionMode = "ManualLevels"
+  ;res4@cnMinLevelValF = 980.0
+  ;res4@cnMaxLevelValF = 1020.0
+  ;res4@cnLevelSpacingF = 2.0
+  res4@cnLevelSelectionMode = "ExplicitLevels"
+  res4@cnLevels = (/ 965., 970., 975., 980., 985.,\
+                     990., 992., 994., 996., 998.,\
+                    1000.,1002.,1004.,1006.,1008.,\
+                    1010.,1012.,1014.,1016.,1018.,\
+                    1020./)
   res4@cnLineLabelInterval = 5
   res4@cnMonoLineThickness = False
-  res4@cnLineThicknesses = (/4.0,2.0,2.0,2.0,2.0,\
+  res4@cnLineThicknesses = (/2.0,4.0,2.0,4.0,2.0,\
+                             4.0,2.0,2.0,2.0,2.0,\
                              4.0,2.0,2.0,2.0,2.0,\
                              4.0,2.0,2.0,2.0,2.0,\
                              4.0/)
@@ -353,7 +370,7 @@ begin
   res5@cnFillPalette = cmap5
   res5@cnLevelSelectionMode = "ManualLevels"
   res5@cnMinLevelValF = 18.0
-  res5@cnMaxLevelValF = 26.0
+  res5@cnMaxLevelValF = 30.0
   res5@cnLevelSpacingF = .5
   res5@lbLabelAutoStride = False
   res5@lbLabelStride = 2

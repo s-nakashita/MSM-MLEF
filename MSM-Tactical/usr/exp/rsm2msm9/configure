@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_jpn          #output top directory
+   export TEMP=$WORKUSR/${EXPN}_tparc          #output top directory
 fi
 #export BASEDIR=$WORKUSR/rsm2rsm27/${SDATE}
 export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
@@ -63,15 +63,16 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export ENDHOUR=168 
-export ENDHOUR=48                             # release_test
+export ENDHOUR=120 
+#export ENDHOUR=48                             # release_test
 #from gfsp2rsm27
 export INCBASE=3
 export INCHOUR=3
 ##from rsm2rsm27
 #export INCBASE=1
 #export INCHOUR=1
-export PRTHOUR=1
+#export PRTHOUR=1
+export PRTHOUR=3
 export TIMESTEP=30
 export IMDLPHY=1                # 1: run model physics, 0: off
 export CLIM=0
@@ -109,7 +110,20 @@ export RUNFCST=yes
 #export  RCENLON=120.0
 #export  RLFTGRD=183.0
 #export  RBTMGRD=190.0
-# Japan domain 110E-150E 16N-46N
+## Japan domain 110E-150E 16N-46N
+#export  IGRD=384
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=140.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=35.0
+#export  RCENLON=130.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+## For T-PARC II domain 120E-164E 5N-38N
 export  IGRD=384
 export  JGRD=324
 export  LEVR=42
@@ -117,24 +131,11 @@ export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=140.0
 export  RDELX=9000.
-export  RDELY=9300.
-export  RCENLAT=35.0
-export  RCENLON=130.0
-export  RLFTGRD=183.0
-export  RBTMGRD=190.0
-## Tropical Pacific Ocean domain 120E-162E 10S-25N
-#export  IGRD=432
-#export  JGRD=192
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=120.0
-#export  RDELX=9000.
-#export  RDELY=9300.
-#export  RCENLAT=15.0
-#export  RCENLON=140.0
-#export  RLFTGRD=183.0
-#export  RBTMGRD=190.0
+export  RDELY=9000.
+export  RCENLAT=20.0
+export  RCENLON=140.0
+export  RLFTGRD=176.0
+export  RBTMGRD=136.0
 ## North America domain 125W-82W 20N-55N
 #export  IGRD=324
 #export  JGRD=324

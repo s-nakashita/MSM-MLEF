@@ -4,7 +4,7 @@ set -x
 #export SDATE=2022042700
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
-rm -rf ${TEMP}/${SDATE} 
+#rm -rf ${TEMP}/${SDATE} 
 echo $RUNDIR
 #
 #export RUNENV='mpiexec -s all -n '${NPES}
