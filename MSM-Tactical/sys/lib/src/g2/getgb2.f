@@ -302,7 +302,7 @@ C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  DETERMINE WHETHER INDEX BUFFER NEEDS TO BE INITIALIZED
       IRGI=0
       CALL GETIDX(LUGB,LUGI,CBUF,NLEN,NNUM,IRGI)
-      WRITE(6,'(2(A,I5))') 'NLEN=',NLEN,' NNUM=',NNUM
+C      WRITE(6,'(2(A,I5))') 'NLEN=',NLEN,' NNUM=',NNUM
       IF(IRGI.GT.1) THEN
         IRET=96
         RETURN

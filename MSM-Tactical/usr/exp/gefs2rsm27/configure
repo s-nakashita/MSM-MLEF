@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
  else
    #export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-    export TEMP=$WORKUSR/${EXPN}_nomad/$MEM
+    export TEMP=$WORKUSR/${EXPN}_nomad
     mkdir -p $TEMP
  fi
 export BASEDIR=$WORKUSR/DATA/gefs/$SDATE/$MEM
