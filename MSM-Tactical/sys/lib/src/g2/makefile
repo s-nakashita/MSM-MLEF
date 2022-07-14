@@ -78,9 +78,10 @@ ARFLAGS=$(ARFLAGS_R)
  CC=gcc
  INCDIR=-I../../incmod
  MODDIR=../../incmod/g2_4
- FFLAGS=-O3 -g -J$(MODDIR) -fallow-argument-mismatch
+# FFLAGS=-O3 -g -J$(MODDIR) -fallow-argument-mismatch
+ FFLAGS=-O3 -g -fallow-argument-mismatch
  CFLAGS=-O2 -g $(DEFS) $(INCDIR)
- CPP=cpp -P -C
+# CPP=cpp -P -C
  ARFLAGS=
 
 #--------------------------------------

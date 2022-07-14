@@ -27,6 +27,7 @@ uname -v = FreeBSD 13.0-RELEASE-p6 #0: Mon Jan 10 06:28:50 UTC 2022     root@amd
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
+PATH: /home/nakashita/.local/ncarg/bin
 PATH: /usr/local/mpi/openmpi/bin
 PATH: /home/nakashita/.local/bin
 PATH: /sbin
@@ -1645,7 +1646,7 @@ configure:20177: $? = 0
 configure:20177: result: yes
 configure:20183: checking for _doprnt
 configure:20183: gcc -o conftest -g -O2 -I/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/include -I/usrx/local/jpeg.6b/include -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib -lpng -lz conftest.c -lm  -ljpeg >&5
-/usr/local/bin/ld: /tmp//cc62aVum.o: in function `main':
+/usr/local/bin/ld: /tmp//ccLxvrKG.o: in function `main':
 /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/src/jasper-1.900.1/conftest.c:77: undefined reference to `_doprnt'
 collect2: error: ld returned 1 exit status
 configure:20183: $? = 1

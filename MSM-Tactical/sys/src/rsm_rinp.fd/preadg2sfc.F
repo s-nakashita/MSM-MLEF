@@ -1,4 +1,4 @@
-      subroutine preadg2sfc(ifile,ijmax,nfld,out,iscale)
+      subroutine preadg2sfc(ifile,ijmax,nfld,out,iscale,iefs)
       use grib_mod
 #include <paramodel.h>
 #include <rscomloc.h>
@@ -6,7 +6,7 @@
       integer,dimension(200) :: jids,jpdt,jgdt
       logical :: unpack=.true.
 !
-      integer :: ijmax,iret,iscale
+      integer :: ijmax,iret,iscale,iefs
       integer :: nfld
       real    :: out(ijmax,nfld)
       integer :: lugi,j
@@ -166,7 +166,11 @@
          j=0
          jdisc=jdisc0(n)
          jids=-9999
-         jpdtn=0          
+         if ( iefs.eq.1 ) then
+         jpdtn=1
+         else
+         jpdtn=0
+         end if
          jpdt=-9999
          jgdtn=-1
          jgdt=-9999

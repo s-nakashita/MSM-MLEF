@@ -27,6 +27,7 @@ uname -v = FreeBSD 13.0-RELEASE-p6 #0: Mon Jan 10 06:28:50 UTC 2022     root@amd
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
+PATH: /home/nakashita/.local/ncarg/bin
 PATH: /usr/local/mpi/openmpi/bin
 PATH: /home/nakashita/.local/bin
 PATH: /sbin
@@ -416,7 +417,7 @@ conftest.c:52:6: warning: conflicting types for built-in function 'pow'; expecte
 conftest.c:40:1: note: 'pow' is declared in header '<math.h>'
    39 | # include <limits.h>
    40 | #else
-/usr/local/bin/ld: /tmp//cc3fRztE.o: in function `main':
+/usr/local/bin/ld: /tmp//cctQWk8j.o: in function `main':
 /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/src/libpng-1.2.40/conftest.c:63: undefined reference to `pow'
 collect2: error: ld returned 1 exit status
 configure:11291: $? = 1

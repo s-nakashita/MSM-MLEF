@@ -1,0 +1,24 @@
+#!/bin/sh
+
+#############################
+#### set all definitions ####
+#############################
+export SDATE=2022071400
+export MEM=001
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure
+echo $RUNDIR
+rm -rf ${TEMP}/${SDATE}
+###########################
+#### download gfs data ####
+###########################
+if [ $RDA = 'no' ]; then
+$USHDIR/download_gefs.sh
+else
+$USHDIR/download_gfspy.sh
+fi
+#####################
+#### excute fcst ####
+#####################
+#ulimit -s unlimited
+$JSHDIR/rsm_fcst.sh  

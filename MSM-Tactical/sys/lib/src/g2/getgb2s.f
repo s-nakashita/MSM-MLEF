@@ -364,12 +364,14 @@ C  CHECK IF IDENTIFICATION SECTION IS A MATCH
            DO I=1,GFLD%IDSECTLEN
               IF ( (JIDS(I).NE.-9999).AND.
      &             (JIDS(I).NE.GFLD%IDSECT(I)) ) THEN
+                 WRITE(6,'(A)') "MATCH1=.FALSE."
                  MATCH1=.FALSE.
                  EXIT
               ENDIF
            ENDDO
         ENDIF
         IF ( .NOT. MATCH1 ) THEN
+           WRITE(6,'(A)') "MATCH1=.FALSE."
            DEALLOCATE(GFLD%IDSECT)
            IPOS=IPOS+INLEN
            CYCLE
@@ -392,6 +394,7 @@ C  CHECK IF GRID DEFINITION TEMPLATE IS A MATCH
                  DO I=1,GFLD%IGDTLEN
                     IF ( (JGDT(I).NE.-9999).AND.
      &                   (JGDT(I).NE.GFLD%IGDTMPL(I)) ) THEN
+                       WRITE(6,'(A)') "MATCH3=.FALSE."
                        MATCH3=.FALSE.
                        EXIT
                     ENDIF
@@ -402,6 +405,7 @@ C     &              MATCH3=ALL(JGDT(1:GFLD%IGDTLEN).EQ.GFLD%IGDTMPL(1:GFLD%IGDT
            ENDIF
         ENDIF
         IF ( .NOT. MATCH3 ) THEN
+           WRITE(6,'(A)') "MATCH3=.FALSE."
            IF (ASSOCIATED(GFLD%IGDTMPL)) DEALLOCATE(GFLD%IGDTMPL)
            IF (ASSOCIATED(GFLD%LIST_OPT)) DEALLOCATE(GFLD%LIST_OPT)
            IPOS=IPOS+INLEN
@@ -422,6 +426,7 @@ C  CHECK IF PRODUCT DEFINITION TEMPLATE IS A MATCH
            MATCH4=.TRUE.
         ELSE
            CALL GBYTE(CBUF,NUMPDT,(JPOS+7)*8,2*8)  ! GET PDT TEMPLATE NO.
+           WRITE(6,'(2(A,I5))') 'JPDTN=',JPDTN,' NUMPDT=',NUMPDT
            IF ( JPDTN.EQ.NUMPDT ) THEN
               IOF=0
               CALL GF_UNPACK4(CBUF(JPOS+1),LSEC4,IOF,GFLD%IPDTNUM,
@@ -432,12 +437,12 @@ C  CHECK IF PRODUCT DEFINITION TEMPLATE IS A MATCH
                  DO I=1,GFLD%IPDTLEN
                     IF ( (JPDT(I).NE.-9999).AND.
      &                   (JPDT(I).NE.GFLD%IPDTMPL(I)) ) THEN
-c                       WRITE(6, '(I2,A,I8,A,I8)') I, ' ,REQUESTED ', 
-c     &                 JPDT(I), ' ,CURRENT ',GFLD%IPDTMPL(I)
-c                       IF ( I.EQ.11 ) THEN
-c                         WRITE(6, '(I2,A,I8,A,I8)') 12,' ,REQUESTED ', 
-c     &                   JPDT(12),' ,CURRENT ',GFLD%IPDTMPL(12)
-c                       ENDIF
+                       WRITE(6, '(I2,A,I8,A,I8)') I, ' ,REQUESTED ', 
+     &                 JPDT(I), ' ,CURRENT ',GFLD%IPDTMPL(I)
+                       IF ( I.EQ.11 ) THEN
+                         WRITE(6, '(I2,A,I8,A,I8)') 12,' ,REQUESTED ', 
+     &                   JPDT(12),' ,CURRENT ',GFLD%IPDTMPL(12)
+                       ENDIF
                        MATCH4=.FALSE.
                        EXIT
                     ENDIF
@@ -448,6 +453,7 @@ c     &              MATCH4=ALL( JPDT(1:GFLD%IPDTLEN) .EQ. GFLD%IPDTMPL(1:GFLD%I
            ENDIF
         ENDIF
         IF ( .NOT. MATCH4 ) THEN
+           WRITE(6,'(A)') "MATCH4=.FALSE."
            IF (ASSOCIATED(GFLD%IPDTMPL)) DEALLOCATE(GFLD%IPDTMPL)
            IF (ASSOCIATED(GFLD%COORD_LIST)) DEALLOCATE(GFLD%COORD_LIST)
         ENDIF

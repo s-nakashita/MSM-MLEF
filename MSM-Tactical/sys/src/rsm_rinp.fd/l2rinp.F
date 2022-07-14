@@ -100,6 +100,13 @@
 #else
       data iscale/0/
 #endif
+!ADD for GEFS
+      integer iefs
+#ifdef GEFS
+      data iefs/1/
+#else
+      data iefs/0/
+#endif
 !END ADD
 !
       print *,' enter l2rinp '
@@ -167,9 +174,9 @@
          call preadg1(npgb,clngrd,levs,plevels,iqvar,nfld,cfld,fhour                &
      &                ,idate,ilatflip)
       else if (igribversion.eq.2) then
-! modified for RDA
+! modified for RDA and GEFS
          call preadg2(npgb,clngrd,levs,plevels,iqvar,nfld,cfld,fhour                &
-     &                ,idate,ilatflip,iscale)
+     &                ,idate,ilatflip,iscale,iefs)
       else
          print *,'no support grib version'
       endif
@@ -466,8 +473,8 @@
       if (igribversion.eq.1) then
          call preadg1sfc(npgb,clngrd,nsfcfld,csfcfld)
       else if (igribversion.eq.2) then
-! modified for RDA
-         call preadg2sfc(npgb,clngrd,nsfcfld,csfcfld,iscale)
+! modified for RDA and GEFS
+         call preadg2sfc(npgb,clngrd,nsfcfld,csfcfld,iscale,iefs)
       else
          print *,'no support grib version'
       endif

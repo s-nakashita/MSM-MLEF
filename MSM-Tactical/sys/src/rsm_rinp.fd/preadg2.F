@@ -1,5 +1,5 @@
       subroutine preadg2(ifile,ijmax,kdim,plevels,iqvar,                &
-     &                   nfld,out,fhour,idate,iflip,iscale)
+     &                   nfld,out,fhour,idate,iflip,iscale,iefs)
       use grib_mod
 #include <paramodel.h>
 #include <rscomloc.h>
@@ -14,7 +14,7 @@
       integer :: lugi,j
       integer :: jpdt2(nfld),jpdt3(nfld),jpdt13(kdim)
       integer :: jdisc,jpdtn,jgdtn
-      integer :: nterr,iflip,iqvar,iscale
+      integer :: nterr,iflip,iqvar,iscale,iefs
       real    :: fhour
       integer :: idate(4)
       integer :: n,k,kk
@@ -62,7 +62,11 @@
          j=0
          jdisc=-1
          jids=-9999
+         if ( iefs.eq.1 ) then
+         jpdtn=1
+         else
          jpdtn=0
+         end if
          jpdt=-9999
          jgdtn=-1
          jgdt=-9999
@@ -126,7 +130,11 @@
          j=0
          jdisc=-1
          jids=-9999
+         if ( iefs.eq.1 ) then
+         jpdtn=1
+         else
          jpdtn=0
+         end if
          jpdt=-9999
          jgdtn=-1
          jgdt=-9999
