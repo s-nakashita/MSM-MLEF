@@ -288,13 +288,13 @@ while [ $h -lt $FEND ]; do
       while [ $hr -le $hx ];do
         if [ $hr -lt 10 ];then hr=0$hr;fi
         $USHDIR/rpgb_post.sh $hr || exit 14
-#
-# panel plot (hr>=3)
-#
-        fh=`expr $hr + 0`
-        if [ $fh -ge 3 ];then
-        $DISKUSR/nclscripts/plot_panel6_each.sh ${IRES} ${fh} || exit 15
-        fi
+##
+## panel plot (hr>=3)
+##
+#        fh=`expr $hr + 0`
+#        if [ $fh -ge 3 ];then
+#        $DISKUSR/nclscripts/plot_panel6_each.sh ${IRES} ${fh} || exit 15
+#        fi
         hr=`expr $hr + $PRTHOUR`
       done
 #

@@ -8,18 +8,18 @@ ires=9
 #    dd=0$dd
 #  fi
 #for hh in 00 12;do
-SDATE="2022062900"
+SDATE="2022071100"
 #SDATE="202206"${dd}${hh}
 if [ $ires -eq 9 ]; then
-ODIR=/zdata/grmsm/fig/rsm2msm9_jpn/${SDATE}
+ODIR=/zdata/grmsm/fig/rsm2msm9_tparc/${SDATE}
 else
-ODIR=/zdata/grmsm/fig/msm2msm3_jpn/${SDATE}
+ODIR=/zdata/grmsm/fig/msm2msm3_tparc/${SDATE}
 fi
 echo $ODIR
 if [ ! -d $ODIR ]; then
   mkdir -p $ODIR
 fi
-for fh in $(seq 3 3 120);do
+for fh in $(seq 3 3 12);do
   echo $SDATE $fh
   ${HOME}/.local/ncarg/bin/ncl -nQ init=\"${SDATE}\" fh=${fh} ires=${ires} panel6_2.ncl #1>/dev/null
   if [ $fh -lt 10 ]; then

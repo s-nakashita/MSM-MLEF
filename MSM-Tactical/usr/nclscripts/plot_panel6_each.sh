@@ -5,9 +5,9 @@ ires=${1}
 fh=3
 fh=${2}
 if [ $ires -eq 9 ]; then
-ODIR=/zdata/grmsm/fig/rsm2msm9_tparc/${SDATE}
+ODIR=/zdata/grmsm/fig/${EXPN}/${SDATE}
 else
-ODIR=/zdata/grmsm/fig/msm2msm3_tparc/${SDATE}
+ODIR=/zdata/grmsm/fig/${EXPN}/${SDATE}
 fi
 echo $ODIR
 if [ ! -d $ODIR ]; then
