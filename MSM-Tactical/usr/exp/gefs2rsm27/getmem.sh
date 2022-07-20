@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-SMEM=5
+SMEM=0
 EMEM=10
 MEM=$SMEM
 while [ $MEM -le $EMEM ];do

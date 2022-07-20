@@ -3,8 +3,8 @@
 #############################
 #### set all definitions ####
 #############################
-export SDATE=2022071100
-export MEM=000
+export SDATE=2022071200
+#export MEM=000
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 export RUNDIR=${TEMP}/${SDATE}/${MEM}

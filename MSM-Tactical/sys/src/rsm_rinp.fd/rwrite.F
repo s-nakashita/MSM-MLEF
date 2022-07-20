@@ -57,6 +57,7 @@
 !.....use u v as input, update u v tendency by div vor tendency.....
 !.....
       use machine , only : kind_io4
+      use physcons, only : pi => con_pi
 !ccj
 #include <paramodel.h>
 #include <rscomloc.h>
@@ -199,6 +200,10 @@
       call maxmin(flat,lngrd,1,1,1,'flat')
       call ful2sgl(flat,tmps,lngrd)
       write(n) (tmps(i),i=1,lngrd)
+      ! add 20220720
+      if(maxval(flon).gt.2.0e0*pi) then
+        flon = flon - 2.0e0*pi
+      end if
       call maxmin(flon,lngrd,1,1,1,'flon')
       call ful2sgl(flon,tmps,lngrd)
       write(n) (tmps(i),i=1,lngrd)

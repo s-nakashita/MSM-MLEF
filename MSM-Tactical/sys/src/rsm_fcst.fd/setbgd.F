@@ -131,6 +131,9 @@
       x00 = -( rlftgrd - 1. ) * delx - twothird * delx
       y00 = -( rbtmgrd - 1. ) * dely - twothird * dely
       dlamda0 = 0.0
+!      ! add 20220720
+!      wlon = cenlon + x00 / a2
+!      if(wlon.lt.0.e0) wlon = twopi + wlon
 !
 ! =========
 !           lat loop
@@ -143,16 +146,21 @@
          x = x00 + i*delx*ngf + x0
          flon = x / a2 + cenlon
          flon = mod(flon,twopi)
-         if(flon.lt.0.e0) flon = twopi + flon
+! comment out 20220720
+!         if(flon.lt.0.e0) flon = twopi + flon
 !
          blat(i,j) = 2.0 *( atan( exp( y/a2 ) ) - qtpi )
-         ! add by zyf 20140604
-         ! fix problem which domain covers 0E.
-         if (flon.lt.blon(ib1,j)) then
-             blon(i,j) = flon + twopi
-         else
+! comment out 20220720
+!         ! add by zyf 20140604
+!         ! fix problem which domain covers 0E.
+!         ! modified 20220720
+!         if (((ib1.le.0).and.(flon.lt.blon(ib1,j))) &
+!         &   .or. &
+!         &   ((ib1.gt.0).and.(flon.lt.wlon))) then
+!             blon(i,j) = flon + twopi
+!         else
              blon(i,j) = flon
-         endif
+!         endif
 !
  200  continue
 !

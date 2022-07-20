@@ -73,6 +73,7 @@
       lon1=nint(180/pi*flon1)-2
       lon2=nint(180/pi*flon2)+2
       print*,lon1,lon2,lat1,lat2
+      positive=.false.
       if(lon1.lt.lon2.and.(lon1.ge.20.and.lon1.lt.340)                           &
      &   .and.(lon2.gt.20.and.lon2.le.340)) positive=.true.
        print*,'longitude type= ',positive

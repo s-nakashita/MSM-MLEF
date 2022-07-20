@@ -59,6 +59,7 @@
 !.....use u v as input, update u v tendency by div vor tendency.....
 !.....
       use machine , only : kind_io4
+      use physcons , only : pi=>con_pi
 !ccj
 #include <paramodel.h>
 #ifdef MP
@@ -386,6 +387,10 @@
       if( mype.eq.master ) then
 #endif
 !     call maxmin(GRIDK1S,lngrd,1,1,1,'swrite flon grid')
+      ! add 20220720
+      if(maxval(GRIDK1S).gt.2.0e0*pi) then
+        GRIDK1S = GRIDK1S - 2.0e0*pi
+      end if
       call ful2sgl(GRIDK1S, tmps,lngrd)
       write(n) (tmps(i),i=1,lngrd)
 #ifdef MP

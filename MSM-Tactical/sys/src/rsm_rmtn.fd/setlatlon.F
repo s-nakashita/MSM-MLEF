@@ -138,6 +138,9 @@
          flats = 2.0 *( atan( exp( ys/a2 ) ) - qtpi )
          flat(ijlats+i) = flats
          flon(ijlats+i) = flons
+! fix problem which domain covers 0E.
+! added 20220720 
+         if (flons.lt.flon(ijlats+1)) flon(ijlats+i)=flons+twopi
 !
  200  continue
 !
@@ -155,6 +158,10 @@
 300   continue
 !
       endif
+! added 20220720 for debug
+      print *,'nproj=',nproj
+      call maxmin(flat,lngrd,1,1,1,'in setlatlon,flat')
+      call maxmin(flon,lngrd,1,1,1,'in setlatlon,flon')
 !
 !
       return

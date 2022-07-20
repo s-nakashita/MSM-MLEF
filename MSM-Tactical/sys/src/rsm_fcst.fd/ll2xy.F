@@ -111,7 +111,15 @@
         ! comment by zyf 20140605 for cross 0E case.
         !blon = mod(blon,twopi)
         !if(blon.lt.0.e0) blon = twopi + blon
-        x=a2*(blon-cenlon)
+!        ! add 20220720 for cross 0E case
+!        wlon = cenlon + x00 / a2
+!        !print *, 'wlon=', wlon
+!        !print *, 'blon=', blon
+!        if(wlon.lt.0.e0) then
+!          x=a2*(blon-twopi-cenlon)
+!        else
+          x=a2*(blon-cenlon)
+!        end if
         y=a2*log(tan(blat/2.0+qtpi))
 !
       endif

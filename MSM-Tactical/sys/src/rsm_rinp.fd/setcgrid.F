@@ -133,7 +133,8 @@
          x = x00 + (i-1)*delx + x0
          flons = x / a2 + cenlon
          flons = mod(flons,twopi)
-         if(flons.lt.0.e0) flons = twopi + flons
+! comment out 20220720
+!         if(flons.lt.0.e0) flons = twopi + flons
 !
          flats = 2.0 *( atan( exp( ys/a2 ) ) - qtpi )
          clat(ijlats+i) = flats
@@ -154,12 +155,13 @@
           do i=1,cigrd1
             clon(ijlats+i) = ((i-1)*delx+clon1)*rad
             clon(ijlats+i) = mod(clon(ijlats+i),twopi)
-            if (clon(ijlats+i).lt.0.e0) clon(ijlats+i)=                 &
-     &                                  twopi+clon(ijlats+i)
-            ! fix bug which domain covers 0E.
-            if (clon(ijlats+i).lt.clon(ijlats+1)) then
-                    clon(ijlats+i)=clon(ijlats+i)+twopi
-            endif
+! comment out 20220720
+!            if (clon(ijlats+i).lt.0.e0) clon(ijlats+i)=                 &
+!     &                                  twopi+clon(ijlats+i)
+!            ! fix bug which domain covers 0E.
+!            if (clon(ijlats+i).lt.clon(ijlats+1)) then
+!                    clon(ijlats+i)=clon(ijlats+i)+twopi
+!            endif
             clat(ijlats+i) = ((j-1)*dely+clat1)*rad
           enddo
         enddo

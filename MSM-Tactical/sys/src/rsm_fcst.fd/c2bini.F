@@ -105,10 +105,18 @@
         lon=(x-x00)/cdelx+1
         lat=(y-y00)/cdely+1
         if( lon.lt.1 .or. lon.gt.cigrd1 ) then
+#ifdef MP
+           print *, mype
+#endif
            print *,x,' out side of ',x00,' and ',x11
+           print *,i,' blon=',blon(i)
            stop
         else if( lat.lt.1 .or. lat.gt.cjgrd1 ) then
+#ifdef MP
+           print *, mype
+#endif
            print *,y,' out side of ',y00,' and ',y11
+           print *,i,' blat=',blat(i)
            stop
         endif
         call ll2xy(clat(lon  ,lat  ),clon(lon  ,lat  ),xc00,yc00)

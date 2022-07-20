@@ -133,14 +133,16 @@
          x = x00 + (i-1)*delx + x0
          flons = x / a2 + cenlon
          flons = mod(flons,twopi)
-         if(flons.lt.0.e0) flons = twopi + flons
+! comment out 20220720
+!         if(flons.lt.0.e0) flons = twopi + flons
 !
          flats = 2.0 *( atan( exp( ys/a2 ) ) - qtpi )
          flat(ijlats+i) = flats
          flon(ijlats+i) = flons
 ! add by zyf 20140604
 ! fix problem which domain covers 0E.
-         if (flons.lt.flon(ijlats+1)) flon(ijlats+i)=flons+twopi
+! comment out 20220720
+!         if (flons.lt.flon(ijlats+1)) flon(ijlats+i)=flons+twopi
 !
  200  continue
 !
