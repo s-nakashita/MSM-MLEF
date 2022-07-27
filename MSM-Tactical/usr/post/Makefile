@@ -11,6 +11,9 @@ EXECSIG=read_sig
 SRCSFC=$(PARENT)/src/read_sfc.f90
 OBJSFC=read_sfc.o
 EXECSFC=read_sfc
+SRCFLX=$(PARENT)/src/read_flx.f90
+OBJFLX=read_flx.o
+EXECFLX=read_flx
 
 $(EXECSIG):	$(OBJSIG)
 	$(LD) $(LDFLAGS) -o $(EXECSIG) $(OBJSIG) $(LIBS)
@@ -23,3 +26,9 @@ $(EXECSFC):	$(OBJSFC)
 
 $(OBJSFC):	$(SRCSFC)
 	$(FC) $(FFLAGS) -c $(SRCSFC)
+
+$(EXECFLX):	$(OBJFLX)
+	$(LD) $(LDFLAGS) -o $(EXECFLX) $(OBJFLX) $(LIBS)
+
+$(OBJFLX):	$(SRCFLX)
+	$(FC) $(FFLAGS) -c $(SRCFLX)

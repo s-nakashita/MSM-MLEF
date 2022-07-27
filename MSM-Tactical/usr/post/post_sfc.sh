@@ -12,7 +12,8 @@ fi
 SDATE=${1}
 IRES=${2}
 if [ $IRES -eq 9 ]; then
-DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
+#DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/000
 FIGDIR=/zdata/grmsm/fig/rsm2msm9_jpn/$SDATE
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
@@ -50,14 +51,14 @@ echo "dset ^${out}" > header.ctl
 head -n 70 sig.f${fh}.ctl | tail -n 69 > middle.ctl
 cat header.ctl middle.ctl footer.ctl > $ctl
 rm header.ctl middle.ctl footer.ctl
-# binary -> netcdf
-cdo -f nc import_binary $ctl ${out%.*}.nc
+## binary -> netcdf
+#cdo -f nc import_binary $ctl ${out%.*}.nc
 rm fort.*
-# plot SST
-if [ `expr $fh % 24` -eq 0 ]; then
-${HOME}/.local/bin/grads -lbx -c "run ${MSMDIR}/usr/grscripts/sst.gs ${fh}"
-mv sst_f${fh}.png $FIGDIR
-fi
+## plot SST
+#if [ `expr $fh % 24` -eq 0 ]; then
+#${HOME}/.local/bin/grads -lbx -c "run ${MSMDIR}/usr/grscripts/sst.gs ${fh}"
+#mv sst_f${fh}.png $FIGDIR
+#fi
 fh=`echo $fh + $inc_h | bc`
 done
 ls -ltr | tail -n 10
