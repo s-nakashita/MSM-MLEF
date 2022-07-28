@@ -32,3 +32,15 @@ $(EXECFLX):	$(OBJFLX)
 
 $(OBJFLX):	$(SRCFLX)
 	$(FC) $(FFLAGS) -c $(SRCFLX)
+
+test_read:	read_module.o write_module.o test_read.o
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+read_module.o:	$(PARENT)/src/read_module.f90
+	$(FC) $(FFLAGS) -c $^
+
+write_module.o:	$(PARENT)/src/write_module.f90
+	$(FC) $(FFLAGS) -c $^
+
+test_read.o:	$(PARENT)/src/test_read.f90
+	$(FC) $(FFLAGS) -c $^

@@ -4,6 +4,7 @@ program read_sig
 !                           readable file with GrADS
 ! history:
 ! 22-05-19 create
+! 22-07-28 add phys3d
 ! 
 ! namelist:
 !
@@ -26,9 +27,10 @@ program read_sig
   real(kind=4) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
  &                delx, dely
   integer :: nflds, nwf, irec
-  integer :: i,j,k,l
+  integer :: i,j,k,l,m
   integer :: igz, ips, it, iu, iv, iq, ioz, icw, ipn, itn, iwn, &
  &           im2
+  integer :: iphys3d(3)
   real(kind=4), allocatable :: sfld(:), dfld(:,:,:)
   real(kind=4), allocatable :: clat(:), clon(:), factor(:,:,:)
   real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
@@ -73,7 +75,7 @@ program read_sig
   sl(1:levs)   = sisl(levs+2:2*levs+1)
   print *, 'si', si(1:levs+1)
   print *, 'sl', sl(1:levs)
-  nflds = 8+13*levs
+  nflds = 8+13*levs+3*levs
   print *, 'nflds', nflds
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf
@@ -286,6 +288,26 @@ program read_sig
     end do
   end do
   print *, 'longitude ', clon(1), clon(igrd1)
+! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
+  if(fhour > 0.0) then
+  iphys3d(1)=im2+1
+  do m=1,3
+  do k=1,levs
+    read(iunit) (sfld(i),i=1,nwf)
+  do j=1,jgrd1
+    do i=1,igrd1
+      dfld(i,j,iphys3d(m)+k-1)=sfld(i+(j-1)*igrd1)
+    end do
+  end do
+  print *,iphys3d(m)+k-1, 'read phys3d at lev=',k, &
+&  dfld(1,1,iphys3d(m)+k-1),&
+&  maxval(dfld(:,:,iphys3d(m)+k-1)), minval(dfld(:,:,iphys3d(m)+k-1))
+  end do
+  if(m<3) then
+    iphys3d(m+1)=iphys3d(m)+levs
+  end if
+  end do
+  end if
   print *, 'start write output'
   ! open output
   open(ounit, FORM='unformatted', access='direct',&
@@ -345,6 +367,15 @@ program read_sig
     write(ounit, rec=irec) dfld(:,:,iwn+k-1)
     irec=irec+1
   end do
+  !phys3d
+  if(fhour > 0.0) then
+  do m=1,3
+    do k=1,levs
+      write(ounit, rec=irec) dfld(:,:,iphys3d(m)+k-1)
+      irec=irec+1
+    end do
+  end do
+  end if
   close(ounit)
   print *, 'end write output'
   print *, 'generate control file'
@@ -409,7 +440,7 @@ contains
     write(day, '(i2.2)') idy
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
-    write(nctl,'(a)') 'vars 12'
+    write(nctl,'(a)') 'vars 15'
     write(nctl,'(a)') 'gz 0 99 surface geopotential'
     write(nctl,'(a)') 'ps 0 99 surface pressure'
     write(nctl,'(a,i2,a)') 't ',levs,' 99 virtual temperature'
@@ -427,6 +458,11 @@ contains
     end if
     write(nctl,'(a)') 'w0 0 99 surface vertical velocity'
     write(nctl,'(a,i2,a)') 'wn ',levs,' 99 vertical velocity'
+  if(fhour > 0.0) then
+    write(nctl,'(a,i2,a)') 'f_ice ',levs,' 99 ice fraction'
+    write(nctl,'(a,i2,a)') 'f_rain ',levs,' 99 rain fraction'
+    write(nctl,'(a,i2,a)') 'f_rimef ',levs,' 99 mixed fraction'
+  end if
     write(nctl,'(a)') 'endvars'
     return
   end subroutine
