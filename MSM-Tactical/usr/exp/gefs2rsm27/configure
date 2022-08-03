@@ -51,7 +51,7 @@ export FCST=no
 
 # --------------- run option --------------------
 #export ENDHOUR=120 
-export ENDHOUR=24                                # release_test
+export ENDHOUR=48                                # release_test
 export CLIM=1
 export POSTTYPE=sync
 export RUNRMTN=yes

@@ -1,19 +1,20 @@
 #!/bin/sh
 #
 # convert r_sfc.fNN to GrADS file
-# caution : This scripts should be carried out afher post_sig.sh
+# caution : This scripts has to be carried out after post_sig.sh
 #
 #SDATE=2022060812
 #IRES=9
-if [ $# != 2 ]; then
-  echo "Usage : ./post_sfc.sh init(YYYYMMDDHH) res(9 or 3)"
+if [ $# -lt 2 ]; then
+  echo "Usage : ./post_sfc.sh init(YYYYMMDDHH) res(9 or 3) [mem(3-digit)]"
   exit 1
 fi
 SDATE=${1}
 IRES=${2}
+MEM=${3:-000}
 if [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/000
+DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
 FIGDIR=/zdata/grmsm/fig/rsm2msm9_jpn/$SDATE
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
@@ -31,10 +32,10 @@ EXEC=read_sfc
 cd $SRCDIR
 make ${EXEC}
 cd $DATADIR
-ln -s ${SRCDIR}/${EXEC} ${EXEC}
+ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
 end_hour=48
-inc_h=1
+inc_h=3
 rm -f fort.*
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then

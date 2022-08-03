@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 set -x
-export SDATE=2022071800
-export MEM=000
+export SDATE=2022073000
+#export MEM=000
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 export RUNDIR=${TEMP}/${SDATE}/${MEM}

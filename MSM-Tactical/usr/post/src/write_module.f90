@@ -6,7 +6,7 @@ module write_module
 ! 
 ! namelist:
 !
-use read_module, only: levmax, nwext, lsoil, nfldsfc, nfldflx
+use read_module, only: levmax, nwext, lsoil, nfldsfc, nfldflx, verbose
 implicit none
   private
 
@@ -73,7 +73,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
-  print *,igz, 'write gz ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,igz, 'write gz ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! ln(ps)
   ips=igz+1
   do j=1,jgrd1
@@ -82,7 +82,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
-  print *,ips, 'write lnps ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ips, 'write lnps ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! T
   it=ips+1
   do k=1, levs
@@ -92,7 +92,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do 
     write(ounit) (sfld(i),i=1,nwf)
-    print *,it+k-1, 'write T at lev=',k, sfld(1),&
+    if(verbose) print *,it+k-1, 'write T at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do  
   ! U,V
@@ -112,7 +112,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,iu+k-1, 'write U at lev=',k, sfld(1),&
+    if(verbose) print *,iu+k-1, 'write U at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
     do j=1,jgrd1
       do i=1,igrd1
@@ -120,7 +120,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,iv+k-1, 'write V at lev=',k, sfld(1),&
+    if(verbose) print *,iv+k-1, 'write V at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! Q
@@ -132,7 +132,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,iq+k-1, 'write Q at lev=',k, sfld(1), &
+    if(verbose) print *,iq+k-1, 'write Q at lev=',k, sfld(1), &
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! OZ
@@ -144,7 +144,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,ioz+k-1, 'write OZ at lev=',k, sfld(1),&
+    if(verbose) print *,ioz+k-1, 'write OZ at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! CW
@@ -156,7 +156,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,icw+k-1, 'write CW at lev=',k, sfld(1),&
+    if(verbose) print *,icw+k-1, 'write CW at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! factor to fully modify the virtual temperature
@@ -180,7 +180,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,ipn+k-1, 'write PN at lev=',k, sfld(1),&
+    if(verbose) print *,ipn+k-1, 'write PN at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! tn
@@ -192,7 +192,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,itn+k-1, 'write TN at lev=',k, sfld(1),&
+    if(verbose) print *,itn+k-1, 'write TN at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do  
   ! wn
@@ -204,7 +204,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
-    print *,iwn+k-1, 'write WN at lev=',k, sfld(1),&
+    if(verbose) print *,iwn+k-1, 'write WN at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   end if
@@ -216,7 +216,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
-  print *, 'write XM2 ', sfld(1), &
+  if(verbose) print *, 'write XM2 ', sfld(1), &
 &  maxval(sfld(:)), minval(sfld(:))
 ! fm2x, fm2y
   do j=1,jgrd1
@@ -225,7 +225,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf) !fm2x
-  print *, 'write FM2X ', sfld(1), &
+  if(verbose) print *, 'write FM2X ', sfld(1), &
 &  maxval(sfld(:)), minval(sfld(:))
   do j=1,jgrd1
     do i=1,igrd1
@@ -233,7 +233,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf) !fm2y
-  print *, 'write FM2Y ', sfld(1), &
+  if(verbose) print *, 'write FM2Y ', sfld(1), &
 &  maxval(sfld(:)), minval(sfld(:))
 ! latitude and longitude
   do j=1,jgrd1
@@ -242,14 +242,14 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
-  print *, 'latitude ', sfld(1), sfld(nwf)
+  if(verbose) print *, 'latitude ', sfld(1), sfld(nwf)
   do j=1,jgrd1
     do i=1,igrd1
       sfld(i+(j-1)*igrd1) = clon(i)*deg2rad
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
-  print *, 'longitude ', sfld(1), sfld(nwf)
+  if(verbose) print *, 'longitude ', sfld(1), sfld(nwf)
 ! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
   if(fhour > 0.0) then
   iphys3d(1)=iwn+levs+1
@@ -261,7 +261,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
         end do
       end do
       write(ounit) (sfld(i),i=1,nwf)
-      print *,iphys3d(m)+k-1, 'write phys3d at lev=',k, &
+      if(verbose) print *,iphys3d(m)+k-1, 'write phys3d at lev=',k, &
 &      sfld(1),&
 &      maxval(sfld(:)), minval(sfld(:))
     end do
@@ -326,7 +326,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write tsea ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write tsea ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! smc
   ismc = ifld
@@ -338,7 +338,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
         l=l+1
       end do
     end do
-    print *,ifld, 'write smc ', 'soil_l=',k, sfldl(1+(k-1)*nwf), &
+    if(verbose) print *,ifld, 'write smc ', 'soil_l=',k, sfldl(1+(k-1)*nwf), &
     &  maxval(sfldl(1+(k-1)*nwf:nwf*k)), minval(sfldl(1+(k-1)*nwf:nwf*k))
     ifld=ifld+1
   end do 
@@ -353,7 +353,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write sheleg ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write sheleg ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! stc
   istc = ifld
@@ -365,7 +365,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
         l=l+1
       end do
     end do
-    print *,ifld, 'write stc ', 'soil_l=',k, sfldl(1+(k-1)*nwf), &
+    if(verbose) print *,ifld, 'write stc ', 'soil_l=',k, sfldl(1+(k-1)*nwf), &
     &  maxval(sfldl(1+(k-1)*nwf:nwf*k)), minval(sfldl(1+(k-1)*nwf:nwf*k))
     ifld=ifld+1
   end do 
@@ -380,7 +380,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write tg3 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write tg3 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! zorl
   izorl = ifld
@@ -392,7 +392,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write zorl ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write zorl ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! cv
   icv = ifld
@@ -404,7 +404,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write cv ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write cv ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! cvb
   icvb = ifld
@@ -416,7 +416,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write cvb ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write cvb ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! cvt
   icvt = ifld
@@ -428,7 +428,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write cvt ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write cvt ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! albedo
   k=1
@@ -440,7 +440,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do
-  print *,ifld, 'write alvsf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
+  if(verbose) print *,ifld, 'write alvsf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
   ifld=ifld+1
   k=k+1
   ialvwf = ifld
@@ -451,7 +451,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do
-  print *,ifld, 'write alvwf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
+  if(verbose) print *,ifld, 'write alvwf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
   ifld=ifld+1
   k=k+1
   ialnsf = ifld
@@ -462,7 +462,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do
-  print *,ifld, 'write alnsf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
+  if(verbose) print *,ifld, 'write alnsf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
   ifld=ifld+1
   k=k+1
   ialnwf = ifld
@@ -473,7 +473,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do
-  print *,ifld, 'write alnwf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
+  if(verbose) print *,ifld, 'write alnwf ', tmps4(1,k), maxval(tmps4(:,k)), minval(tmps4(:,k))
   write(ounit) tmps4
   ifld=ifld+1
 ! slmsk
@@ -486,7 +486,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write slmsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write slmsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! vfrac
   ivfrac = ifld
@@ -498,7 +498,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write vfrac ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write vfrac ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! canopy
   icanopy = ifld
@@ -510,7 +510,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write canopy ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write canopy ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! f10m
   if10m = ifld
@@ -522,7 +522,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write f10m ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write f10m ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! vtype
   ivtype = ifld
@@ -534,7 +534,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write vtype ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write vtype ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! stype
   istype = ifld
@@ -546,7 +546,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write stype ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write stype ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! facswf
   k=1
@@ -558,7 +558,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do 
-  print *,ifld, 'write facsf ', tmps2(1,k), maxval(tmps2(:,k)), minval(tmps2(:,k))
+  if(verbose) print *,ifld, 'write facsf ', tmps2(1,k), maxval(tmps2(:,k)), minval(tmps2(:,k))
   ifld=ifld+1
   k=k+1
   ifacwf = ifld
@@ -569,7 +569,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
       l=l+1
     end do
   end do 
-  print *,ifld, 'write facwf ', tmps2(1,k), maxval(tmps2(:,k)), minval(tmps2(:,k))
+  if(verbose) print *,ifld, 'write facwf ', tmps2(1,k), maxval(tmps2(:,k)), minval(tmps2(:,k))
   write(ounit) tmps2
   ifld = ifld + 1
 ! uustar
@@ -582,7 +582,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write uustar ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write uustar ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! ffmm
   iffmm = ifld
@@ -594,7 +594,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write ffmm ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write ffmm ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ifld=ifld+1
 ! ffhh
   iffhh = ifld
@@ -606,7 +606,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
     end do
   end do 
   write(ounit) (sfld(i), i=1,nwf)
-  print *,ifld, 'write ffhh ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,ifld, 'write ffhh ', sfld(1), maxval(sfld(:)), minval(sfld(:))
 ! end writing
   print *, 'ifld', ifld, 'nflds ', nfldsfc
   return
@@ -746,6 +746,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd1,' jgrd ',jgrd1
   print *,'maxbit ',maxbit,' colat ',colat
@@ -760,6 +761,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
   print *,l,'write dusfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  end if
   ! dvsfc
   l=l+1
   itype=iparam(l)
@@ -777,7 +779,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dvsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dvsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! dtsfc
   l=l+1
   itype=iparam(l)
@@ -795,7 +797,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dtsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dtsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! dqsfc
   l=l+1
   itype=iparam(l)
@@ -813,7 +815,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dqsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dqsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! tsea
   l=l+1
   itype=iparam(l)
@@ -831,7 +833,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write tsea ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write tsea ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! smc(1)
   l=l+1
   itype=iparam(l)
@@ -850,7 +852,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write smc(:,1) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write smc(:,1) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! smc(2)
   l=l+1
   itype=iparam(l)
@@ -870,7 +872,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write smc(:,2) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write smc(:,2) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! stc(1)
   l=l+1
   itype=iparam(l)
@@ -890,7 +892,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write stc(:,1) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write stc(:,1) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! stc(2)
   l=l+1
   itype=iparam(l)
@@ -910,7 +912,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write stc(:,2) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write stc(:,2) ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! sheleg
   l=l+1
   itype=iparam(l)
@@ -930,7 +932,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write sheleg ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write sheleg ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! dlwsfc
   l=l+1
   itype=iparam(l)
@@ -948,7 +950,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dlwsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dlwsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! ulwsfc
   l=l+1
   itype=iparam(l)
@@ -966,7 +968,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write ulwsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write ulwsfc ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! raw fluxes
   do k=1,4
     l=l+1
@@ -985,7 +987,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-    print *,l,'write raw flux ',k, sfld(1), maxval(sfld(:)), minval(sfld(:))
+    if(verbose) print *,l,'write raw flux ',k, sfld(1), maxval(sfld(:)), minval(sfld(:))
   end do
   ! fixed fluxes for approx diurnal cycle
   do k=5,7
@@ -1009,7 +1011,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-    print *,l,'write fixed flux ',k4+1, sfld(1), maxval(sfld(:)), minval(sfld(:))
+    if(verbose) print *,l,'write fixed flux ',k4+1, sfld(1), maxval(sfld(:)), minval(sfld(:))
     l=l+1
     itype=iparam(l)
     ilev=itlr(k4+2)
@@ -1026,7 +1028,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-    print *,l,'write fixed flux ',k4+2, sfld(1), maxval(sfld(:)), minval(sfld(:))
+    if(verbose) print *,l,'write fixed flux ',k4+2, sfld(1), maxval(sfld(:)), minval(sfld(:))
     l=l+1
     itype=iparam(l)
     ilev=itlr(k4+3)
@@ -1043,7 +1045,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-    print *,l,'write fixed flux ',k4+3, sfld(1), maxval(sfld(:)), minval(sfld(:))
+    if(verbose) print *,l,'write fixed flux ',k4+3, sfld(1), maxval(sfld(:)), minval(sfld(:))
     l=l+1
     itype=iparam(l)
     ilev=itlr(k4+4)
@@ -1060,7 +1062,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-    print *,l,'write fixed flux ',k4+4, sfld(1), maxval(sfld(:)), minval(sfld(:))
+    if(verbose) print *,l,'write fixed flux ',k4+4, sfld(1), maxval(sfld(:)), minval(sfld(:))
   end do 
   ! geshem
   l=l+1
@@ -1079,7 +1081,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write geshem ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write geshem ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! bengsh
   l=l+1
   itype=iparam(l)
@@ -1097,7 +1099,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write bengsh ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write bengsh ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! gflux
   l=l+1
   itype=iparam(l)
@@ -1118,7 +1120,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write gflux ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write gflux ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! slmsk
   l=l+1
   itype=iparam(l)
@@ -1136,7 +1138,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write slmsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write slmsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! cemsk
   l=l+1
   itype=iparam(l)
@@ -1154,7 +1156,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write cemsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write cemsk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! u10
   l=l+1
   itype=iparam(l)
@@ -1173,7 +1175,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write u10 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write u10 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! v10
   l=l+1
   itype=iparam(l)
@@ -1192,7 +1194,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write v10 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write v10 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! t2
   l=l+1
   itype=iparam(l)
@@ -1211,7 +1213,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write t2 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write t2 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! q2
   l=l+1
   itype=iparam(l)
@@ -1230,7 +1232,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write q2 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write q2 ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! psurf
   l=l+1
   itype=iparam(l)
@@ -1249,7 +1251,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write psurf ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write psurf ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! t2max
   l=l+1
   itype=iparam(l)
@@ -1268,7 +1270,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write t2max ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write t2max ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! q2max
   l=l+1
   itype=iparam(l)
@@ -1287,7 +1289,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write q2max ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write q2max ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! t2min
   l=l+1
   itype=iparam(l)
@@ -1306,7 +1308,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write t2min ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write t2min ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! q2min
   l=l+1
   itype=iparam(l)
@@ -1325,7 +1327,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write q2min ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write q2min ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! runoff
   l=l+1
   itype=iparam(l)
@@ -1347,7 +1349,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write runoff ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write runoff ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! ep
   l=l+1
   itype=iparam(l)
@@ -1365,7 +1367,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write ep ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write ep ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! cldwrk
   l=l+1
   itype=iparam(l)
@@ -1383,7 +1385,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write cldwrk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write cldwrk ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! dugwd
   l=l+1
   itype=iparam(l)
@@ -1401,7 +1403,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dugwd ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dugwd ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! dvgwd
   l=l+1
   itype=iparam(l)
@@ -1419,7 +1421,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write dvgwd ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write dvgwd ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! hpbl
   l=l+1
   itype=iparam(l)
@@ -1437,7 +1439,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write hpbl ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write hpbl ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! pwat
   l=l+1
   itype=iparam(l)
@@ -1455,7 +1457,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write pwat ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write pwat ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! albedo(percent)
   l=l+1
   itype=iparam(l)
@@ -1473,7 +1475,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write albedo ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write albedo ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! cldf
   l=l+1
   itype=iparam(l)
@@ -1494,7 +1496,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write cldf ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write cldf ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! wvuflx
   l=l+1
   itype=iparam(l)
@@ -1512,7 +1514,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write wvuflx ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write wvuflx ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! wvvflx
   l=l+1
   itype=iparam(l)
@@ -1530,7 +1532,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write wvvflx ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write wvvflx ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! srunoff
   l=l+1
   itype=iparam(l)
@@ -1551,7 +1553,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write srunoff ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write srunoff ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! soilm
   l=l+1
   itype=iparam(l)
@@ -1574,7 +1576,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,0,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write soilm ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write soilm ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! snwdph
   l=l+1
   itype=iparam(l)
@@ -1597,7 +1599,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
   &           ifhour,ithr,ip2,itime,ina,inm,icen2,idstmp,iens,&
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
-  print *,l,'write snwdph ', sfld(1), maxval(sfld(:)), minval(sfld(:))
+  if(verbose) print *,l,'write snwdph ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   print *,'end writing flux file'
   return
 end subroutine write_flx

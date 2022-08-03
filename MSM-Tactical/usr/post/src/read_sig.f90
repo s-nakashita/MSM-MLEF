@@ -400,7 +400,7 @@ contains
     data mon/'JAN','FEB','MAR','APR','MAY','JUN',&
 &            'JUL','AUG','SEP','OCT','NOV','DEC'/
 
-    write(nctl,'(a)') 'dset DATAFILE'
+    write(nctl,'(a)') 'dset ^DATAFILE'
     write(nctl,'(a)') 'options big_endian'
     write(nctl,'(a)') 'undef -9.99E+33'
     if (proj .eq. 0) then
@@ -440,7 +440,11 @@ contains
     write(day, '(i2.2)') idy
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
+    if(fhour .gt. 0.0) then
     write(nctl,'(a)') 'vars 15'
+    else
+    write(nctl,'(a)') 'vars 12'
+    end if
     write(nctl,'(a)') 'gz 0 99 surface geopotential'
     write(nctl,'(a)') 'ps 0 99 surface pressure'
     write(nctl,'(a,i2,a)') 't ',levs,' 99 virtual temperature'

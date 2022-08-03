@@ -11,6 +11,7 @@ implicit none
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
   integer, parameter, public :: lsoil=2, nfldsfc=26
   integer, parameter, public :: nfldflx=56
+  logical, parameter, public :: verbose=.FALSE.
 
   public :: read_header, read_sig, read_sfc, read_flx
 contains
@@ -56,6 +57,9 @@ subroutine read_header(iunit,label,idate,fhour,si,sl,ext,nflds)
   rgrdlft=ext(12); rgrdbtm=ext(13)
   delx  = ext(14); dely = ext(15)
   nonhyd= int(ext(16))
+  si(1:levs+1) = sisl(1:levs+1)
+  sl(1:levs)   = sisl(levs+2:2*levs+1)
+  if(verbose) then
   print *, 'iwav1, jwav1'
   print '(2i4)', iwav1, jwav1
   print *, 'igrd1, jgrd1'
@@ -72,10 +76,9 @@ subroutine read_header(iunit,label,idate,fhour,si,sl,ext,nflds)
   else
     print *, 'Input is a hydrostatic'
   end if
-  si(1:levs+1) = sisl(1:levs+1)
-  sl(1:levs)   = sisl(levs+2:2*levs+1)
   print *, 'si', si(1:levs+1)
   print *, 'sl', sl(1:levs)
+  end if
   !nflds = 8+13*levs
   nflds = 2+9*levs+1 
   !gz,q,t(levs),u(levs),v(levs),q(levs),oz(levs),cw(levs),pn(levs),tn(levs),wn(levs+1)
@@ -141,7 +144,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,igz) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,igz, 'read gz ', dfld(1,1,igz), maxval(dfld(:,:,igz)), minval(dfld(:,:,igz))
+  if(verbose) print *,igz, 'read gz ', dfld(1,1,igz), maxval(dfld(:,:,igz)), minval(dfld(:,:,igz))
   ! ln(ps)
   ips=igz+1
   read(iunit) (sfld(i),i=1,nwf)
@@ -150,7 +153,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,ips) = EXP(sfld(i+(j-1)*igrd1))
     end do
   end do 
-  print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
+  if(verbose) print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
   ! T
   it=ips+1
   do k=1, levs
@@ -160,7 +163,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,it+k-1) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,it+k-1, 'read T at lev=',k, dfld(1,1,it+k-1),&
+  if(verbose) print *,it+k-1, 'read T at lev=',k, dfld(1,1,it+k-1),&
 &  maxval(dfld(:,:,it+k-1)), minval(dfld(:,:,it+k-1))
   end do  
   ! U,V
@@ -179,9 +182,9 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,iv+k-1) = sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,iu+k-1, 'read U at lev=',k, dfld(1,1,iu+k-1),&
+  if(verbose) print *,iu+k-1, 'read U at lev=',k, dfld(1,1,iu+k-1),&
 &  maxval(dfld(:,:,iu+k-1)), minval(dfld(:,:,iu+k-1))
-  print *,iv+k-1, 'read V at lev=',k, dfld(1,1,iv+k-1),&
+  if(verbose) print *,iv+k-1, 'read V at lev=',k, dfld(1,1,iv+k-1),&
 &  maxval(dfld(:,:,iv+k-1)), minval(dfld(:,:,iv+k-1))
   end do
   ! Q
@@ -193,7 +196,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,iq+k-1) = sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,iq+k-1, 'read Q at lev=',k, dfld(1,1,iq+k-1), &
+  if(verbose) print *,iq+k-1, 'read Q at lev=',k, dfld(1,1,iq+k-1), &
 &  maxval(dfld(:,:,iq+k-1)), minval(dfld(:,:,iq+k-1))
   end do
   ! OZ
@@ -205,7 +208,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,ioz+k-1)=sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,ioz+k-1, 'read OZ at lev=',k, dfld(1,1,ioz+k-1),&
+  if(verbose) print *,ioz+k-1, 'read OZ at lev=',k, dfld(1,1,ioz+k-1),&
 &  maxval(dfld(:,:,ioz+k-1)), minval(dfld(:,:,ioz+k-1))
   end do
   ! CW
@@ -217,7 +220,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,icw+k-1)=sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,icw+k-1, 'read CW at lev=',k, dfld(1,1,icw+k-1),&
+  if(verbose) print *,icw+k-1, 'read CW at lev=',k, dfld(1,1,icw+k-1),&
 &  maxval(dfld(:,:,icw+k-1)), minval(dfld(:,:,icw+k-1))
   end do
   ! factor to fully modify the virtual temperature
@@ -241,7 +244,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
 !        end if
       end do
     end do
-  print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
+  if(verbose) print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
 &  maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
   end do
   ! tn
@@ -253,7 +256,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
         dfld(i,j,itn+k-1) = sfld(i+(j-1)*igrd1)!/factor(i,j,k)
       end do
     end do
-  print *,itn+k-1, 'read TN at lev=',k, dfld(1,1,itn+k-1),&
+  if(verbose) print *,itn+k-1, 'read TN at lev=',k, dfld(1,1,itn+k-1),&
 &  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
   end do  
   ! wn
@@ -265,7 +268,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
         dfld(i,j,iwn+k-1) = sfld(i+(j-1)*igrd1)
       end do
     end do
-  print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
+  if(verbose) print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
 &  maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
   end do
   else
@@ -277,7 +280,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
         dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
       end do
     end do
-  print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
+  if(verbose) print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
   end do
   ! hydro t
   itn=ipn+levs
@@ -287,7 +290,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
         dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)!/factor(i,j,k)
       end do
     end do
-  print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
+  if(verbose) print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
   itn=itn+1
   end do  
   ! w=0
@@ -298,7 +301,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
         dfld(i,j,iwn+k-1) = 0.0
       end do
     end do
-  print *, 'zero W at lev=',k, maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
+  if(verbose) print *, 'zero W at lev=',k, maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
   end do
   end if
 ! map factor**2
@@ -309,7 +312,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       mapf(i,j,1) = sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,'read XM2 ', mapf(1,1,1), &
+  if(verbose) print *,'read XM2 ', mapf(1,1,1), &
 &  maxval(mapf(:,:,1)), minval(mapf(:,:,1))
 ! modify variables by map factor
  ! U,V
@@ -328,7 +331,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       mapf(i,j,2) = sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *, 'read FM2X ', mapf(1,1,2), &
+  if(verbose) print *, 'read FM2X ', mapf(1,1,2), &
 &  maxval(mapf(:,:,2)), minval(mapf(:,:,2))
   read(iunit) (sfld(i),i=1,nwf) ! fm2y
   do j=1,jgrd1
@@ -336,7 +339,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       mapf(i,j,3) = sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *, 'read FM2Y ', mapf(1,1,3), &
+  if(verbose) print *, 'read FM2Y ', mapf(1,1,3), &
 &  maxval(mapf(:,:,3)), minval(mapf(:,:,3))
 ! latitude and longitude
   read(iunit) (sfld(i),i=1,nwf)
@@ -345,14 +348,14 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
     clat(j) = sfld(1+(j-1)*igrd1)*rad2deg
     end do
   end do
-  print *, 'latitude ', clat(1), clat(jgrd1)
+  if(verbose) print *, 'latitude ', clat(1), clat(jgrd1)
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
       clon(i) = sfld(i+(j-1)*igrd1)*rad2deg
     end do
   end do
-  print *, 'longitude ', clon(1), clon(igrd1)
+  if(verbose) print *, 'longitude ', clon(1), clon(igrd1)
 ! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
   if(fhour > 0.0) then
   iphys3d(1)=iwn+levs+1
@@ -364,7 +367,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
       dfld(i,j,iphys3d(m)+k-1)=sfld(i+(j-1)*igrd1)
     end do
   end do
-  print *,iphys3d(m)+k-1, 'read phys3d at lev=',k, &
+  if(verbose) print *,iphys3d(m)+k-1, 'read phys3d at lev=',k, &
 &  dfld(1,1,iphys3d(m)+k-1),&
 &  maxval(dfld(:,:,iphys3d(m)+k-1)), minval(dfld(:,:,iphys3d(m)+k-1))
   end do
@@ -437,7 +440,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read tsea ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read tsea ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! smc
   ismc = ifld
@@ -450,7 +453,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
         l=l+1
       end do
     end do
-    print *,ifld, 'read smc ', 'soil_l=',k, dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+    if(verbose) print *,ifld, 'read smc ', 'soil_l=',k, dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
     ifld=ifld+1
   end do 
 ! sheleg
@@ -463,7 +466,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read sheleg ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read sheleg ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! stc
   istc = ifld
@@ -476,7 +479,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
         l=l+1
       end do
     end do
-    print *,ifld, 'read stc ', 'soil_l=',k, dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+    if(verbose) print *,ifld, 'read stc ', 'soil_l=',k, dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
     ifld=ifld+1
   end do 
 ! tg3
@@ -489,7 +492,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read tg3 ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read tg3 ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! zorl
   izorl = ifld
@@ -501,7 +504,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read zorl ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read zorl ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! cv
   icv = ifld
@@ -513,7 +516,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read cv ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read cv ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! cvb
   icvb = ifld
@@ -525,7 +528,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read cvb ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read cvb ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! cvt
   icvt = ifld
@@ -537,7 +540,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read cvt ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read cvt ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! albedo
   read(iunit) tmps4
@@ -550,7 +553,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do
-  print *,ifld, 'read alvsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read alvsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
   k=k+1
   ialvwf = ifld
@@ -561,7 +564,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do
-  print *,ifld, 'read alvwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read alvwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
   k=k+1
   ialnsf = ifld
@@ -572,7 +575,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do
-  print *,ifld, 'read alnsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read alnsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
   k=k+1
   ialnwf = ifld
@@ -583,7 +586,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do
-  print *,ifld, 'read alnwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read alnwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! slmsk
   islmsk = ifld
@@ -595,7 +598,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read slmsk ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read slmsk ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! vfrac
   ivfrac = ifld
@@ -607,7 +610,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read vfrac ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read vfrac ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! canopy
   icanopy = ifld
@@ -619,7 +622,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read canopy ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read canopy ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! f10m
   if10m = ifld
@@ -631,7 +634,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read f10m ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read f10m ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! vtype
   ivtype = ifld
@@ -643,7 +646,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read vtype ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read vtype ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! stype
   istype = ifld
@@ -655,7 +658,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read stype ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read stype ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
 ! facswf
   read(iunit,err=5000) tmps2
@@ -668,7 +671,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read facsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read facsf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld=ifld+1
   k=k+1
   ifacwf = ifld
@@ -679,7 +682,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read facwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read facwf ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
   ifld = ifld + 1
 ! uustar
   iuustar = ifld
@@ -691,7 +694,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read uustar ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read uustar ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
 200 continue
   ifld=ifld+1
 ! ffmm
@@ -704,7 +707,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read ffmm ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read ffmm ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
 201 continue
   ifld=ifld+1
 ! ffhh
@@ -717,7 +720,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
       l=l+1
     end do
   end do 
-  print *,ifld, 'read ffhh ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
+  if(verbose) print *,ifld, 'read ffhh ', dfld(1,1,ifld), maxval(dfld(:,:,ifld)), minval(dfld(:,:,ifld))
 202 continue
 ! end reading
   print *, 'ifld', ifld, 'nflds ', nfldsfc
@@ -792,7 +795,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   rewind(iunit)
   ! dusfc
   l=1
-  print *, 'itype ',izws,' ilev ',isfc
+  if(verbose) print *, 'itype ',izws,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -802,6 +805,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   iparam(l)=itype
   fhour=real(ithr)
   zhour=real(ifhr)
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -815,15 +819,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dusfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dusfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dvsfc
   l=l+1
-  print *, 'itype ',imws,' ilev ',isfc
+  if(verbose) print *, 'itype ',imws,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -831,6 +836,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -844,15 +850,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dvsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dvsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dtsfc
   l=l+1
-  print *, 'itype ',ishflx,' ilev ',isfc
+  if(verbose) print *, 'itype ',ishflx,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -860,6 +867,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -873,15 +881,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dtsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dtsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dqsfc
   l=l+1
-  print *, 'itype ',ilhflx,' ilev ',isfc
+  if(verbose) print *, 'itype ',ilhflx,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -889,6 +898,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -902,15 +912,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dqsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dqsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! tsea
   l=l+1
-  print *, 'itype ',itemp,' ilev ',isfc
+  if(verbose) print *, 'itype ',itemp,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -918,6 +929,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -931,15 +943,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read tsea ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read tsea ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! smc(1)
   l=l+1
-  print *, 'itype ',isoilm,' ilev ',i2dbls
+  if(verbose) print *, 'itype ',isoilm,' ilev ',i2dbls
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -947,6 +960,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -960,15 +974,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read smc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read smc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! smc(2)
   l=l+1
-  print *, 'itype ',isoilm,' ilev ',i2dbls
+  if(verbose) print *, 'itype ',isoilm,' ilev ',i2dbls
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -976,6 +991,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -989,15 +1005,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read smc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read smc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! stc(1)
   l=l+1
-  print *, 'itype ',itemp,' ilev ',i2dbls
+  if(verbose) print *, 'itype ',itemp,' ilev ',i2dbls
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1005,6 +1022,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1018,15 +1036,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read stc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read stc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! stc(2)
   l=l+1
-  print *, 'itype ',itemp,' ilev ',i2dbls
+  if(verbose) print *, 'itype ',itemp,' ilev ',i2dbls
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1034,6 +1053,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1047,15 +1067,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read stc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read stc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! sheleg
   l=l+1
-  print *, 'itype ',isnowd,' ilev ',isfc
+  if(verbose) print *, 'itype ',isnowd,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1063,6 +1084,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1076,15 +1098,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read sheleg ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read sheleg ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dlwsfc
   l=l+1
-  print *, 'itype ',idlwf,' ilev ',isfc
+  if(verbose) print *, 'itype ',idlwf,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1092,6 +1115,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1105,15 +1129,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dlwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dlwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! ulwsfc
   l=l+1
-  print *, 'itype ',iulwf,' ilev ',isfc
+  if(verbose) print *, 'itype ',iulwf,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1121,6 +1146,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1134,162 +1160,173 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read ulwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read ulwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! raw fluxes
   do k=1,4
     l=l+1
-    print *, 'itype ',ipur(k),' ilev ',itlr(k)
+    if(verbose) print *, 'itype ',ipur(k),' ilev ',itlr(k)
     read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
     &           ilpds,iptv,icen,igen,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
     ids(itype)=idstmp
-  iparam(l)=itype
-  print *,'lbm ',lbm(1:min(10,nwf))
-  print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
-  print *,'maxbit ',maxbit,' colat ',colat
-  print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
-  print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
-  print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
-  print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
-  print *,'delx ',delx,' dely ',dely
-  print *,'ortru ',ortru,' proj ',proj
+    iparam(l)=itype
+    if(verbose) then
+    print *,'lbm ',lbm(1:min(10,nwf))
+    print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
+    print *,'maxbit ',maxbit,' colat ',colat
+    print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
+    print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
+    print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
+    print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
+    print *,'delx ',delx,' dely ',dely
+    print *,'ortru ',ortru,' proj ',proj
     print *,'ibm ',ibm,' itype ',itype,' ilev ',ilev
     print *,'il1k ',il1k,' il2k ',il2k
     print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
     print *,'ids ',ids(itype),' iens ',iens
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         dfld(i,j,l) = sfld(i+(j-1)*igrd1)
       end do
     end do 
-    print *,l,'read raw flux ',k, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+    if(verbose) print *,l,'read raw flux ',k, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   end do
   ! fixed fluxes for approx diurnal cycle
   do k=5,7
     l=l+1
     k4=4+(k-5)*4
-    print *, 'itype ',ipur(k4+1),' ilev ',itlr(k4+1)
+    if(verbose) print *, 'itype ',ipur(k4+1),' ilev ',itlr(k4+1)
     read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
     &           ilpds,iptv,icen,igen,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
     ids(itype)=idstmp
-  iparam(l)=itype
-  print *,'lbm ',lbm(1:min(10,nwf))
-  print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
-  print *,'maxbit ',maxbit,' colat ',colat
-  print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
-  print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
-  print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
-  print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
-  print *,'delx ',delx,' dely ',dely
-  print *,'ortru ',ortru,' proj ',proj
+    iparam(l)=itype
+    if(verbose) then
+    print *,'lbm ',lbm(1:min(10,nwf))
+    print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
+    print *,'maxbit ',maxbit,' colat ',colat
+    print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
+    print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
+    print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
+    print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
+    print *,'delx ',delx,' dely ',dely
+    print *,'ortru ',ortru,' proj ',proj
     print *,'ibm ',ibm,' itype ',itype,' ilev ',ilev
     print *,'il1k ',il1k,' il2k ',il2k
     print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
     print *,'ids ',ids(itype),' iens ',iens
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         dfld(i,j,l) = sfld(i+(j-1)*igrd1)
       end do
     end do 
-    print *,l,'read fixed flux ',k4+1, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+    if(verbose) print *,l,'read fixed flux ',k4+1, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
     l=l+1
-    print *, 'itype ',ipur(k4+2),' ilev ',itlr(k4+2)
+    if(verbose) print *, 'itype ',ipur(k4+2),' ilev ',itlr(k4+2)
     read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
     &           ilpds,iptv,icen,igen,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
     ids(itype)=idstmp
-  iparam(l)=itype
-  print *,'lbm ',lbm(1:min(10,nwf))
-  print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
-  print *,'maxbit ',maxbit,' colat ',colat
-  print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
-  print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
-  print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
-  print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
-  print *,'delx ',delx,' dely ',dely
-  print *,'ortru ',ortru,' proj ',proj
+    iparam(l)=itype
+    if(verbose) then
+    print *,'lbm ',lbm(1:min(10,nwf))
+    print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
+    print *,'maxbit ',maxbit,' colat ',colat
+    print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
+    print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
+    print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
+    print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
+    print *,'delx ',delx,' dely ',dely
+    print *,'ortru ',ortru,' proj ',proj
     print *,'ibm ',ibm,' itype ',itype,' ilev ',ilev
     print *,'il1k ',il1k,' il2k ',il2k
     print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
     print *,'ids ',ids(itype),' iens ',iens
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         dfld(i,j,l) = sfld(i+(j-1)*igrd1)
       end do
     end do 
-    print *,l,'read fixed flux ',k4+2, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+    if(verbose) print *,l,'read fixed flux ',k4+2, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
     l=l+1
-    print *, 'itype ',ipur(k4+3),' ilev ',itlr(k4+3)
+    if(verbose) print *, 'itype ',ipur(k4+3),' ilev ',itlr(k4+3)
     read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
     &           ilpds,iptv,icen,igen,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
     ids(itype)=idstmp
-  iparam(l)=itype
-  print *,'lbm ',lbm(1:min(10,nwf))
-  print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
-  print *,'maxbit ',maxbit,' colat ',colat
-  print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
-  print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
-  print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
-  print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
-  print *,'delx ',delx,' dely ',dely
-  print *,'ortru ',ortru,' proj ',proj
+    iparam(l)=itype
+    if(verbose) then
+    print *,'lbm ',lbm(1:min(10,nwf))
+    print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
+    print *,'maxbit ',maxbit,' colat ',colat
+    print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
+    print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
+    print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
+    print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
+    print *,'delx ',delx,' dely ',dely
+    print *,'ortru ',ortru,' proj ',proj
     print *,'ibm ',ibm,' itype ',itype,' ilev ',ilev
     print *,'il1k ',il1k,' il2k ',il2k
     print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
     print *,'ids ',ids(itype),' iens ',iens
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         dfld(i,j,l) = sfld(i+(j-1)*igrd1)
       end do
     end do 
-    print *,l,'read fixed flux ',k4+3, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+    if(verbose) print *,l,'read fixed flux ',k4+3, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
     l=l+1
-    print *, 'itype ',ipur(k4+4),' ilev ',itlr(k4+4)
+    if(verbose) print *, 'itype ',ipur(k4+4),' ilev ',itlr(k4+4)
     read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
     &           ilpds,iptv,icen,igen,&
     &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
     &           ifhour,ifhr,ithr,itime,ina,inm,icen2,idstmp,iens,&
     &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
     ids(itype)=idstmp
-  iparam(l)=itype
-  print *,'lbm ',lbm(1:min(10,nwf))
-  print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
-  print *,'maxbit ',maxbit,' colat ',colat
-  print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
-  print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
-  print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
-  print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
-  print *,'delx ',delx,' dely ',dely
-  print *,'ortru ',ortru,' proj ',proj
+    iparam(l)=itype
+    if(verbose) then
+    print *,'lbm ',lbm(1:min(10,nwf))
+    print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
+    print *,'maxbit ',maxbit,' colat ',colat
+    print *,'ilpds ',ilpds,' iptv ',iptv,' icen ',icen,' igen ',igen
+    print *,'iyr ',iyr,' imo ',imo,' ida ',ida,' ihr ',ihr
+    print *,'ifhour ',ifhour,' ifhr ',ifhr,' ithr ',ithr
+    print *,'rlat1 ',rlat1,' rlon1 ',rlon1,' rlat2 ',rlat2,' rlon2 ',rlon2
+    print *,'delx ',delx,' dely ',dely
+    print *,'ortru ',ortru,' proj ',proj
     print *,'ibm ',ibm,' itype ',itype,' ilev ',ilev
     print *,'il1k ',il1k,' il2k ',il2k
     print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
     print *,'ids ',ids(itype),' iens ',iens
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         dfld(i,j,l) = sfld(i+(j-1)*igrd1)
       end do
     end do 
-    print *,l,'read fixed flux ',k4+4, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+    if(verbose) print *,l,'read fixed flux ',k4+4, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   end do 
   ! geshem
   l=l+1
-  print *, 'itype ',ipcpr,' ilev ',isfc
+  if(verbose) print *, 'itype ',ipcpr,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1297,6 +1334,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1310,15 +1348,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read geshem ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read geshem ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! bengsh
   l=l+1
-  print *, 'itype ',icpcpr,' ilev ',isfc
+  if(verbose) print *, 'itype ',icpcpr,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1326,6 +1365,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1339,15 +1379,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read bengsh ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read bengsh ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! gflux
   l=l+1
-  print *, 'itype ',ighflx,' ilev ',isfc
+  if(verbose) print *, 'itype ',ighflx,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1355,6 +1396,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1368,15 +1410,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read gflux ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read gflux ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! slmsk
   l=l+1
-  print *, 'itype ',islmsk,' ilev ',isfc
+  if(verbose) print *, 'itype ',islmsk,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1384,6 +1427,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1397,15 +1441,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read slmsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read slmsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! cemsk
   l=l+1
-  print *, 'itype ',icemsk,' ilev ',isfc
+  if(verbose) print *, 'itype ',icemsk,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1413,6 +1458,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1426,15 +1472,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read cemsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read cemsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! u10
   l=l+1
-  print *, 'itype ',iznlw,' ilev ',ielev
+  if(verbose) print *, 'itype ',iznlw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1442,6 +1489,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1455,15 +1503,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read u10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read u10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! v10
   l=l+1
-  print *, 'itype ',imerw,' ilev ',ielev
+  if(verbose) print *, 'itype ',imerw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1471,6 +1520,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1484,15 +1534,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read v10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read v10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! t2
   l=l+1
-  print *, 'itype ',itemp,' ilev ',ielev
+  if(verbose) print *, 'itype ',itemp,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1500,6 +1551,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1513,15 +1565,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read t2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read t2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! q2
   l=l+1
-  print *, 'itype ',isphum,' ilev ',ielev
+  if(verbose) print *, 'itype ',isphum,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1529,6 +1582,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1542,15 +1596,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read q2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read q2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! psurf
   l=l+1
-  print *, 'itype ',iprs,' ilev ',isfc
+  if(verbose) print *, 'itype ',iprs,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1558,6 +1613,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1571,15 +1627,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read psurf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read psurf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! t2max
   l=l+1
-  print *, 'itype ',itmx,' ilev ',ielev
+  if(verbose) print *, 'itype ',itmx,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1587,6 +1644,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1600,15 +1658,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read t2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read t2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! q2max
   l=l+1
-  print *, 'itype ',iqmx,' ilev ',ielev
+  if(verbose) print *, 'itype ',iqmx,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1616,6 +1675,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1629,15 +1689,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read q2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read q2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! t2min
   l=l+1
-  print *, 'itype ',itmn,' ilev ',ielev
+  if(verbose) print *, 'itype ',itmn,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1645,6 +1706,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1658,15 +1720,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read t2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read t2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! q2min
   l=l+1
-  print *, 'itype ',iqmn,' ilev ',ielev
+  if(verbose) print *, 'itype ',iqmn,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1674,6 +1737,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1687,15 +1751,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read q2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read q2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! runoff
   l=l+1
-  print *, 'itype ',irnof,' ilev ',isfc
+  if(verbose) print *, 'itype ',irnof,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1703,6 +1768,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1716,15 +1782,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read runoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read runoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! ep
   l=l+1
-  print *, 'itype ',iep,' ilev ',isfc
+  if(verbose) print *, 'itype ',iep,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1732,6 +1799,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1745,15 +1813,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read ep ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read ep ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! cldwrk
   l=l+1
-  print *, 'itype ',icldwk,' ilev ',icolmn
+  if(verbose) print *, 'itype ',icldwk,' ilev ',icolmn
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1761,6 +1830,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1774,15 +1844,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read cldwrk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read cldwrk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dugwd
   l=l+1
-  print *, 'itype ',izgw,' ilev ',isfc
+  if(verbose) print *, 'itype ',izgw,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1790,6 +1861,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1803,15 +1875,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dugwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dugwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! dvgwd
   l=l+1
-  print *, 'itype ',imgw,' ilev ',isfc
+  if(verbose) print *, 'itype ',imgw,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1819,6 +1892,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1832,15 +1906,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read dvgwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read dvgwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! hpbl
   l=l+1
-  print *, 'itype ',ihpbl,' ilev ',isfc
+  if(verbose) print *, 'itype ',ihpbl,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1848,6 +1923,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1861,15 +1937,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read hpbl ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read hpbl ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! pwat
   l=l+1
-  print *, 'itype ',ipwat,' ilev ',icolmn
+  if(verbose) print *, 'itype ',ipwat,' ilev ',icolmn
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1877,6 +1954,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1890,15 +1968,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read pwat ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read pwat ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! albedo(percent)
   l=l+1
-  print *, 'itype ',ialbdo,' ilev ',isfc
+  if(verbose) print *, 'itype ',ialbdo,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1906,6 +1985,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1919,15 +1999,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read albedo ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read albedo ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! cldf
   l=l+1
-  print *, 'itype ',icldf,' ilev ',icolmn
+  if(verbose) print *, 'itype ',icldf,' ilev ',icolmn
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1935,6 +2016,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1948,15 +2030,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read cldf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read cldf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! wvuflx
   l=l+1
-  print *, 'itype ',242,' ilev ',icolmn
+  if(verbose) print *, 'itype ',242,' ilev ',icolmn
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1964,6 +2047,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
 !  ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -1977,15 +2061,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',idstmp,' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read wvuflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read wvuflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! wvvflx
   l=l+1
-  print *, 'itype ',243,' ilev ',icolmn
+  if(verbose) print *, 'itype ',243,' ilev ',icolmn
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -1993,6 +2078,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
 !  ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose)then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -2006,15 +2092,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',idstmp,' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read wvvflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read wvvflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! srunoff
   l=l+1
-  print *, 'itype ',235,' ilev ',isfc
+  if(verbose) print *, 'itype ',235,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -2022,6 +2109,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
 !  ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -2035,15 +2123,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',idstmp,' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read srunoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read srunoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! soilm
   l=l+1
-  print *, 'itype ',86,' ilev ',i2dbls
+  if(verbose) print *, 'itype ',86,' ilev ',i2dbls
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -2051,6 +2140,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -2064,15 +2154,16 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read soilm ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read soilm ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! snwdph
   l=l+1
-  print *, 'itype ',66,' ilev ',isfc
+  if(verbose) print *, 'itype ',66,' ilev ',isfc
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
   &           ibm,itype,ilev,il1k,il2k,iyr,imo,ida,ihr,&
@@ -2080,6 +2171,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   &           rlat1,rlon1,rlat2,rlon2,delx,dely,ortru,proj
   ids(itype)=idstmp
   iparam(l)=itype
+  if(verbose) then
   print *,'lbm ',lbm(1:min(10,nwf))
   print *,'idrt ',idrt,' igrd ',igrd2,' jgrd ',jgrd2
   print *,'maxbit ',maxbit,' colat ',colat
@@ -2093,12 +2185,13 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   print *,'il1k ',il1k,' il2k ',il2k
   print *,'itime ',itime,' ina ',ina,' inm ',inm,' icen2 ',icen2
   print *,'ids ',ids(itype),' iens ',iens
+  end if
   do j=1,jgrd1
     do i=1,igrd1
       dfld(i,j,l) = sfld(i+(j-1)*igrd1)
     end do
   end do 
-  print *,l,'read snwdph ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
+  if(verbose) print *,l,'read snwdph ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   print *,'end reading flux file'
   return
 end subroutine read_flx
