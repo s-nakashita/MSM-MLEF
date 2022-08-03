@@ -238,7 +238,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! latitude and longitude
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(1+(j-1)*igrd1) = clat(j)*deg2rad
+      sfld(i+(j-1)*igrd1) = clat(j)*deg2rad
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)

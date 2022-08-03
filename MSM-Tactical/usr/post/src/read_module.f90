@@ -348,14 +348,16 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
     clat(j) = sfld(1+(j-1)*igrd1)*rad2deg
     end do
   end do
-  if(verbose) print *, 'latitude ', clat(1), clat(jgrd1)
+  !if(verbose) print *, 'latitude ', clat(1), clat(jgrd1)
+  print *, 'latitude ', clat(1), clat(jgrd1)
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
       clon(i) = sfld(i+(j-1)*igrd1)*rad2deg
     end do
   end do
-  if(verbose) print *, 'longitude ', clon(1), clon(igrd1)
+  !if(verbose) print *, 'longitude ', clon(1), clon(igrd1)
+  print *, 'longitude ', clon(1), clon(igrd1)
 ! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
   if(fhour > 0.0) then
   iphys3d(1)=iwn+levs+1

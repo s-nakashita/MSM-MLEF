@@ -46,12 +46,14 @@ cd $DATADIR/tmp
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
 end_hour=$ENDHOUR
+#end_hour=0
 inc_h=$PRTHOUR
 rm -f fort.*
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then
   fh=0$fh
 fi
+#if [ ! -f $DATADIR/mean/r_sig.f$fh ] || [ ! -f $DATADIR/sprd/r_sig.f$fh ];then
 nsig=11
 nsfc=21
 nflx=31
@@ -84,11 +86,14 @@ mv r_sigs.f$fh $DATADIR/sprd/r_sig.f$fh
 mv r_sfcs.f$fh $DATADIR/sprd/r_sfc.f$fh
 mv r_flxs.f$fh $DATADIR/sprd/r_flx.f$fh
 rm fort.*
+#fi
 #
 # r_pgb
 #
 cd $DATADIR/mean
 $USHDIR/rpgb_post.sh $fh || exit 14
+#cd $DATADIR/sprd
+#$USHDIR/rpgb_post.sh $fh || exit 15
 cd $DATADIR/tmp
 fh=`echo $fh + $inc_h | bc`
 done
