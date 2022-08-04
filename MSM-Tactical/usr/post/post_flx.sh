@@ -4,13 +4,14 @@
 #
 #SDATE=2022071800
 #IRES=9
-if [ $# -lt 2 ]; then
-  echo "Usage : ./post_flx.sh init(YYYYMMDDHH) res(9 or 3) [mem(3-digit)]"
+if [ $# -lt 3 ]; then
+  echo "Usage : ./post_flx.sh init(YYYYMMDDHH) res(9 or 3) end_hour [mem(3-digit)]"
   exit 1
 fi
 SDATE=${1}
 IRES=${2}
-MEM=${3:-000}
+ENDHOUR=${3}
+MEM=${4:-000}
 if [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
@@ -28,7 +29,7 @@ make ${EXEC}
 cd $DATADIR
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
-end_hour=48
+end_hour=$ENDHOUR
 inc_h=3
 rm -f fort.*
 while [ $fh -le $end_hour ]; do

@@ -5,6 +5,7 @@ LDFLAGS=
 LIBS=
 
 PARENT=${PWD}
+MODDIR=${PWD}/../../dpac/src/common_modules
 SRCSIG=$(PARENT)/src/read_sig.f90
 OBJSIG=read_sig.o
 EXECSIG=read_sig
@@ -39,10 +40,10 @@ ensmspr:	read_module.o write_module.o ensmspr.o
 test_read:	read_module.o write_module.o test_read.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-read_module.o:	$(PARENT)/src/read_module.f90
+read_module.o:	$(MODDIR)/read_module.f90
 	$(FC) $(FFLAGS) -c $^
 
-write_module.o:	$(PARENT)/src/write_module.f90
+write_module.o:	$(MODDIR)/write_module.f90
 	$(FC) $(FFLAGS) -c $^
 
 ensmspr.o:	$(PARENT)/src/ensmspr.f90

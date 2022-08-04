@@ -45,8 +45,8 @@ mkdir -p $DATADIR/tmp
 cd $DATADIR/tmp
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
-end_hour=$ENDHOUR
-#end_hour=0
+#end_hour=$ENDHOUR
+end_hour=24
 inc_h=$PRTHOUR
 rm -f fort.*
 while [ $fh -le $end_hour ]; do
