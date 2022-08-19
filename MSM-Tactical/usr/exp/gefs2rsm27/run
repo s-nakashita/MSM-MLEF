@@ -3,7 +3,7 @@
 #############################
 #### set all definitions ####
 #############################
-export SDATE=2022073012
+export SDATE=2022080218
 #export MEM=000
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
