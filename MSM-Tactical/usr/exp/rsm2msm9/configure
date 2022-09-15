@@ -17,8 +17,14 @@ else
    export TEMP=$WORKUSR/${EXPN}_tparc          #output top directory
 fi
 #export BASEDIR=$WORKUSR/rsm2rsm27/${SDATE}
+if [ do$MEM = do ];then
 export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+else
+export RUNDIR=$TEMP/$SDATE/$MEM
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM}
+fi
 export IRES=9
+export PLOT=yes
 
 # --------------- compile options ----------------
 # machine dependent

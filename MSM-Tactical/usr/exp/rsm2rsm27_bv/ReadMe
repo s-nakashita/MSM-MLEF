@@ -1,0 +1,24 @@
+                                      rsm2rsm27
+
+Run RSM using RSM background data
+
+1. How to compile
+1) edit configure
+   At least, you need change the following terms.
+   MACHINE       # machine and compiler
+   You can find all config term and comment in utl/rsm_default.option
+2) execute ./compile
+
+2. How to run
+1) edit configure
+   At least, you need change the following terms.
+   BASEDIR       # data dir
+   RUNENV        # run command
+2) edit run 
+   change SDATE
+3) execute ./run
+
+This deck is to run d01 domain of 27km grid spacing resolution over
+70E-170W and 22S-65N domain.
+The base field is from RSM prepared from 0.5 degree NCEP pgb file or
+from 0.25 degree of NCEP pgb file with 55km or 27.5km, respectively.

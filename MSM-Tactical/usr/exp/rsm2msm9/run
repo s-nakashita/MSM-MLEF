@@ -1,11 +1,13 @@
 #!/bin/sh
 #
 set -x
-export SDATE=2022071200
+#export SDATE=2022090812
+#export MEM=000
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 #rm -rf ${TEMP}/${SDATE} 
 echo $RUNDIR
+#exit
 #
 #export RUNENV='mpiexec -s all -n '${NPES}
  export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}

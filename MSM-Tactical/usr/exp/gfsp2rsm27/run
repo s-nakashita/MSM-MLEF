@@ -3,7 +3,7 @@
 #############################
 #### set all definitions ####
 #############################
-export SDATE=2022071200
+#export SDATE=2022090812
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 echo $RUNDIR

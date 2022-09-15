@@ -12,9 +12,17 @@ SDATE=${1}
 IRES=${2}
 ENDHOUR=${3}
 MEM=${4:-000}
-if [ $IRES -eq 9 ]; then
-#DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
+if [ $IRES -eq 27 ]; then
+#DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE/$MEM
+if [ "$MEM" = "000" ]; then
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
+else
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/$MEM
+fi
+#DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
+elif [ $IRES -eq 9 ]; then
+DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE/bvc1
+#DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 else
@@ -25,13 +33,15 @@ MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 EXEC=read_sig
 cd $SRCDIR
-make ${EXEC}
+gmake ${EXEC}
 cd $DATADIR
+pwd
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
 end_hour=$ENDHOUR
 inc_h=3
 rm -f fort.*
+rm ${EXEC}.log
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then
   fh=0$fh
@@ -39,6 +49,8 @@ fi
 in=r_sig.f$fh
 out=sig.f${fh}.bin
 ctl=sig.f${fh}.ctl
+rm $out
+rm $ctl
 ln -s $in fort.11
 ln -s $out fort.51
 ln -s $ctl fort.61

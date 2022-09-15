@@ -11,6 +11,11 @@ message(STATUS "MPI_FOUND=${MPI_FOUND}")
 find_package(LAPACK REQUIRED)
 message(STATUS "LAPACK_FOUND=${LAPACK_FOUND}")
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(NETCDF REQUIRED IMPORTED_TARGET GLOBAL netcdf)
+include_directories(${NETCDF_INCLUDE_DIRS})
+message(STATUS "NETCDF_INCLUDE_DIRS=${NETCDF_INCLUDE_DIRS}")
+
 add_subdirectory(src/common_modules)
 #add_subdirectory(src/lmlef)
 #add_subdirectory(src/obs)

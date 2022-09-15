@@ -1,0 +1,15 @@
+#PBS -l nodes=4:ppn=32
+#PBS -N rsm2msm9
+#PBS -q workq
+source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/impi/2017.2.174/intel64/bin/mpivars.sh
+cd $PBS_O_WORKDIR
+
+export SDATE=2017052500
+. ./configure 
+
+NPES=128
+#
+#export RUNENV='mpiexec -s all -n '${NPES}
+ export RUNENV='mpiexec        -n '${NPES}
+$JSHDIR/rsm_fcst.sh  

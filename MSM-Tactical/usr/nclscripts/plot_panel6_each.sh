@@ -4,17 +4,15 @@ ires=9
 ires=${1}
 fh=3
 fh=${2}
-if [ $ires -eq 9 ]; then
-ODIR=/zdata/grmsm/fig/${EXPN}/${SDATE}
-else
-ODIR=/zdata/grmsm/fig/${EXPN}/${SDATE}
-fi
+WDIR=${RUNDIR}
+#ODIR=/zdata/grmsm/fig/${WDIR}
+ODIR=`echo $WDIR | sed -e "s/work/fig/"`
 echo $ODIR
 if [ ! -d $ODIR ]; then
   mkdir -p -m 775 $ODIR
 fi
 echo $SDATE $fh
-${HOME}/.local/ncarg/bin/ncl -nQ init=\"${SDATE}\" fh=${fh} ires=${ires} ${CDIR}/panel6_2.ncl #1>/dev/null
+${HOME}/.local/ncarg/bin/ncl -nQ init=\"${SDATE}\" fh=${fh} ires=${ires} wdir=\"${WDIR}\" ${CDIR}/panel6_2.ncl #1>/dev/null
 if [ $fh -lt 10 ]; then
   fh=00$fh
 elif [ $fh -lt 100 ]; then

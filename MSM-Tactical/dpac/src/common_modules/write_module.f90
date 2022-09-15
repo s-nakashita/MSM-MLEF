@@ -16,7 +16,7 @@ contains
 ! write sigma file
 !======================================================================
 subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
-&                    igrd1,jgrd1,levs,nflds,nonhyd,dfld,mapf,clat,clon)
+&                    igrd1,jgrd1,levs,nflds,nonhyd,icld,dfld,mapf,clat,clon)
 ! input :
 ! ounit sigma file (sequential, with header)
 ! dfld  variables (single precision)
@@ -28,6 +28,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   real(kind=4),intent(in) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
   integer, intent(in) :: igrd1, jgrd1, levs, nflds 
   integer, intent(in) :: nonhyd
+  integer, intent(in) :: icld !1=include 3D physics, 0=not include
   real(kind=4), intent(inout) :: dfld(igrd1,jgrd1,nflds)
   real(kind=4), intent(in) :: mapf(igrd1,jgrd1,3)
   real(kind=4), intent(in) :: clat(jgrd1), clon(igrd1)
@@ -47,6 +48,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! write label
   write(ounit) label
 ! write header
+  print *, 'posting date = ', idate(4), idate(2), idate(3), idate(1), '+', nint(fhour)
   sisl=0.0
   do k=1,levs
     sisl(k) = si(k)
@@ -74,11 +76,11 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   end do 
   write(ounit) (sfld(i),i=1,nwf)
   if(verbose) print *,igz, 'write gz ', sfld(1), maxval(sfld(:)), minval(sfld(:))
-  ! ln(ps)
+  ! ln(ps)[kPa]
   ips=igz+1
   do j=1,jgrd1
     do i=1,igrd1
-       sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ips))
+       sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ips)/1000.0) !Pa=>kPa
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
@@ -173,7 +175,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-         sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ipn+k-1))
+         sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ipn+k-1)/1000.0) !Pa=>kPa
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
@@ -250,8 +252,8 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   end do
   write(ounit) (sfld(i),i=1,nwf)
   if(verbose) print *, 'longitude ', sfld(1), sfld(nwf)
-! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
-  if(fhour > 0.0) then
+! (icld==1 & fhour > 0) 3D physics (f_ice f_rain f_rimef)
+  if((icld.eq.1).and.(fhour > 0.0)) then
   iphys3d(1)=iwn+levs+1
   do m=1,3
     do k=1,levs
@@ -308,6 +310,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
 ! write label
   write(ounit) label
 ! write header
+  print *, 'posting date = ', idate(4), idate(2), idate(3), idate(1), '+', nint(fhour)
   version=199802
   write(ounit) fhour, idate, igrd1, jgrd1, version
   nwf = igrd1*jgrd1

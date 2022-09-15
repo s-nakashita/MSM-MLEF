@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 set -x
-export SDATE=2022073000
+export SDATE=2022083100
 #export MEM=000
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure

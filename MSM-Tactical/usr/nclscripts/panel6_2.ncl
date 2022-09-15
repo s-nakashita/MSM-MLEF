@@ -9,14 +9,14 @@ begin
   vhour = ihour + fh + 9 ;UTC=>JST
   valid = cd_string(vhour,"%D%HJST")
   print(valid)
-  if (ires.eq.9) then
-    ;wdir = "rsm2msm9_jpn"
-    wdir = "rsm2msm9_tparc"
-  else
-    ;wdir = "msm2msm3_jpn"
-    wdir = "msm2msm3_tparc"
-  end if
-  a = addfile("/zdata/grmsm/work/"+wdir+"/"+init+"/r_pgb.f"+sprinti("%0.2d",fh), "r")
+;  if (ires.eq.9) then
+;    ;wdir = "rsm2msm9_jpn"
+;    wdir = "rsm2msm9_tparc"
+;  else
+;    ;wdir = "msm2msm3_jpn"
+;    wdir = "msm2msm3_tparc"
+;  end if
+  a = addfile(wdir+"/r_pgb.f"+sprinti("%0.2d",fh), "r")
   dNames = getfiledimnames(a)
   print(dNames)
   vNames = getfilevarnames(a)

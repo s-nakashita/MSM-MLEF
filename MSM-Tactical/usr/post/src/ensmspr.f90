@@ -2,6 +2,7 @@ program ensmspr
   use read_module
   use write_module
   implicit none
+  integer, parameter :: icld=1
   ! ensemble size
   integer, parameter :: nens=10
   ! input files' units (first member, increased linearly with members)
@@ -25,7 +26,7 @@ program ensmspr
 
 !!! sigma files (r_sig.fNN)
   ! headers are assumed to be identical for all members
-  call read_header(nisig,label,idate,fhour,si,sl,ext,nfldsig)
+  call read_header(nisig,icld,label,idate,fhour,si,sl,ext,nfldsig)
   print*, label
   print*, idate
   print*, fhour
@@ -52,7 +53,7 @@ program ensmspr
   dflds=0.0d0
   nsig=nisig
   do n=1,nens
-    call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,fhour,sl,dfld,mapf,clat,clon)
+    call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
     print*, n, maxval(dfld(:,:,3)),minval(dfld(:,:,3))
     dfldm = dfldm + dfld
     dflds = dflds + dfld**2
@@ -62,9 +63,9 @@ program ensmspr
   dflds = sqrt( dflds/nens - dfldm**2 )
   ! write output
   call write_sig(nmsig,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
-&                    igrd1,jgrd1,levs,nfldsig,nonhyd,dfldm,mapf,clat,clon)
+&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldm,mapf,clat,clon)
   call write_sig(nssig,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
-&                    igrd1,jgrd1,levs,nfldsig,nonhyd,dflds,mapf,clat,clon)
+&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dflds,mapf,clat,clon)
 
   deallocate( dfld, dfldm, dflds ) 
 

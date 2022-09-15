@@ -3,23 +3,30 @@
 #############################
 #### set all definitions ####
 #############################
-export SDATE=2022080218
+#export SDATE=2022080218
 #export MEM=000
+SDATE=${1}
+MEM=${2}
+export SDATE MEM
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 export RUNDIR=${TEMP}/${SDATE}/${MEM}
 echo $RUNDIR
-rm -rf ${TEMP}/${SDATE}/${MEM}
+if [ $RUNDIR = $TEMP ];then
+  echo "Argument error"
+  exit
+fi
+#rm -rf ${TEMP}/${SDATE}/${MEM}
 ###########################
 #### download gfs data ####
 ###########################
 if [ $RDA = 'no' ]; then
-$USHDIR/download_gefs.sh
+$USHDIR/download_gefs.sh > out${MEM}.log 2> out${MEM}.err
 else
-$USHDIR/download_gfspy.sh
+$USHDIR/download_gfspy.sh > out${MEM}.log 2> out${MEM}.err
 fi
 #####################
 #### excute fcst ####
 #####################
 #ulimit -s unlimited
-$JSHDIR/rsm_fcst.sh  
+$JSHDIR/rsm_fcst.sh >> out${MEM}.log 2>> out${MEM}.err 

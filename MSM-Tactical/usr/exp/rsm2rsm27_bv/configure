@@ -1,0 +1,155 @@
+#!/bin/ksh
+# check all config term and comment in utl/rsm_default.option
+
+# --------------- directory ------------------
+export USERID=` whoami `
+export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+export WORKUSR=$DISK/usr/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+else
+#   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+   export TEMP=$WORKUSR/$EXPN          #output top directory
+fi
+if [ "$MEM" = "000" ];then
+export RUNDIR=$TEMP/$SDATE #CONTROL
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000
+elif [ $CYCLE -eq 0 ];then
+export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
+else
+export RUNDIR=$TEMP/$SDATE/bv${MEM}${BP}_c${CYCLE} #BGM
+#export RUNDIR=$TEMP/$SDATE/bv${SIGN}${MEM}${BP}_c${CYCLE} #BGM
+if [ do$BP != do ];then
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
+else
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
+fi
+fi
+export IRES=27
+
+# --------------- compile options ----------------
+# machine dependent
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
+# linux_pgi, linux_intel, linux_gfortran
+export MACHINE=freebsd_gfortran
+export IBMSP=no 
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# massively parallel procesing options
+export MARCH=mpi
+export LAMMPI=no
+export MPICH=yes
+export KINDMPI=4
+export NCOL=6
+export NROW=4
+export NODES=24   
+export MP=yes
+export THREAD=no 
+
+# model parameter
+
+# compile model option
+export NEST=C2R   # G2R C2R P2R N2R
+export NONHYD=no
+export RAS=no
+export SAS=yes
+export NCLDB=1
+export NCLD=1
+export GTOPO30=yes
+export CHGTLEV=no 
+export SLRFIX=yes 
+export BGF=1                    # CDELX ~= BGF * RDELX
+export MBC=yes 
+export LBC=no 
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=yes
+
+# --------------- run option --------------------
+export ENDHOUR=168 
+export ENDHOUR=24                             # release_test
+export PRTHOUR=1                             # release_test
+export INCBASE=3
+export INCHOUR=3
+export TIMESTEP=90
+export IMDLPHY=1
+export NEWMTN=.FALSE.
+export CLIM=0
+export RSFC_MERGE=yes
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNFCST=yes
+
+#### rsmlocation
+
+# d01 domain 70E-170W 22S-65N
+export  IGRD=324
+export  JGRD=288
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=120.0
+export  RDELX=27000.
+export  RDELY=27000.
+export  RCENLAT=23.5
+export  RCENLON=120.0
+export  RLFTGRD=133.
+export  RBTMGRD=121.
+# test dimension and shift
+#export  IGRD=128                             # release_test
+#export  JGRD=108                             # release_test
+#export  RLFTGRD=57.                          # release_test
+#export  RBTMGRD=63.                          # release_test
+
+## base field from running RSM 
+export  CIGRD=384 
+export  CJGRD=324
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=120.0
+export  CDELX=27000.
+export  CDELY=27000.
+export  CCENLAT=23.5
+export  CCENLON=120.0
+export  CLFTGRD=163.
+export  CBTMGRD=139.
+## base field from 0.5 degree, check gfsp2rsm/configure
+#export  CIGRD=216 
+#export  CJGRD=192
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=23.5
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=50000.
+#export  CDELY=50000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=93.
+#export  CBTMGRD=79.
+## uncomment following 6 lines if base field from 0.25 degree
+#export  CIGRD=512 
+#export  CJGRD=432
+#export  CDELX=27500.
+#export  CDELY=27500.
+#export  CLFTGRD=218.
+#export  CBTMGRD=184.
+
+#
+# load default configure file
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+

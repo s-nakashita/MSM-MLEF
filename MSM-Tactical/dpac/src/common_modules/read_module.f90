@@ -18,15 +18,17 @@ contains
 !======================================================================
 ! read sigma file header
 !======================================================================
-subroutine read_header(iunit,label,idate,fhour,si,sl,ext,nflds)
+subroutine read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
 ! input :
 ! iunit sigma file (sequential, with header)
+! icld  flag for 3D physics
 ! 
 ! output: (header components and field number)
 ! label, idate, fhour, sisl, ext, nflds
 !
   implicit none
   integer, intent(in) :: iunit
+  integer, intent(in) :: icld !1=include 3D physics, 0=not include
   character(len=8),intent(out) :: label(4)
   integer,intent(out) :: idate(4), nflds
   real(kind=4),intent(out) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
@@ -82,7 +84,7 @@ subroutine read_header(iunit,label,idate,fhour,si,sl,ext,nflds)
   !nflds = 8+13*levs
   nflds = 2+9*levs+1 
   !gz,q,t(levs),u(levs),v(levs),q(levs),oz(levs),cw(levs),pn(levs),tn(levs),wn(levs+1)
-  if(fhour.gt.0.0) then !phys3d
+  if((icld.eq.1).and.(fhour.gt.0.0)) then !phys3d
     nflds = nflds + 3*levs
   end if
   print *, 'nflds', nflds
@@ -91,7 +93,7 @@ end subroutine read_header
 !======================================================================
 ! read sigma file
 !======================================================================
-subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
+subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
                   & dfld,mapf,clat,clon)
 ! input :
 ! iunit sigma file (sequential, with header)
@@ -103,6 +105,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
   integer, intent(in) :: iunit
   integer, intent(in) :: igrd1, jgrd1, levs, nflds 
   integer, intent(in) :: nonhyd
+  integer, intent(in) :: icld !1=include 3D physics, 0=not include
   real(kind=4), intent(in)  :: fhour
   real(kind=4), intent(in)  :: sl(levs)
   real(kind=4), intent(out) :: dfld(igrd1,jgrd1,nflds)
@@ -145,12 +148,12 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
     end do
   end do 
   if(verbose) print *,igz, 'read gz ', dfld(1,1,igz), maxval(dfld(:,:,igz)), minval(dfld(:,:,igz))
-  ! ln(ps)
+  ! ln(ps) [kPa]
   ips=igz+1
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ips) = EXP(sfld(i+(j-1)*igrd1))
+      dfld(i,j,ips) = EXP(sfld(i+(j-1)*igrd1))*1000.0 !kPa=>Pa
     end do
   end do 
   if(verbose) print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
@@ -238,7 +241,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ipn+k-1) = EXP(sfld(i+(j-1)*igrd1))
+        dfld(i,j,ipn+k-1) = EXP(sfld(i+(j-1)*igrd1))*1000.0 !kPa=>Pa
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
@@ -358,8 +361,8 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,fhour,sl,&
   end do
   !if(verbose) print *, 'longitude ', clon(1), clon(igrd1)
   print *, 'longitude ', clon(1), clon(igrd1)
-! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
-  if(fhour > 0.0) then
+! (icld==1 & fhour > 0) 3D physics (f_ice f_rain f_rimef)
+  if((icld.eq.1).and.(fhour > 0.0)) then
   iphys3d(1)=iwn+levs+1
   do m=1,3
   do k=1,levs

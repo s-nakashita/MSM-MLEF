@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+set -x
+export SDATE=${SDATE:-2022083000}
+export MEM=${MEM:-000}
+export SIGN=${SIGN}
+export BP=${BP}
+export CYCLE=${CYCLE:-0}
+BV=6
+if [ $CYCLE -gt 1 ]; then
+   PCYCLE=`expr $CYCLE - 1`
+   fh=`expr $BV \* $PCYCLE`
+   SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${SDATE}"`
+   export SDATE
+fi
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure 
+#export ENDHOUR=${BV}
+echo $ENDHOUR $RUNDIR
+#exit
+#
+#export RUNENV='mpiexec -s all -n '${NPES}
+ export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}
+$JSHDIR/rsm_fcst.sh  

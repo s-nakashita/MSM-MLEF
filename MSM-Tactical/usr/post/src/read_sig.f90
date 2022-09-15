@@ -1,10 +1,11 @@
-program read_sig
+program readsig
 !
 ! main program : read_sig   read sigma file and convert into 
 !                           readable file with GrADS
 ! history:
 ! 22-05-19 create
 ! 22-07-28 add phys3d
+! 22-09-14 replaced by module
 ! 
 ! namelist:
 !
@@ -14,36 +15,31 @@ program read_sig
 ! output:
 ! unit 51 sigma file (direct, no header)
 !
+  use kind_module
+  use phconst_module
+  use read_module
   implicit none
   integer, parameter :: iunit=11, ounit=51, cunit=61
   character(len=8) :: label(4)
   integer :: idate(4), iymdh
   integer :: iret
-  integer, parameter :: levmax=100, nwext=512-(6+2*levmax)
-  real(kind=4) :: fhour, si(levmax+1), sl(levmax), sisl(2*levmax+1), &
+  real(kind=sp) :: fhour, si(levmax+1), sl(levmax), sisl(2*levmax+1), &
  &                ext(nwext) 
   ! components of ext
   integer :: iwav1,jwav1,igrd1,jgrd1,levs,nfldx,proj,nonhyd
-  real(kind=4) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
+  real(kind=sp) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
  &                delx, dely
   integer :: nflds, nwf, irec
   integer :: i,j,k,l,m
   integer :: igz, ips, it, iu, iv, iq, ioz, icw, ipn, itn, iwn, &
  &           im2
   integer :: iphys3d(3)
-  real(kind=4), allocatable :: sfld(:), dfld(:,:,:)
-  real(kind=4), allocatable :: clat(:), clon(:), factor(:,:,:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, rad2deg=180.0/pi
+  real(kind=sp), allocatable :: sfld(:), dfld(:,:,:), mapf(:,:,:)
+  real(kind=sp), allocatable :: clat(:), clon(:), factor(:,:,:)
   
   print *, 'read and extract header record'
-  iret = 0
-  rewind(iunit)
-! read label
-  read(iunit) label
+  call read_header(iunit,1,label,idate,fhour,si,sl,ext,nflds)
   print '(4a8)', label
-! read header
-  read(iunit) fhour, idate, sisl, ext
   iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   print *, 'posting date ', iymdh, '+', nint(fhour)
   iwav1 = int(ext(1)); jwav1 = int(ext(2))
@@ -71,105 +67,23 @@ program read_sig
   else
     print *, 'Input is a hydrostatic'
   end if
-  si(1:levs+1) = sisl(1:levs+1)
-  sl(1:levs)   = sisl(levs+2:2*levs+1)
   print *, 'si', si(1:levs+1)
   print *, 'sl', sl(1:levs)
-  nflds = 8+13*levs+3*levs
   print *, 'nflds', nflds
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf
-  allocate( sfld(nwf), dfld(igrd1,jgrd1,nflds) )
+  allocate( sfld(nwf), dfld(igrd1,jgrd1,nflds), mapf(igrd1,jgrd1,3) )
   allocate( clat(jgrd1),clon(igrd1), factor(igrd1,jgrd1,levs) )
   print *, 'start reading and writing data'
-  l=1
-  ! gz
+  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,1,fhour,sl,dfld,mapf,clat,clon)
   igz=1
-  read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,igz) = sfld(i+(j-1)*igrd1)
-    end do
-  end do 
-  print *,igz, 'read gz ', dfld(1,1,igz), maxval(dfld(:,:,igz)), minval(dfld(:,:,igz))
-  ! ln(ps)
   ips=igz+1
-  read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,ips) = EXP(sfld(i+(j-1)*igrd1))
-    end do
-  end do 
-  print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
-  ! T
   it=ips+1
-  do k=1, levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,it+k-1) = sfld(i+(j-1)*igrd1)
-    end do
-  end do 
-  print *,it+k-1, 'read T at lev=',k, dfld(1,1,it+k-1),&
-&  maxval(dfld(:,:,it+k-1)), minval(dfld(:,:,it+k-1))
-  end do  
-  ! U,V
   iu=it+levs
   iv=iu+levs
-  do k=1, levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,iu+k-1) = sfld(i+(j-1)*igrd1)
-    end do
-  end do
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,iv+k-1) = sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,iu+k-1, 'read U at lev=',k, dfld(1,1,iu+k-1),&
-&  maxval(dfld(:,:,iu+k-1)), minval(dfld(:,:,iu+k-1))
-  print *,iv+k-1, 'read V at lev=',k, dfld(1,1,iv+k-1),&
-&  maxval(dfld(:,:,iv+k-1)), minval(dfld(:,:,iv+k-1))
-  end do
-  ! Q
-  iq = iv+levs
-  do k=1, levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,iq+k-1) = sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,iq+k-1, 'read Q at lev=',k, dfld(1,1,iq+k-1), &
-&  maxval(dfld(:,:,iq+k-1)), minval(dfld(:,:,iq+k-1))
-  end do
-  ! OZ
+  iq=iv+levs
   ioz=iq+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,ioz+k-1)=sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,ioz+k-1, 'read OZ at lev=',k, dfld(1,1,ioz+k-1),&
-&  maxval(dfld(:,:,ioz+k-1)), minval(dfld(:,:,ioz+k-1))
-  end do
-  ! CW
   icw=ioz+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,icw+k-1)=sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,icw+k-1, 'read CW at lev=',k, dfld(1,1,icw+k-1),&
-&  maxval(dfld(:,:,icw+k-1)), minval(dfld(:,:,icw+k-1))
-  end do
   ! factor to fully modify the virtual temperature
   do k=1,levs
     do j=1,jgrd1
@@ -178,134 +92,24 @@ program read_sig
       end do
     end do
   end do
-  if (nonhyd.eq.1) then
-  ! pn
   ipn=icw+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,ipn+k-1) = EXP(sfld(i+(j-1)*igrd1))
-        if (k.eq.1) then
-          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
-        end if
-      end do
-    end do
-  print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
-&  maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
-  end do
-  ! tn
   itn=ipn+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,itn+k-1) = sfld(i+(j-1)*igrd1)/factor(i,j,k)
+  if(nonhyd.eq.1) then
+    do k=1,levs
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k)
+        end do
       end do
     end do
-  print *,itn+k-1, 'read TN at lev=',k, dfld(1,1,itn+k-1),&
-&  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
-  end do  
-  ! wn
-  iwn=itn+levs
-  do k=1,levs+1
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,iwn+k-1) = sfld(i+(j-1)*igrd1)
-      end do
-    end do
-  print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
-&  maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
-  end do
-  else
-  ! hydro p
-  ipn=icw+levs
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
-      end do
-    end do
-  print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
-  end do
-  ! hydro t
-  itn=ipn+levs
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)/factor(i,j,k)
-      end do
-    end do
-  print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
-  itn=itn+1
-  end do  
-  ! w=0
-  iwn=itn+levs
-  do k=1,levs+1
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,iwn+k-1) = 0.0
-      end do
-    end do
-  print *, 'zero W at lev=',k, maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
-  end do
   end if
-! map factor**2
-  im2=iwn+levs+1
-  read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,im2) = sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,im2, 'read XM2 ', dfld(1,1,im2), &
-&  maxval(dfld(:,:,im2)), minval(dfld(:,:,im2))
-! modify variables by map factor
- ! U,V
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,iu+k-1)=dfld(i,j,iu+k-1)*sqrt(dfld(i,j,im2))
-        dfld(i,j,iv+k-1)=dfld(i,j,iv+k-1)*sqrt(dfld(i,j,im2))
-      end do
-    end do
-  end do
-! latitude and longitude
-  read(iunit) (sfld(i),i=1,nwf) ! fm2x
-  read(iunit) (sfld(i),i=1,nwf) ! fm2y
-  read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-    clat(j) = sfld(1+(j-1)*igrd1)*rad2deg
-    end do
-  end do
-  print *, 'latitude ', clat(1), clat(jgrd1)
-  read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      clon(i) = sfld(i+(j-1)*igrd1)*rad2deg
-    end do
-  end do
-  print *, 'longitude ', clon(1), clon(igrd1)
-! (fhour > 0) 3D physics (f_ice f_rain f_rimef)
+  iwn=itn+levs
   if(fhour > 0.0) then
-  iphys3d(1)=im2+1
+  iphys3d(1)=iwn+1
   do m=1,3
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-  do j=1,jgrd1
-    do i=1,igrd1
-      dfld(i,j,iphys3d(m)+k-1)=sfld(i+(j-1)*igrd1)
-    end do
-  end do
-  print *,iphys3d(m)+k-1, 'read phys3d at lev=',k, &
-&  dfld(1,1,iphys3d(m)+k-1),&
-&  maxval(dfld(:,:,iphys3d(m)+k-1)), minval(dfld(:,:,iphys3d(m)+k-1))
-  end do
-  if(m<3) then
-    iphys3d(m+1)=iphys3d(m)+levs
-  end if
+    if(m<3) then
+      iphys3d(m+1)=iphys3d(m)+levs
+    end if
   end do
   end if
   print *, 'start write output'
@@ -388,8 +192,8 @@ contains
     implicit none
     integer, intent(in) :: nctl,igrd1,jgrd1,levs,proj,nonhyd
     integer, intent(in) :: idate(4)
-    real(kind=4), intent(in) :: fhour
-    real(kind=4), intent(in) :: clat(:), clon(:)
+    real(kind=sp), intent(in) :: fhour
+    real(kind=sp), intent(in) :: clat(:), clon(:)
     integer :: i,j
     integer :: ihr,idy,imo,iyr
     integer :: days(12),daysl(12)
