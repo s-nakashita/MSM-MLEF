@@ -15,10 +15,14 @@ else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
 fi
+GLOBAL=${GLOBAL:-GEFS}
 if [ "$MEM" = "000" ];then
 export RUNDIR=$TEMP/$SDATE #CONTROL
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000
-elif [ $CYCLE -eq 0 ];then
+if [ $GLOBAL = GFS ];then #deterministic
+export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+fi
+elif [ $CYCLE -eq 0 -o do$BV != doyes ];then
 export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
 else
@@ -28,6 +32,9 @@ if [ do$BP != do ];then
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
 else
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
+if [ $GLOBAL = GFS ];then #deterministic
+export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+fi
 fi
 fi
 export IRES=27

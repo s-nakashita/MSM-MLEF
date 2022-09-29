@@ -11,21 +11,21 @@ fi
 SDATE=${1}
 IRES=${2}
 #export SDATE IRES
-EDATE=${EDATE:-$SDATE}
+EDATE=${3:-$SDATE}
 MEM=000
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 while [ $SDATE -le $EDATE ];do
 echo $SDATE
 if [ $IRES -eq 27 ]; then
-#DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
-#EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
-EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
+DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
+EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
+#DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
+#EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE
-EXPDIR=$MSMDIR/usr/exp/rsm2msm9_ens
+DATADIR=/zdata/grmsm/work/rsm2msm9_bv/$SDATE
+EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 #elif [ $IRES -eq 3 ]; then
 #DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 #EXPDIR=$MSMDIR/usr/exp/msm2msm3
@@ -55,8 +55,8 @@ mkdir -p $DATADIR/tmp
 cd $DATADIR/tmp
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
-end_hour=24
-inc_h=1
+end_hour=72
+inc_h=3
 rm -f fort.*
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then

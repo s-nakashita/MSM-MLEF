@@ -12,7 +12,7 @@ PDATE=2022061112 #prtb base
 PMEM=${MEM:-001} #prtb member
 IRES=27
 CYCLE=${CYCLE:-3}
-BV=6
+BV_H=${BV_H:-6}
 BP=${BP} #with boundary perturbation
 CYCLE=${1:-$CYCLE}
 #SDATE=${1}
@@ -48,7 +48,7 @@ EXEC=addprtb
 cd $SRCDIR
 gmake ${EXEC}
 if [ $CYCLE -gt 1 ]; then
-fh=`expr $BV \* \( $CYCLE - 1 \)`
+fh=`expr $BV_H \* \( $CYCLE - 1 \)`
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
@@ -57,7 +57,8 @@ SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${SDATE}"` #a
 #else #c
 #fh=00 #c
 fi
-OUTDIR=$DATADIR/$SDATE/bv${PMEM}${BP}_c${CYCLE}
+OUTDIR=$DATADIR/$SDATE/bv${PMEM}${BP}_c${CYCLE} #c
+#OUTDIR=$DATADIR/$SDATE/bv${PMEM}${BP}_a${CYCLE}
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
 #OUTPDIR=$DATADIR/$SDATE/bvp${PMEM}${BP}_a${CYCLE}
@@ -94,34 +95,38 @@ ln -s $DATADIR/$SDATE/r_sfc.f00 fort.14 #a
 #ln -s $DATADIR/$SDATE/r_sfc.f$fh fort.14 #c
 # perturbation base
 if [ $CYCLE -eq 1 ]; then
-#echo $PDATE
-#ln -s $DATADIR/$PDATE/r_sig.f12 fort.12
-#PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
-#echo $PDATE
-#ln -s $DATADIR/$PDATE/r_sig.f24 fort.13
+if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
+echo $PDATE
+ln -s $DATADIR/$PDATE/r_sig.f12 fort.12
+PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
+echo $PDATE
+ln -s $DATADIR/$PDATE/r_sig.f24 fort.13
 ##ln -s $DATADIR/$SDATE/r_sigitdt fort.15 #c(dummy)
+else
 ### ensemble
 #ln -s $DATADIR/$SDATE/mean/r_sig.f00 fort.13
 ln -s $DATADIR/$SDATE/$PMEM/r_sig.f00 fort.12
 ln -s $DATADIR/$SDATE/r_sig.f00 fort.13
+fi
 else
 PCYCLE=`expr $CYCLE - 1`
-fh2=$BV
+fh2=$BV_H
 if [ $fh2 -lt 10 ]; then
 fh2=0$fh2
 fi
 #ln -s $DATADIR/$SDATE/r_sig.f$fh fort.12 #c
-#ln -s $DATADIR/$SDATE/bv${BV}h_c${PCYCLE}/r_sig.f$fh2 fort.13 #c
-##ln -s $DATADIR/$SDATE/bv${BV}h_c${PCYCLE}/r_sig.f$fh fort.13 #c
-#ln -s $DATADIR/$SDATE/bv${BV}h_c${PCYCLE}/r_sigitdt fort.15 #c
-PDATE=`date -j -f "%Y%m%d%H" -v-${BV}H +"%Y%m%d%H" "${SDATE}"` #a
+#ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh2 fort.13 #c
+##ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh fort.13 #c
+#ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sigitdt fort.15 #c
+PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${SDATE}"` #a
 echo $PDATE #a
 if [ do$BP = dowbp ];then
-ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #a
+ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
 else
 ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
 fi
-ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #a
+ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
+#ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
 #ln -s $DATADIR/$PDATE/bvm${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.12 #a
 #ln -s $DATADIR/$PDATE/bvp${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
 fi
@@ -131,10 +136,10 @@ cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
  teref=2.0d0,
- lonw=120.0,
- lone=164.0,
- lats=5.0,
- latn=39.0,
+ lonw=110.0,
+ lone=153.0,
+ lats=15.0,
+ latn=47.0,
 &end
 EOF
 #else

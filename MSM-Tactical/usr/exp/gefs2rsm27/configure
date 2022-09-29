@@ -50,7 +50,7 @@ export RINP=yes
 export FCST=no 
 
 # --------------- run option --------------------
-export ENDHOUR=120
+export ENDHOUR=72
 #export ENDHOUR=48                                # release_test
 export CLIM=1
 export POSTTYPE=sync

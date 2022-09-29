@@ -1,10 +1,10 @@
 #!/usr/local/bin/bash
 set -e
-#SDATE=2022090800
-#EDATE=2022090800
+SDATE=2022092800
+EDATE=2022092818
 NPARALLEL=11
-#while [ $SDATE -le $EDATE ];do
-#export SDATE
+while [ $SDATE -le $EDATE ];do
+export SDATE
 SMEM=0
 EMEM=10
 MEM=$SMEM
@@ -31,5 +31,5 @@ done
 time wait
 done
 #### Date change
-#SDATE=`date -j -f "%Y%m%d%H" -v+6H +"%Y%m%d%H" "${SDATE}"`
-#done
+SDATE=`date -j -f "%Y%m%d%H" -v+6H +"%Y%m%d%H" "${SDATE}"`
+done

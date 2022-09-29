@@ -11,7 +11,7 @@ SDATE=${SDATE:-2022083000}
 EDATE=${EDATE:-$SDATE}
 IRES=27
 CYCLE=${CYCLE:-1}
-BV=6
+BV_H=6
 MEM=${MEM:-003}
 BP=${BP} #with boundary perturbation
 MEM=${1:-$MEM}
@@ -52,12 +52,12 @@ cd tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 if [ $CYCLE -gt 1 ];then
-fhs=`expr $BV \* \( $CYCLE - 1 \)`
+fhs=`expr $BV_H \* \( $CYCLE - 1 \)`
 else
 fhs=0
 fi
 #dte=`expr 48 - $fhs` #c
-dte=$BV #a
+dte=$BV_H #a
 if [ $CYCLE -ge 5 ]; then
 dte=24
 fi
@@ -93,32 +93,34 @@ fh=$dt
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
-#ln -s $DATADIR/$IDATE/bv${BV}h_c${CYCLE}/r_sig.f$fh fort.$nsig #c
+#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${CYCLE}/r_sig.f$fh fort.$nsig #c
 #if [ $CYCLE -eq 1 ]; then
 #ln -s $DATADIR/$PDATE/bva${CYCLE}/r_sig.f$fh fort.$nsig #a
 #else
-#ln -s $DATADIR/$PDATE/bv${BV}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
+#ln -s $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 #fi
-ln -s $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig #a
+ln -s $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
+#ln -s $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
- lonw=120.0,
- lone=164.0,
- lats=5.0,
- latn=39.0,
+ lonw=110.0,
+ lone=153.0,
+ lats=15.0,
+ latn=47.0,
 &END
 EOF
 ./${EXEC} < NAMELIST #1>>${EXEC}.log 2>&1
 cat te.dat
 #mv te.dat $DATADIR/stat/te${dt}h${IDATE}.dat
-#mv te.dat $DATADIR/$IDATE/bv${BV}h_c${CYCLE}/te${dt}h.dat #c
+#mv te.dat $DATADIR/$IDATE/bv${BV_H}h_c${CYCLE}/te${dt}h.dat #c
 #if [ $CYCLE -eq 1 ]; then
 #mv te.dat $DATADIR/$PDATE/bva${CYCLE}/te${dt}h.dat #a
 #else
-#mv te.dat $DATADIR/$PDATE/bv${BV}h_a${CYCLE}/te${dt}h.dat #a
+#mv te.dat $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/te${dt}h.dat #a
 #fi
-mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/te${dt}h.dat #a
+mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/te${dt}h.dat #c
+#mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/te${dt}h.dat #a
 rm fort.*
 IDATE=`date -j -f  "%Y%m%d%H" -v+12H +"%Y%m%d%H" "${IDATE}"`
 done

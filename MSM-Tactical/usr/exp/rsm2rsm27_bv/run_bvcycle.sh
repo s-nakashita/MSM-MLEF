@@ -1,13 +1,19 @@
 #!/bin/sh
 export SDATE=2022083000
-export MEM=004
-export BP=wbp
+export SDATE=2022061400
+export GLOBAL=GFS
 export SIGN=
 
 RUNDIR=`pwd`
 POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
+
+export CYCLE=1
+#### prepare control
+cd $RUNDIR
+export MEM=000
+./run || exit 2 #1>run.log 2>run.err
 
 MEM=1
 while [ $MEM -le 10 ]; do
@@ -17,20 +23,25 @@ else
 MEM=0$MEM
 fi
 export MEM
+if [ $GLOBAL != GFS ];then
+### downscaling
+cd $RUNDIR
+export BV=no
+./run || exit 2 #1>run.log 2>run.err
+fi
+#### breeding
+export BV=yes
 #for j in $(seq 0 1 1);do
-#if [ $j -eq 0 ];then
-#export BP=
-#else
+j=0
+if [ $j -eq 0 ];then
+export BP=
+else
 export BP=wbp
-#fi
-#### prepare member
-#cd $RUNDIR
-#export CYCLE=0
-#./run || exit 2 #1>run.log 2>run.err
+fi
 ### start cycle
-i=5
+#i=1
 #while [ $i -le 4 ];do
-export CYCLE=$i
+#export CYCLE=$i
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $RUNDIR
