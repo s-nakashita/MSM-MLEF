@@ -83,7 +83,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export ENDHOUR=168 
-export ENDHOUR=24                             # release_test
+export ENDHOUR=48                             # release_test
 export PRTHOUR=1                             # release_test
 export INCBASE=3
 export INCHOUR=3

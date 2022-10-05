@@ -1,0 +1,29 @@
+####PBS -l select=4:ncpus=32:mpiprocs=16
+#PBS -l nodes=4:ppn=32
+#PBS -N rsm2msm9
+#PBS -q workq
+
+#cd $PBS_O_WORKDIR
+#pwd
+
+set -ex
+
+source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/impi/2017.2.174/intel64/bin/mpivars.sh
+
+cd /work2/juang/MSM-Tft/usr/exp/rsm2msm9
+export SDATE=2017052500
+. ./configure 
+
+#NPES=64
+#export OMP_NUM_THREADS=2
+ NPES=128
+#
+export RUNENV='mpirun'
+
+echo "JSHDIR>> :" $JSHDIR
+$JSHDIR/rsm_fcst.sh  
+
+
+
+

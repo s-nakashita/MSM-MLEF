@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+set -x
+export SDATE=${SDATE:-2022083100}
+export MEM=${MEM:-000}
+export BV=${BV:-no}
+export BP=
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure
+echo "ENDHOUR=$ENDHOUR PRTHOUR=$PRTHOUR"
+echo $RUNDIR
+#exit
+#
+#export RUNENV='mpiexec -s all -n '${NPES}
+ export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}
+$JSHDIR/rsm_fcst.sh  

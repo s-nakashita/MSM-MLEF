@@ -7,29 +7,33 @@ set -ex
 #  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(9 or 3)"
 #  exit 1
 #fi
-SDATE=${SDATE:-2022083000} #base
-PDATE=2022061112 #prtb base
+IDATE=${IDATE:-2022083000} #base
+PDATE=${PDATE:-2022061112} #prtb base
 PMEM=${MEM:-001} #prtb member
 IRES=27
 CYCLE=${CYCLE:-3}
 BV_H=${BV_H:-6}
 BP=${BP} #with boundary perturbation
 CYCLE=${1:-$CYCLE}
-#SDATE=${1}
+#IDATE=${1}
 #IRES=${2}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
-BASEDIR=/zdata/grmsm/work/gefs2rsm27_nomad
+if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
+BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
+else
+BASE=/zdata/grmsm/work/gefs2rsm27_nomad
+fi
 DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
-BASEDIR=/zdata/grmsm/work/gfsp2rsm27_nomad
+BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn
 #DATADIR=/zdata/grmsm/work/rsm2msm9_tparc
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9
 elif [ $IRES -eq 3 ]; then
-BASEDIR=/zdata/grmsm/work/rsm2msm9_jpn
+BASE=/zdata/grmsm/work/rsm2msm9_jpn
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn
 EXPDIR=$MSMDIR/usr/exp/msm2msm3
 else
@@ -53,34 +57,28 @@ if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
 echo "forecast hour=${fh}"
-SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${SDATE}"` #a
+IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 #else #c
 #fh=00 #c
 fi
-OUTDIR=$DATADIR/$SDATE/bv${PMEM}${BP}_c${CYCLE} #c
-#OUTDIR=$DATADIR/$SDATE/bv${PMEM}${BP}_a${CYCLE}
+OUTDIR=$DATADIR/$IDATE/bv${PMEM}${BP}_c${CYCLE} #c
+#OUTDIR=$DATADIR/$IDATE/bv${PMEM}${BP}_a${CYCLE}
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
-#OUTPDIR=$DATADIR/$SDATE/bvp${PMEM}${BP}_a${CYCLE}
-#OUTMDIR=$DATADIR/$SDATE/bvm${PMEM}${BP}_a${CYCLE}
+#OUTPDIR=$DATADIR/$IDATE/bvp${PMEM}${BP}_a${CYCLE}
+#OUTMDIR=$DATADIR/$IDATE/bvm${PMEM}${BP}_a${CYCLE}
 #rm -rf $OUTPDIR
 #mkdir -p $OUTPDIR
 #rm -rf $OUTMDIR
 #mkdir -p $OUTMDIR
-##copy unchanged file
-###orography
-cp $DATADIR/$SDATE/rmtn.parm $OUTDIR/
-cp $DATADIR/$SDATE/rmtnoss $OUTDIR/
-cp $DATADIR/$SDATE/rmtnslm $OUTDIR/
-cp $DATADIR/$SDATE/rmtnvar $OUTDIR/
-#cp $DATADIR/$SDATE/rmtn.parm $OUTPDIR/
-#cp $DATADIR/$SDATE/rmtnoss $OUTPDIR/
-#cp $DATADIR/$SDATE/rmtnslm $OUTPDIR/
-#cp $DATADIR/$SDATE/rmtnvar $OUTPDIR/
-#cp $DATADIR/$SDATE/rmtn.parm $OUTMDIR/
-#cp $DATADIR/$SDATE/rmtnoss $OUTMDIR/
-#cp $DATADIR/$SDATE/rmtnslm $OUTMDIR/
-#cp $DATADIR/$SDATE/rmtnvar $OUTMDIR/
+##copy orography
+#for OUTDIR in $OUTPDIR $OUTMDIR;do
+cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
+cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
+cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
+cp $DATADIR/$IDATE/rmtnvar $OUTDIR/
+#done
+rm -rf tmp
 mkdir -p tmp
 cd tmp
 #. ${EXPDIR}/configure
@@ -88,25 +86,49 @@ cd tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field
-echo $SDATE
-ln -s $DATADIR/$SDATE/r_sig.f00 fort.11 #a
-ln -s $DATADIR/$SDATE/r_sfc.f00 fort.14 #a
-#ln -s $DATADIR/$SDATE/r_sig.f$fh fort.11 #c
-#ln -s $DATADIR/$SDATE/r_sfc.f$fh fort.14 #c
+echo $IDATE
+ln -s $DATADIR/$IDATE/r_sig.f00 fort.11 #analysis
+ln -s $DATADIR/$IDATE/r_sfc.f00 fort.14 #analysis
+#ln -s $DATADIR/$IDATE/r_sig.f$fh fort.11 #guess
+#ln -s $DATADIR/$IDATE/r_sfc.f$fh fort.14 #guess
 # perturbation base
 if [ $CYCLE -eq 1 ]; then
 if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
-echo $PDATE
-ln -s $DATADIR/$PDATE/r_sig.f12 fort.12
+cd ${EXPDIR}
+. ./configure
+export RUNFCST=no
+export RUNRINP2=yes
+export POSTTYPE=
+cd -
+echo $IGRD $JGRD
+mkdir -p $PDATE
+cd $PDATE
+export SDATE=$PDATE
+export BASEDIR=${BASE}/${SDATE}
+export RUNDIR=`pwd`
+echo $BASEDIR $RUNDIR
+export ENDHOUR=12
+export INCHOUR=12
+$JSHDIR/rsm_fcst.sh > rint.log 2>&1 || exit 10
+cd ..
+ln -s $RUNDIR/r_sig.f12 fort.12
 PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
-echo $PDATE
-ln -s $DATADIR/$PDATE/r_sig.f24 fort.13
-##ln -s $DATADIR/$SDATE/r_sigitdt fort.15 #c(dummy)
-else
-### ensemble
-#ln -s $DATADIR/$SDATE/mean/r_sig.f00 fort.13
-ln -s $DATADIR/$SDATE/$PMEM/r_sig.f00 fort.12
-ln -s $DATADIR/$SDATE/r_sig.f00 fort.13
+mkdir -p $PDATE
+cd $PDATE
+export SDATE=$PDATE
+export BASEDIR=${BASE}/${SDATE}
+export RUNDIR=`pwd`
+echo $BASEDIR $RUNDIR
+export ENDHOUR=24
+export INCHOUR=24
+$JSHDIR/rsm_fcst.sh > rint.log 2>&1 || exit 10
+cd ..
+ln -s $RUNDIR/r_sig.f24 fort.13
+##ln -s $DATADIR/$IDATE/r_sigitdt fort.15 #c(dummy)
+else #ensemble
+#ln -s $DATADIR/$IDATE/mean/r_sig.f00 fort.13
+ln -s $DATADIR/$IDATE/$PMEM/r_sig.f00 fort.12
+ln -s $DATADIR/$IDATE/r_sig.f00 fort.13
 fi
 else
 PCYCLE=`expr $CYCLE - 1`
@@ -114,11 +136,11 @@ fh2=$BV_H
 if [ $fh2 -lt 10 ]; then
 fh2=0$fh2
 fi
-#ln -s $DATADIR/$SDATE/r_sig.f$fh fort.12 #c
-#ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh2 fort.13 #c
-##ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh fort.13 #c
-#ln -s $DATADIR/$SDATE/bv${BV_H}h_c${PCYCLE}/r_sigitdt fort.15 #c
-PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${SDATE}"` #a
+#ln -s $DATADIR/$IDATE/r_sig.f$fh fort.12 #c
+#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh2 fort.13 #c
+##ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh fort.13 #c
+#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sigitdt fort.15 #c
+PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${IDATE}"` #a
 echo $PDATE #a
 if [ do$BP = dowbp ];then
 ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c

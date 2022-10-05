@@ -7,11 +7,11 @@ set -ex
 #  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(9 or 3)"
 #  exit 1
 #fi
-SDATE=${SDATE:-2022083000}
-EDATE=${EDATE:-$SDATE}
-IRES=27
+IDATE=${IDATE:-2022083000}
+EDATE=${EDATE:-$IDATE}
+IRES=${IRES:-27}
 CYCLE=${CYCLE:-1}
-BV_H=6
+BV_H=${BV_H:-6}
 MEM=${MEM:-003}
 BP=${BP} #with boundary perturbation
 MEM=${1:-$MEM}
@@ -20,15 +20,18 @@ MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
 #DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad
+#EXPDIR=$MSMDIR/usr/exp/gfsp2rsm27
 DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
-EXPDIR=$MSMDIR/usr/exp/gfsp2rsm27
+EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
-DATADIR=/zdata/grmsm/work/rsm2msm9_jpn
+#DATADIR=/zdata/grmsm/work/rsm2msm9_jpn
 #DATADIR=/zdata/grmsm/work/rsm2msm9_tparc
-EXPDIR=$MSMDIR/usr/exp/rsm2msm9
+#EXPDIR=$MSMDIR/usr/exp/rsm2msm9
+DATADIR=/zdata/grmsm/work/rsm2msm9_bv
+EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 elif [ $IRES -eq 3 ]; then
-DATADIR=/zdata/grmsm/work/msm2msm3_jpn
-EXPDIR=$MSMDIR/usr/exp/msm2msm3
+DATADIR=/zdata/grmsm/work/msm2msm3_bv
+EXPDIR=$MSMDIR/usr/exp/msm2msm3_bv
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -45,10 +48,12 @@ EXEC=calcte
 cd $SRCDIR
 gmake ${EXEC}
 #mkdir -p $DATADIR/stat
+cd ${EXPDIR}
+. ./configure
+#echo $IGRD $JGRD
+cd -
 mkdir -p tmp
 cd tmp
-#. ${EXPDIR}/configure
-#echo $IGRD $JGRD
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 if [ $CYCLE -gt 1 ];then
@@ -59,13 +64,13 @@ fi
 #dte=`expr 48 - $fhs` #c
 dte=$BV_H #a
 if [ $CYCLE -ge 5 ]; then
-dte=24
+dte=$ENDHOUR
 fi
 #for dt in 12 24 36 48;do
 for dt in $(seq 0 1 $dte);do
 #dt=0 #hour
-IDATE=$SDATE
-while [ $IDATE -le $EDATE ];do
+CDATE=$IDATE
+while [ $CDATE -le $EDATE ];do
 # latest forecast
 nsig=11
 if [ $fhs -gt 0 ]; then
@@ -77,12 +82,12 @@ fh=$dt #a
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
-#ln -s $DATADIR/$IDATE/r_sig.f$fh fort.$nsig #c
-PDATE=`date -j -f "%Y%m%d%H" -v+${fhs}H +"%Y%m%d%H" "${IDATE}"` #a
+#ln -s $DATADIR/$CDATE/r_sig.f$fh fort.$nsig #c
+PDATE=`date -j -f "%Y%m%d%H" -v+${fhs}H +"%Y%m%d%H" "${CDATE}"` #a
 ln -s $DATADIR/$PDATE/r_sig.f$fh fort.$nsig #a
 # previous forecast
 nsig=`expr $nsig + 1`
-#PDATE=`date -j -f "%Y%m%d%H" -v-${dt}H +"%Y%m%d%H" "${IDATE}"`
+#PDATE=`date -j -f "%Y%m%d%H" -v-${dt}H +"%Y%m%d%H" "${CDATE}"`
 #echo $PDATE
 #fh=`expr $fh + $dt`
 #if [ $fh -lt 10 ]; then
@@ -93,14 +98,19 @@ fh=$dt
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
-#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${CYCLE}/r_sig.f$fh fort.$nsig #c
+#ln -s $DATADIR/$CDATE/bv${BV_H}h_c${CYCLE}/r_sig.f$fh fort.$nsig #c
 #if [ $CYCLE -eq 1 ]; then
 #ln -s $DATADIR/$PDATE/bva${CYCLE}/r_sig.f$fh fort.$nsig #a
 #else
 #ln -s $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 #fi
+if [ $IRES -eq 27 ];then
 ln -s $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
 #ln -s $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/r_sig.f$fh fort.$nsig #a
+else
+ln -s $DATADIR/$PDATE/bv${MEM}${BP}/r_sig.f$fh fort.$nsig #c
+fi
+if [ $IRES -eq 27 ];then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
@@ -110,19 +120,34 @@ cat <<EOF >NAMELIST
  latn=47.0,
 &END
 EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ lprtb=T,
+ lonw=,
+ lone=,
+ lats=,
+ latn=,
+&END
+EOF
+fi
 ./${EXEC} < NAMELIST #1>>${EXEC}.log 2>&1
 cat te.dat
-#mv te.dat $DATADIR/stat/te${dt}h${IDATE}.dat
-#mv te.dat $DATADIR/$IDATE/bv${BV_H}h_c${CYCLE}/te${dt}h.dat #c
+#mv te.dat $DATADIR/stat/te${dt}h${CDATE}.dat
+#mv te.dat $DATADIR/$CDATE/bv${BV_H}h_c${CYCLE}/te${dt}h.dat #c
 #if [ $CYCLE -eq 1 ]; then
 #mv te.dat $DATADIR/$PDATE/bva${CYCLE}/te${dt}h.dat #a
 #else
 #mv te.dat $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/te${dt}h.dat #a
 #fi
+if [ $IRES -eq 27 ];then
 mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/te${dt}h.dat #c
 #mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/te${dt}h.dat #a
+else
+mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}/te${dt}h.dat #c
+fi
 rm fort.*
-IDATE=`date -j -f  "%Y%m%d%H" -v+12H +"%Y%m%d%H" "${IDATE}"`
+CDATE=`date -j -f  "%Y%m%d%H" -v+12H +"%Y%m%d%H" "${CDATE}"`
 done
 done
 echo END

@@ -1,0 +1,222 @@
+#!/bin/ksh
+# check all config term and comment in utl/rsm_default.option
+
+# --------------- directory ------------------
+export USERID=` whoami `
+export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+#export WORKUSR=$DISK/usr/work
+export WORKUSR=/zdata/grmsm/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+else
+#   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+   export TEMP=$WORKUSR/${EXPN}          #output top directory
+fi
+#export RUNDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}/bv${BV}h_c${CYCLE}
+#export RUNDIR=$WORKUSR/rsm2msm9_tparc/${SDATE}/bv${BV}h_c${CYCLE}
+if [ do$BV = doyes ];then #Bred vector
+export RUNDIR=$TEMP/${SDATE}/bv${MEM}${BP}
+export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/bv${MEM}${BP}_c${CYCLE}
+else #GEFS downscaling
+if [ "$MEM" = "000" ];then #control
+export RUNDIR=$TEMP/${SDATE}
+export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}
+else #member
+export RUNDIR=$TEMP/${SDATE}/${MEM}
+export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/${MEM}
+fi
+fi
+#export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+export IRES=9
+
+# --------------- compile options ----------------
+# machine dependent
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
+# linux_pgi, linux_intel, linux_gfortran
+export MACHINE=freebsd_gfortran
+export IBMSP=no 
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# massively parallel procesing options
+export MARCH=mpi
+export LAMMPI=no
+export MPICH=yes
+export KINDMPI=4
+export NCOL=6
+export NROW=4
+export NODES=24   
+export MP=yes
+export THREAD=no 
+
+# model parameter
+
+# compile model option
+export NEST=C2R   # G2R C2R P2R N2R
+export NONHYD=yes
+export INTDTB=yes           # internal evolved base field T
+export RAS=no
+export SAS=yes
+export NCLDB=1
+export NCLD=1
+export GTOPO30=yes
+export CHGTLEV=no              # top level damping
+export BGF=3                        # CDELX ~= BGF * RDELX
+export MBC=yes 
+export LBC=no 
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=yes
+
+# --------------- run option --------------------
+export ENDHOUR=24 
+export ENDHOUR=48                             # release_test
+#from gfsp2rsm27
+export INCBASE=3
+export INCHOUR=3
+export PRTHOUR=3
+##from rsm2rsm27
+#export INCBASE=1
+#export INCHOUR=1
+export PRTHOUR=1
+export TIMESTEP=30
+export IMDLPHY=1                # 1: run model physics, 0: off
+export CLIM=0
+export RSFC_MERGE=yes
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNFCST=yes
+
+#### rsmlocation
+
+## d02 domain 100E-142E 2N-37N
+#export  IGRD=384
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=23.5
+#export  RCENLON=120.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+## East China domain 100E-142E 20N-55N
+#export  IGRD=324
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=39.0
+#export  RCENLON=120.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+# Japan domain 110E-150E 16N-46N
+export  IGRD=384
+export  JGRD=324
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=140.0
+export  RDELX=9000.
+export  RDELY=9300.
+export  RCENLAT=35.0
+export  RCENLON=130.0
+export  RLFTGRD=183.0
+export  RBTMGRD=190.0
+## North America domain 125W-82W 20N-55N
+#export  IGRD=324
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=39.0
+#export  RCENLON=255.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+# test dimension and shift
+#export  IGRD=128                            # release_test
+#export  JGRD=108                            # release_test
+#export  RLFTGRD=57.                         # release_test
+#export  RBTMGRD=63.                         # release_test
+
+## base field from running RSM 
+##from gfsp2rsm27
+#export  CIGRD=384 
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=163.
+#export  CBTMGRD=139.
+#from rsm2rsm27
+export  CIGRD=324
+export  CJGRD=288
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=120.0
+export  CDELX=27000.
+export  CDELY=27000.
+export  CCENLAT=23.5
+export  CCENLON=120.0
+export  CLFTGRD=133.
+export  CBTMGRD=121.
+## base field from running RSM 
+#export  CIGRD=384 
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=141.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=39.3
+#export  CCENLON=141.0
+#export  CLFTGRD=193.
+#export  CBTMGRD=191.
+## base field from running RSM 
+#export  CIGRD=324 
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=250.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=39.0
+#export  CCENLON=250.0
+#export  CLFTGRD=193.
+#export  CBTMGRD=191.
+# test dimension and shift
+#export  CIGRD=128                           # release_test
+#export  CJGRD=108                           # release_test
+#export  CLFTGRD=57.                          # release_test
+#export  CBTMGRD=63.                          # release_test
+#
+# load default configure file
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+
