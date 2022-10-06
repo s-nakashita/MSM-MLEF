@@ -21,8 +21,11 @@ module rsmparm_module
   integer,save,public :: nproj !0=mercator, 1.or.-1=polar
   real(kind=dp),save,public :: rtruth,rorient,rdelx,rdely,rcenlat,rcenlon
   real(kind=dp),save,public :: rlftgrd, rbtmgrd
-  namelist /rsmparm/ igrd1,jgrd1,nlev,&
-  & nproj,rtruth,rorient,rdelx,rdely,rcenlat,rcenlon,rlftgrd,rbtmgrd
+  !!! model version
+  integer,save,public :: nonhyd=1 !0=hydrostatic, 1=nonhydrostatic
+  namelist /rsmparm/ igrd1,jgrd1,nlev&
+  & ,nproj,rtruth,rorient,rdelx,rdely,rcenlat,rcenlon,rlftgrd,rbtmgrd &
+  & ,nonhyd
 !
 ! grid information
 !
@@ -37,8 +40,6 @@ module rsmparm_module
 !
 ! variables' indexes
 !
-  !!! model version
-  integer,save,public :: nonhyd=1 !0=hydrostatic, 1=nonhydrostatic
   !!! in r_sig.fNN
   integer,save,public :: nflds
   !!! 2D variables
@@ -65,6 +66,7 @@ module rsmparm_module
     implicit none
     integer,intent(in) :: nsig ! input sigma file unit
     integer :: nskip
+    integer :: icld
     character(len=8) :: label(4)
     integer :: idate(4)
     real(kind=sp) :: fhour,sisl(2*levmax+1),ext(nwext)
@@ -77,12 +79,17 @@ module rsmparm_module
     write(6,rsmparm)
     lngrd=igrd1*jgrd1
     write(6,'(A,I8)') 'lngrd=',lngrd
+    if(nonhyd.eq.1) then
+      icld=1
+    else
+      icld=0
+    end if
     
     allocate( rlon(igrd1), rlat(jgrd1) )
     allocate( sig(nlev), sigh(nlev+1) )
     allocate( mapf(lngrd,3) )
 
-    call read_header(nsig,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
+    call read_header(nsig,icld,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
     nonhyd = int(ext(16))
     do i=1,nlev
       sig(i) = sisl(levmax+1+i)

@@ -18,5 +18,5 @@ message(STATUS "NETCDF_INCLUDE_DIRS=${NETCDF_INCLUDE_DIRS}")
 
 add_subdirectory(src/common_modules)
 #add_subdirectory(src/lmlef)
-#add_subdirectory(src/obs)
+add_subdirectory(src/obs)
 add_subdirectory(test)

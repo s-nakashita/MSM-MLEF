@@ -61,10 +61,10 @@ fhs=`expr $BV_H \* \( $CYCLE - 1 \)`
 else
 fhs=0
 fi
+dte=$ENDHOUR
+if [ $IRES -eq 27 ] && [ $CYCLE -lt 5 ]; then
 #dte=`expr 48 - $fhs` #c
 dte=$BV_H #a
-if [ $CYCLE -ge 5 ]; then
-dte=$ENDHOUR
 fi
 #for dt in 12 24 36 48;do
 for dt in $(seq 0 1 $dte);do

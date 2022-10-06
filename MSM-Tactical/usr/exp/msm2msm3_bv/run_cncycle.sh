@@ -4,7 +4,7 @@
 #
 #export IDATE=2022083000
 export IDATE=2022061800
-export EDATE=2022061800
+export EDATE=2022061812
 export GLOBAL=GFS
 export SIGN=
 export BV_H=12

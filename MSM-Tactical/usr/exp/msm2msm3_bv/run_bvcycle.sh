@@ -10,7 +10,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-MEM=1
+MEM=2
 while [ $MEM -le 10 ]; do
 if [ $MEM -lt 10 ]; then
 MEM=00$MEM
@@ -37,6 +37,7 @@ fi
 cd $RUNDIR
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
+export IDATE=$SDATE
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
 #done
 MEM=`expr $MEM + 1`
