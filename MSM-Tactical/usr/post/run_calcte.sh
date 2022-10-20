@@ -13,6 +13,7 @@ IRES=${IRES:-27}
 CYCLE=${CYCLE:-1}
 BV_H=${BV_H:-6}
 MEM=${MEM:-003}
+BV=${BV:-yes}
 BP=${BP} #with boundary perturbation
 MEM=${1:-$MEM}
 CYCLE=${2:-$CYCLE}
@@ -62,12 +63,13 @@ else
 fhs=0
 fi
 dte=$ENDHOUR
+inch=$PRTHOUR
 if [ $IRES -eq 27 ] && [ $CYCLE -lt 5 ]; then
 #dte=`expr 48 - $fhs` #c
 dte=$BV_H #a
 fi
 #for dt in 12 24 36 48;do
-for dt in $(seq 0 1 $dte);do
+for dt in $(seq 0 $inch $dte);do
 #dt=0 #hour
 CDATE=$IDATE
 while [ $CDATE -le $EDATE ];do
@@ -104,11 +106,15 @@ fi
 #else
 #ln -s $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 #fi
+if [ $BV = yes ];then
 if [ $IRES -eq 27 ];then
 ln -s $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
 #ln -s $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 else
 ln -s $DATADIR/$PDATE/bv${MEM}${BP}/r_sig.f$fh fort.$nsig #c
+fi
+else
+ln -s $DATADIR/$PDATE/${MEM}/r_sig.f$fh fort.$nsig
 fi
 if [ $IRES -eq 27 ];then
 cat <<EOF >NAMELIST
@@ -140,11 +146,15 @@ cat te.dat
 #else
 #mv te.dat $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/te${dt}h.dat #a
 #fi
+if [ $BV = yes ];then
 if [ $IRES -eq 27 ];then
 mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/te${dt}h.dat #c
 #mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/te${dt}h.dat #a
 else
 mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}/te${dt}h.dat #c
+fi
+else
+mv te.dat $DATADIR/$PDATE/${MEM}/te${dt}h.dat
 fi
 rm fort.*
 CDATE=`date -j -f  "%Y%m%d%H" -v+12H +"%Y%m%d%H" "${CDATE}"`

@@ -28,9 +28,9 @@ elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2msm9_bv/$SDATE
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
-#elif [ $IRES -eq 3 ]; then
-#DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
-#EXPDIR=$MSMDIR/usr/exp/msm2msm3
+elif [ $IRES -eq 3 ]; then
+DATADIR=/zdata/grmsm/work/msm2msm3_bv/$SDATE
+EXPDIR=$MSMDIR/usr/exp/msm2msm3_bv
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -60,7 +60,7 @@ cd $DATADIR/tmp
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
 end_hour=$ENDHOUR
-inc_h=1
+inc_h=$PRTHOUR
 rm -f fort.*
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then

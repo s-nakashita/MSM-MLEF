@@ -16,7 +16,7 @@ if [ $CYCLE -gt 1 ]; then
 fi
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
-if [ do$BV = doyes -a $CYCLE -lt 5 ];then
+if [ $CYCLE -lt 5 ];then
 export ENDHOUR=${BV_H}
 fi
 echo $ENDHOUR $BASEDIR $RUNDIR

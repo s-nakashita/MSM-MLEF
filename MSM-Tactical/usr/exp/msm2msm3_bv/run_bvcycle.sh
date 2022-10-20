@@ -1,5 +1,5 @@
 #!/bin/sh
-export SDATE=2022061800
+export SDATE=2022061812
 export GLOBAL=GFS
 export BV_H=12
 export SIGN=
@@ -10,7 +10,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-MEM=2
+MEM=1
 while [ $MEM -le 10 ]; do
 if [ $MEM -lt 10 ]; then
 MEM=00$MEM

@@ -1,8 +1,10 @@
 #!/bin/sh
-export IDATE=2022083000
-export IDATE=2022061400
-export GLOBAL=GFS
-export BV_H=12
+export GLOBAL=GEFS
+export IDATE=2022091500
+export BV_H=6
+#export GLOBAL=GFS
+#export IDATE=2022061400
+#export BV_H=12
 export SIGN=
 
 RUNDIR=`pwd`
@@ -10,11 +12,15 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-export CYCLE=10
+export CYCLE=6
+### control
+export MEM=000
+export SDATE=$IDATE
+./run || exit 2 #1>run.log 2>run.err
 
 MEM=1
 while [ $MEM -le 10 ]; do
-if [ $CYCLE -eq 1 ];then
+if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $RUNDIR
 PDATE=`cat pdate.txt | awk '{if(NR == '$MEM') {print $1}}'`
 echo $PDATE
@@ -32,6 +38,8 @@ cd $RUNDIR
 export BV=no
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
+cd $POSTDIR
+./run_calcte.sh || exit 4 #1>out.log 2>out.err
 fi
 #### breeding
 export BV=yes
@@ -46,11 +54,11 @@ fi
 ##i=1
 ##while [ $i -le 4 ];do
 ##export CYCLE=$i
-#cd $POSTDIR
-#./run_addprtb.sh || exit 3 #1>out.log 2>out.err
-#cd $RUNDIR
-#export SDATE=$IDATE
-#./run || exit 2 #1>run.log 2>run.err
+cd $POSTDIR
+./run_addprtb.sh || exit 3 #1>out.log 2>out.err
+cd $RUNDIR
+export SDATE=$IDATE
+./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
 ##i=`expr $i + 1`

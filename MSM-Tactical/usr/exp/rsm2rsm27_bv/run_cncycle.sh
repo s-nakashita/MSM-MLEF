@@ -2,10 +2,12 @@
 #
 # for control run
 #
-#export IDATE=2022083000
-export IDATE=2022061800
-export EDATE=2022062000
-export GLOBAL=GFS
+export IDATE=2022083118
+export EDATE=2022083118
+export GLOBAL=GEFS
+#export IDATE=2022061800
+#export EDATE=2022062000
+#export GLOBAL=GFS
 export SIGN=
 export BV_H=12
 
