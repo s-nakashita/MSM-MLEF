@@ -5,7 +5,7 @@
 #SDATE=2022060812
 #IRES=9
 if [ $# -lt 2 ]; then
-  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(27 or 9) [wbp]"
+  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(27 or 9) [bv_h, wbp]"
   exit 1
 fi
 SDATE=${1}
@@ -13,8 +13,9 @@ IRES=${2}
 #export SDATE IRES
 EDATE=${EDATE:-$SDATE}
 MEM=000
-BP=${3}
-CYCLE=${4:-1}
+BV_H=${3:-6}
+BP=${4}
+CYCLE=${5:-1}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 while [ $SDATE -le $EDATE ];do
@@ -50,10 +51,15 @@ echo $IGRD $JGRD
 EXEC=ensmspr
 cd $SRCDIR
 gmake ${EXEC}
-rm -rf $DATADIR/bvmean${BP}
-mkdir -p $DATADIR/bvmean${BP}
-rm -rf $DATADIR/bvsprd${BP}
-mkdir -p $DATADIR/bvsprd${BP}
+if [ $BV_H -eq 6 ]; then
+header=bv
+else
+header=bv${BV_H}h
+fi
+rm -rf $DATADIR/${header}mean${BP}
+mkdir -p $DATADIR/${header}mean${BP}
+rm -rf $DATADIR/${header}sprd${BP}
+mkdir -p $DATADIR/${header}sprd${BP}
 rm -rf $DATADIR/tmp
 mkdir -p $DATADIR/tmp
 cd $DATADIR/tmp
@@ -81,13 +87,13 @@ fi
 #ln -s $DATADIR/bv${SIGN}${MEM}${BP}_a5/r_sfc.f$fh fort.$nsfc
 #ln -s $DATADIR/bv${SIGN}${MEM}${BP}_a5/r_flx.f$fh fort.$nflx
 if [ $IRES -eq 27 ];then
-ln -s $DATADIR/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig
-ln -s $DATADIR/bv${MEM}${BP}_c${CYCLE}/r_sfc.f$fh fort.$nsfc
-ln -s $DATADIR/bv${MEM}${BP}_c${CYCLE}/r_flx.f$fh fort.$nflx
+ln -s $DATADIR/${header}${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig
+ln -s $DATADIR/${header}${MEM}${BP}_c${CYCLE}/r_sfc.f$fh fort.$nsfc
+ln -s $DATADIR/${header}${MEM}${BP}_c${CYCLE}/r_flx.f$fh fort.$nflx
 else
-ln -s $DATADIR/bv${MEM}${BP}/r_sig.f$fh fort.$nsig
-ln -s $DATADIR/bv${MEM}${BP}/r_sfc.f$fh fort.$nsfc
-ln -s $DATADIR/bv${MEM}${BP}/r_flx.f$fh fort.$nflx
+ln -s $DATADIR/${header}${MEM}${BP}/r_sig.f$fh fort.$nsig
+ln -s $DATADIR/${header}${MEM}${BP}/r_sfc.f$fh fort.$nsfc
+ln -s $DATADIR/${header}${MEM}${BP}/r_flx.f$fh fort.$nflx
 fi
 nsig=`expr $nsig + 1`
 nsfc=`expr $nsfc + 1`
@@ -102,20 +108,20 @@ ln -s r_sigs.f$fh fort.54
 ln -s r_sfcs.f$fh fort.55
 ln -s r_flxs.f$fh fort.56
 ./${EXEC} #1>>${EXEC}.log 2>&1
-mv r_sigm.f$fh $DATADIR/bvmean${BP}/r_sig.f$fh
-mv r_sfcm.f$fh $DATADIR/bvmean${BP}/r_sfc.f$fh
-mv r_flxm.f$fh $DATADIR/bvmean${BP}/r_flx.f$fh
-mv r_sigs.f$fh $DATADIR/bvsprd${BP}/r_sig.f$fh
-mv r_sfcs.f$fh $DATADIR/bvsprd${BP}/r_sfc.f$fh
-mv r_flxs.f$fh $DATADIR/bvsprd${BP}/r_flx.f$fh
+mv r_sigm.f$fh $DATADIR/${header}mean${BP}/r_sig.f$fh
+mv r_sfcm.f$fh $DATADIR/${header}mean${BP}/r_sfc.f$fh
+mv r_flxm.f$fh $DATADIR/${header}mean${BP}/r_flx.f$fh
+mv r_sigs.f$fh $DATADIR/${header}sprd${BP}/r_sig.f$fh
+mv r_sfcs.f$fh $DATADIR/${header}sprd${BP}/r_sfc.f$fh
+mv r_flxs.f$fh $DATADIR/${header}sprd${BP}/r_flx.f$fh
 rm fort.*
-cd $DATADIR/bvmean${BP}
+cd $DATADIR/${header}mean${BP}
 $USHDIR/rpgb_post.sh $fh
 cd -
 fh=`echo $fh + $inc_h | bc`
 done
-ls -ltr $DATADIR/bvmean${BP} | tail -n 10
-ls -ltr $DATADIR/bvsprd${BP} | tail -n 10
-SDATE=`date -j -f "%Y%m%d%H" -v+6H +"%Y%m%d%H" "${SDATE}"`
+ls -ltr $DATADIR/${header}mean${BP} | tail -n 10
+ls -ltr $DATADIR/${header}sprd${BP} | tail -n 10
+SDATE=`date -j -f "%Y%m%d%H" -v+${BV_H}H +"%Y%m%d%H" "${SDATE}"`
 done
 echo END

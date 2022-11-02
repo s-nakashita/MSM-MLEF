@@ -1,18 +1,18 @@
 #!/bin/sh
 export GLOBAL=GEFS
-export IDATE=2022091500
+export IDATE=2022083000
 export BV_H=6
 #export GLOBAL=GFS
 #export IDATE=2022061400
 #export BV_H=12
 export SIGN=
 
-RUNDIR=`pwd`
+EXPDIR=`pwd`
 POSTDIR=`cd ../../post && pwd`
-echo $RUNDIR
+echo $EXPDIR
 echo $POSTDIR
 
-export CYCLE=6
+export CYCLE=9
 ### control
 export MEM=000
 export SDATE=$IDATE
@@ -21,7 +21,7 @@ export SDATE=$IDATE
 MEM=1
 while [ $MEM -le 10 ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
-cd $RUNDIR
+cd $EXPDIR
 PDATE=`cat pdate.txt | awk '{if(NR == '$MEM') {print $1}}'`
 echo $PDATE
 export PDATE
@@ -34,7 +34,7 @@ fi
 export MEM
 if [ $GLOBAL != GFS ];then
 ### downscaling
-cd $RUNDIR
+cd $EXPDIR
 export BV=no
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
@@ -51,18 +51,17 @@ else
 export BP=wbp
 fi
 ### start cycle
-##i=1
-##while [ $i -le 4 ];do
-##export CYCLE=$i
+cd $EXPDIR
+. ./configure
+if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
-cd $RUNDIR
+cd $EXPDIR
+fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
-##i=`expr $i + 1`
-##done
 #done
 MEM=`expr $MEM + 1`
 done

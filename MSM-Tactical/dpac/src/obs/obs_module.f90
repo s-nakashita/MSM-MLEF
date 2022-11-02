@@ -48,16 +48,19 @@ module obs_module
 
   public :: obstype, openfile, get_nobs, read_upper 
 contains
-  subroutine get_nobs(inf,cfile,ndataall,nobs)
+  subroutine get_nobs(inf,cfile,smin,emin,ndataall,nobs)
     implicit none
     integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
+    integer, intent(in) :: smin !hhnn->min
+    integer, intent(in) :: emin !hhnn->min
     integer, intent(out) :: ndataall
     integer, intent(out) :: nobs
     integer :: ioffset
     integer :: idrec
     integer :: ntype
     integer :: data1(7)
+    integer :: imin,tmphour,tmpminu
     integer,dimension(:),allocatable :: did,ndata,nobseach
     integer :: iyy, imm, idd, ihh, inn, iwk
     integer(2) :: ibuf2
@@ -135,7 +138,16 @@ contains
 !        end if
         ! use only 3XXX data type
         if(floor(real(did(i),kind=dp)*1.0d-3).eq.3) then
-          nobs=nobs+(nrec4-2)/10*nobstype_upper
+          ! read hour and minutes
+          irec=ioffset+nrec1+6
+          read(inf,rec=irec) ibuf2
+          tmphour=int(ibuf2,kind=4)/100
+          tmpminu=int(ibuf2,kind=4)-tmphour*100
+          imin=tmphour*60+tmpminu
+      !    if((imin.ge.smin).and.(imin.lt.emin)) then
+            if(debug) print *, 'total minutes =',imin
+            nobs=nobs+(nrec4-2)/10*nobstype_upper
+      !    end if
         end if
         ioffset=ioffset+nrecall
       end do
@@ -143,10 +155,12 @@ contains
     return
   end subroutine get_nobs
 
-  subroutine read_upper(inf,cfile,ndataall,nobs,nobsuse,obs)
+  subroutine read_upper(inf,cfile,smin,emin,ndataall,nobs,nobsuse,obs)
     implicit none
     integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
+    integer, intent(in) :: smin !hhnn->min
+    integer, intent(in) :: emin !hhnn->min
     integer, intent(in) :: ndataall
     integer, intent(in) :: nobs
     integer, intent(out) :: nobsuse
@@ -156,11 +170,12 @@ contains
     integer :: data1(7)
     integer :: dtype
     type(obstype), allocatable :: tmpobs(:)
+    integer :: imin
     integer :: tmphour, tmpminu, tmpelm
     real(kind=dp) :: tmplon, tmplat
-    real(kind=dp) :: lonb, latb
     real(kind=dp) :: tmplev, tmpdat, tmperr
     integer(2) :: ibuf2
+    integer :: lonb, latb
     integer :: nloop
     character(len=16) :: acc
     integer :: n,nn,i,irec
@@ -171,7 +186,7 @@ contains
     ! start reading data
     nobsuse=0
     nn=0
-    do n=1,20 !ndataall
+    do n=1,ndataall
       ! read part 1 and extract information
       call read_part1(inf,ioffset,idrec,data1)
       if(debug) then
@@ -181,110 +196,121 @@ contains
         print *, data1
       end if
       nrec_data = nrecall
-      dtype = int(data1(1),kind=4)
+      dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
       tmplon = real(data1(3),kind=dp)*0.01d0
       if(nn==0) then
-        latb=tmplat
-        lonb=tmplon
-      else if((tmplat/=latb).and.(tmplon/=lonb)) then
+        latb=data1(2);lonb=data1(3)
+      end if
+      if((nn>0).and.(data1(2)/=latb).and.(data1(3)/=lonb)) then
+        if(debug) then
+          print *, 'latlon(previous) ',latb, lonb
+          print *, 'latlon(current)  ',data1(2), data1(3)
+        end if
         call sortobs(nn,tmpobs)
         obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
         nobsuse=nobsuse+nn
         nn=0
-      end if
-      ! read hour and minutes
-      irec=ioffset+nrec1+6
-      read(inf,rec=irec) ibuf2
-      tmphour=int(ibuf2,kind=4)/100
-      tmpminu=int(ibuf2,kind=4)-tmphour*100
-      if(debug) then
-        print *, 'dtype,lat,lon,hour,minutes'
-        print *, dtype,tmplat,tmplon,tmphour,tmpminu
+        latb=data1(2);lonb=data1(3)
       end if
       ! use only 3XXX data type
       if(floor(real(dtype,kind=dp)*1.0d-3).eq.3) then
-        irec=ioffset+nrec1+nrec2+nrec3+1
+        ! read hour and minutes
+        irec=ioffset+nrec1+6
         read(inf,rec=irec) ibuf2
-        if(debug) print *, 'sst ',real(ibuf2,kind=dp)*0.1
-        irec=irec+1
-        read(inf,rec=irec) ibuf2
-        nloop = int(ibuf2,kind=4)
-        if(debug) print *, 'nloop ',nloop 
-        do i=1,nloop
-          irec=irec+2
-          read(inf,rec=irec) ibuf2 !accuracy
-          write(acc,'(b16.16)') ibuf2
+        tmphour=int(ibuf2,kind=4)/100
+        tmpminu=int(ibuf2,kind=4)-tmphour*100
+        imin=tmphour*60+tmpminu
+        if((imin.ge.smin).and.(imin.lt.emin)) then
           if(debug) then
-            print *, ibuf2
-            print '(a16)', acc
+            print *, 'dtype,lat,lon,hour,minutes,total minutes'
+            print *, dtype,tmplat,tmplon,tmphour,tmpminu,imin
           end if
-          if(ibuf2<0) cycle
+          irec=ioffset+nrec1+nrec2+nrec3+1
+          read(inf,rec=irec) ibuf2
+          if(debug) print *, 'sst ',real(ibuf2,kind=dp)*0.1
           irec=irec+1
           read(inf,rec=irec) ibuf2
-          !if(acc(11:11)=='0') then
-          if(ibuf2>0) then
-            tmplev=real(ibuf2,kind=8)*0.1d0 ![hPa]
-          else
-            irec=irec+7
-            cycle
-          end if
-          irec=irec+3
-          read(inf,rec=irec) ibuf2
-          !if(acc(13:13)=='0') then
-          if(ibuf2>0) then
-            tmpelm=id_t_obs
-            tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
-            tmperr=obserr(1)
-            nn=nn+1
-            call setobs(tmpobs(nn),&
-            &  tmpelm,tmphour,tmpminu,&
-            &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmperr)
-          end if   
-          irec=irec+1
-          read(inf,rec=irec) ibuf2
-          !if(acc(14:14)=='0') then
-          if(ibuf2>0) then
-            tmpelm=id_td_obs
-            tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
-            tmperr=obserr(2)
-            nn=nn+1
-            call setobs(tmpobs(nn),&
-            &  tmpelm,tmphour,tmpminu,&
-            &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmperr)
-          end if   
-          irec=irec+2 
-          read(inf,rec=irec) ibuf2
-          !if(acc(15:15)=='0') then
-          if(ibuf2>0) then
-            tmpelm=id_wd_obs
-            tmpdat=real(ibuf2,kind=dp) ![degree]
-            tmperr=obserr(3)
-            nn=nn+1
-            call setobs(tmpobs(nn),&
-            &  tmpelm,tmphour,tmpminu,&
-            &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmperr)
-          end if   
-          irec=irec+1
-          read(inf,rec=irec) ibuf2
-          !if(acc(16:16)=='0') then
-          if(ibuf2>0) then
-            tmpelm=id_ws_obs
-            tmpdat=real(ibuf2,kind=dp)*0.1d0 ![m/s]
-            tmperr=obserr(4)
-            nn=nn+1
-            call setobs(tmpobs(nn),&
-            &  tmpelm,tmphour,tmpminu,&
-            &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmperr)
-          end if   
-        end do
+          nloop = int(ibuf2,kind=4)
+          if(debug) print *, 'nloop ',nloop 
+          do i=1,nloop
+            irec=irec+2
+            read(inf,rec=irec) ibuf2 !accuracy
+            write(acc,'(b16.16)') ibuf2
+            if(ibuf2/=0) then
+              print *, ibuf2
+              print '(a16)', acc
+            end if
+            if(ibuf2<0) then
+              irec=irec+8
+              cycle
+            end if
+            irec=irec+1
+            read(inf,rec=irec) ibuf2
+            if(acc(11:11)=='0'.and.ibuf2>0) then
+              tmplev=real(ibuf2,kind=8)*0.1d0 ![hPa]
+            else
+              irec=irec+7
+              cycle
+            end if
+            irec=irec+3
+            read(inf,rec=irec) ibuf2
+            if(acc(13:13)=='0'.and.ibuf2>0) then
+              tmpelm=id_t_obs
+              tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+              tmperr=obserr(1)
+              nn=nn+1
+              call setobs(tmpobs(nn),&
+              &  tmpelm,tmphour,tmpminu,&
+              &  tmplat,tmplon,tmplev,&
+              &  tmpdat,tmperr)
+            end if   
+            irec=irec+1
+            read(inf,rec=irec) ibuf2
+            if(acc(14:14)=='0'.and.ibuf2>0) then
+              tmpelm=id_td_obs
+              tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+              tmperr=obserr(2)
+              nn=nn+1
+              call setobs(tmpobs(nn),&
+              &  tmpelm,tmphour,tmpminu,&
+              &  tmplat,tmplon,tmplev,&
+              &  tmpdat,tmperr)
+            end if   
+            irec=irec+2 
+            read(inf,rec=irec) ibuf2
+            if(acc(15:15)=='0'.and.ibuf2>0) then
+              tmpelm=id_wd_obs
+              tmpdat=real(ibuf2,kind=dp) ![degree]
+              tmperr=obserr(3)
+              nn=nn+1
+              call setobs(tmpobs(nn),&
+              &  tmpelm,tmphour,tmpminu,&
+              &  tmplat,tmplon,tmplev,&
+              &  tmpdat,tmperr)
+            end if   
+            irec=irec+1
+            read(inf,rec=irec) ibuf2
+            if(acc(16:16)=='0'.and.ibuf2>0) then
+              tmpelm=id_ws_obs
+              tmpdat=real(ibuf2,kind=dp)*0.1d0 ![m/s]
+              tmperr=obserr(4)
+              nn=nn+1
+              call setobs(tmpobs(nn),&
+              &  tmpelm,tmphour,tmpminu,&
+              &  tmplat,tmplon,tmplev,&
+              &  tmpdat,tmperr)
+            end if   
+          end do
+        end if
       end if
       ioffset=ioffset+nrec_data
     end do
+    if(nn>0) then
+      call sortobs(nn,tmpobs)
+      obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
+      nobsuse=nobsuse+nn
+    end if
     close(inf)
 
     return
@@ -327,69 +353,75 @@ contains
   end subroutine setobs
 
   subroutine sortobs(nobs,obs)
+    use stdlib_sorting
     implicit none
     integer, intent(inout) :: nobs
     type(obstype), intent(inout) :: obs(:)
-    integer :: ntim, nobs1
-    integer, allocatable :: ndate(:), ndatesum(:)
+    integer :: nobs1
     integer :: nelm(0:nobstype_upper), nelmsum(nobstype_upper)
     integer, dimension(nobstype_upper) :: elemlist=(/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs/)
+    type(obstype), allocatable :: tmpobs(:)
     real(kind=dp), allocatable :: tmplev(:)
+    real(kind=dp) :: clev
+    integer(int_size), allocatable :: idx(:)
     integer :: n,nn,ns,ne
     integer :: i,j
     
-    print *, nobs
-    ! time sort
-    ntim=24
-    allocate( ndate(0:ntim-1), ndatesum(ntim) )
-    ndate(:)=0
-    do i=1,ntim-1
+    if(debug) print *, nobs
+    ! element sort
+    nelm(:)=0
+    do j=1,nobstype_upper
       do n=1,nobs
-        if( obs(n)%date(1) >= i .or. obs(n)%date(1) < i-1) cycle
-        ndate(i) = ndate(i) + 1
+        if( obs(n)%elem /= elemlist(j) ) cycle
+        nelm(j)=nelm(j)+1
       end do
     end do
-    ndatesum(:)=0
-    do i=1,ntim
-      ndatesum(i) = sum(ndate(0:i-1))
+    nelmsum(:)=0
+    do j=1,nobstype_upper
+      nelmsum(j) = sum(nelm(0:j-1))
     end do
-    print *, ndate
-    print *, ndatesum
-    do i=1,ntim-1
+    if(debug) print *, nelm
+    if(debug) print *, nelmsum
+    allocate( tmpobs(nobs) )
+    tmpobs(1:nobs) = obs(1:nobs)
+    do j=1,nobstype_upper
       nn=0
       do n=1,nobs
-        if( obs(n)%date(1) >= i .or. obs(n)%date(1) < i-1) cycle
+        if( tmpobs(n)%elem /= elemlist(j) ) cycle
         nn=nn+1
-        obs(nn+ndatesum(i)) = obs(n)
+        obs(nn+nelmsum(j)) = tmpobs(n)
       end do
-    end do 
-    ! element sort
-    do i=1,ntim-1
-      ns=ndatesum(i)
-      ne=ndatesum(i+1)
-      if(ns==ne) cycle
-      print *, i, ns, ne
-      nelm(:)=0
-      do j=1,nobstype_upper
-        do n=ns+1,ne
-          if( obs(n)%elem /= elemlist(j) ) cycle
-          nelm(j)=nelm(j)+1
+    end do
+    ! level sort & delete duplicate data
+    tmpobs(1:nobs) = obs(1:nobs)
+    nobs=0
+    do i=1,nobstype_upper
+      if( nelm(i)==0 ) cycle
+      ns=nelmsum(i)
+      ne=ns+nelm(i)
+      if(debug) print *, ns, ne
+      allocate( tmplev(1:nelm(i)) )
+      allocate( idx(1:size(tmplev)) )
+      do j=1,nelm(i)
+        tmplev(j) = tmpobs(ns+j)%lev
+      end do
+      if(debug) print *, tmplev
+      ! sorting descending order (lower->upper)
+      call sort_index(tmplev, idx, reverse=.true.)
+      if(debug) print *, tmplev
+      if(debug) print *, idx
+      nobs=nobs+1
+      obs(nobs)=tmpobs(ns+idx(1))
+      clev=tmplev(1)
+      if( nelm(i).gt.1 ) then
+        do j=2,nelm(i)
+          if(tmplev(j)==clev) cycle
+          nobs=nobs+1
+          obs(nobs)=tmpobs(ns+idx(j))
+          clev=tmplev(j)
         end do
-      end do
-      nelmsum(:)=0
-      do j=1,nobstype_upper
-        nelmsum(j) = sum(nelm(0:j-1))
-      end do
-      print *, nelm
-      print *, nelmsum
-      do j=1,nobstype_upper
-        nn=ns
-        do n=ns+1,ne
-          if( obs(n)%elem /= elemlist(j) ) cycle
-          nn=nn+1
-          obs(nn+nelmsum(j)) = obs(n)
-        end do
-      end do
+      end if
+      deallocate(tmplev,idx)
     end do
     return
   end subroutine sortobs

@@ -7,16 +7,18 @@ export SIGN=${SIGN}
 export BV=${BV:-no}
 export BP=${BP}
 export CYCLE=${CYCLE:-0}
-BV_H=${BV_H:-6}
+export BV_H=${BV_H:-6}
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`
    SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${SDATE}"`
    export SDATE
 fi
+SPINUP=`expr 24 / $BV_H + 1`
+
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
-if [ $CYCLE -lt 5 ];then
+if [ $CYCLE -lt $SPINUP ];then
 export ENDHOUR=${BV_H}
 fi
 echo $ENDHOUR $BASEDIR $RUNDIR

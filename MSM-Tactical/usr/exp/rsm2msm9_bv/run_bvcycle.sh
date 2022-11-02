@@ -1,7 +1,7 @@
 #!/bin/sh
 export IDATE=2022083000
 export GLOBAL=GEFS
-export BV_H=6
+export BV_H=24
 #export IDATE=2022061400
 #export GLOBAL=GFS
 #export BV_H=12
@@ -13,7 +13,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-export CYCLE=8
+export CYCLE=3
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`
@@ -26,7 +26,6 @@ cd $RUNDIR
 export MEM=000
 export BV=no
 ./run || exit 2 #1>run.log 2>run.err
-
 
 MEM=1
 while [ $MEM -le 10 ]; do

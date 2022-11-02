@@ -4,7 +4,8 @@ set -x
 export SDATE=${SDATE:-2022083100}
 export MEM=${MEM:-000}
 export BV=${BV:-no}
-export BP=
+export BP=${BP}
+export BV_H=${BV_H:-6}
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 echo "ENDHOUR=$ENDHOUR PRTHOUR=$PRTHOUR"

@@ -19,8 +19,13 @@ fi
 #export RUNDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}/bv${BV}h_c${CYCLE}
 #export RUNDIR=$WORKUSR/rsm2msm9_tparc/${SDATE}/bv${BV}h_c${CYCLE}
 if [ do$BV = doyes ];then #Bred vector
+if [ $BV_H -gt 6 ]; then
+export RUNDIR=$TEMP/${SDATE}/bv${BV_H}h${MEM}${BP}
+export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/bv${BV_H}h${MEM}${BP}_c${CYCLE}
+else
 export RUNDIR=$TEMP/${SDATE}/bv${MEM}${BP}
 export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/bv${MEM}${BP}_c${CYCLE}
+fi
 else #GEFS downscaling
 if [ "$MEM" = "000" ];then #control
 export RUNDIR=$TEMP/${SDATE}

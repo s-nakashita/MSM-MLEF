@@ -26,8 +26,11 @@ elif [ $CYCLE -eq 0 -o do$BV != doyes ];then
 export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
 else
-export RUNDIR=$TEMP/$SDATE/bv${MEM}${BP}_c${CYCLE} #BGM
+export RUNDIR=$TEMP/$SDATE/bvhalf${MEM}${BP}_c${CYCLE} #BGM
 #export RUNDIR=$TEMP/$SDATE/bv${SIGN}${MEM}${BP}_c${CYCLE} #BGM
+if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ]; then
+export RUNDIR=$TEMP/$SDATE/bvhalf${BV_H}h${MEM}${BP}_c${CYCLE} #BGM
+fi
 if [ do$BP != do ];then
 export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
 else

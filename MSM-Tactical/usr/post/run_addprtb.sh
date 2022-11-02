@@ -61,8 +61,12 @@ IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 #else #c
 #fh=00 #c
 fi
-OUTDIR=$DATADIR/$IDATE/bv${PMEM}${BP}_c${CYCLE} #c
-#OUTDIR=$DATADIR/$IDATE/bv${PMEM}${BP}_a${CYCLE}
+WDIR=bvhalf${PMEM}${BP}
+if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
+WDIR=bvhalf${BV_H}h${PMEM}${BP}
+fi
+OUTDIR=$DATADIR/$IDATE/${WDIR}_c${CYCLE}
+#OUTDIR=$DATADIR/$IDATE/${WDIR}_a${CYCLE}
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
 #OUTPDIR=$DATADIR/$IDATE/bvp${PMEM}${BP}_a${CYCLE}
@@ -147,17 +151,21 @@ ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
 else
 ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
 fi
+if [ $PCYCLE -eq 1 ]; then
 ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
+else
+ln -s $DATADIR/$PDATE/${WDIR}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
 #ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
 #ln -s $DATADIR/$PDATE/bvm${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.12 #a
 #ln -s $DATADIR/$PDATE/bvp${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
+fi
 fi
 ### set namelist
 #if [ $CYCLE -lt 5 ];then
 cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
- teref=2.0d0,
+ teref=1.0d0,
  lonw=110.0,
  lone=153.0,
  lats=15.0,

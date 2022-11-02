@@ -64,7 +64,8 @@ fhs=0
 fi
 dte=$ENDHOUR
 inch=$PRTHOUR
-if [ $IRES -eq 27 ] && [ $CYCLE -lt 5 ]; then
+SPINUP=`expr 24 / $BV_H + 1`
+if [ $IRES -eq 27 ] && [ $CYCLE -lt $SPINUP ]; then
 #dte=`expr 48 - $fhs` #c
 dte=$BV_H #a
 fi
@@ -107,11 +108,16 @@ fi
 #ln -s $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 #fi
 if [ $BV = yes ];then
+if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
+WDIR=bvhalf${BV_H}h${MEM}${BP}
+else
+WDIR=bvhalf${MEM}${BP}
+fi
 if [ $IRES -eq 27 ];then
-ln -s $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
+ln -s $DATADIR/$PDATE/${WDIR}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
 #ln -s $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 else
-ln -s $DATADIR/$PDATE/bv${MEM}${BP}/r_sig.f$fh fort.$nsig #c
+ln -s $DATADIR/$PDATE/${WDIR}/r_sig.f$fh fort.$nsig #c
 fi
 else
 ln -s $DATADIR/$PDATE/${MEM}/r_sig.f$fh fort.$nsig
@@ -148,10 +154,10 @@ cat te.dat
 #fi
 if [ $BV = yes ];then
 if [ $IRES -eq 27 ];then
-mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_c${CYCLE}/te${dt}h.dat #c
+mv te.dat $DATADIR/$PDATE/${WDIR}_c${CYCLE}/te${dt}h.dat #c
 #mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/te${dt}h.dat #a
 else
-mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}/te${dt}h.dat #c
+mv te.dat $DATADIR/$PDATE/${WDIR}/te${dt}h.dat #c
 fi
 else
 mv te.dat $DATADIR/$PDATE/${MEM}/te${dt}h.dat
