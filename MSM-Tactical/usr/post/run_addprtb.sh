@@ -58,35 +58,22 @@ fh=0$fh
 fi
 echo "forecast hour=${fh}"
 IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
-#else #c
-#fh=00 #c
 fi
-WDIR=bvhalf${PMEM}${BP}
+WDIR=bvdry${PMEM}${BP}
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-WDIR=bvhalf${BV_H}h${PMEM}${BP}
+WDIR=bvdry${BV_H}h${PMEM}${BP}
 fi
 OUTDIR=$DATADIR/$IDATE/${WDIR}_c${CYCLE}
-#OUTDIR=$DATADIR/$IDATE/${WDIR}_a${CYCLE}
 rm -rf $OUTDIR
 mkdir -p $OUTDIR
-#OUTPDIR=$DATADIR/$IDATE/bvp${PMEM}${BP}_a${CYCLE}
-#OUTMDIR=$DATADIR/$IDATE/bvm${PMEM}${BP}_a${CYCLE}
-#rm -rf $OUTPDIR
-#mkdir -p $OUTPDIR
-#rm -rf $OUTMDIR
-#mkdir -p $OUTMDIR
 ##copy orography
-#for OUTDIR in $OUTPDIR $OUTMDIR;do
 cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
 cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnvar $OUTDIR/
-#done
 rm -rf tmp
 mkdir -p tmp
 cd tmp
-#. ${EXPDIR}/configure
-#echo $IGRD $JGRD
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field
@@ -128,9 +115,7 @@ export INCHOUR=24
 $JSHDIR/rsm_fcst.sh > rint.log 2>&1 || exit 10
 cd ..
 ln -s $RUNDIR/r_sig.f24 fort.13
-##ln -s $DATADIR/$IDATE/r_sigitdt fort.15 #c(dummy)
 else #ensemble
-#ln -s $DATADIR/$IDATE/mean/r_sig.f00 fort.13
 ln -s $DATADIR/$IDATE/$PMEM/r_sig.f00 fort.12
 ln -s $DATADIR/$IDATE/r_sig.f00 fort.13
 fi
@@ -140,10 +125,6 @@ fh2=$BV_H
 if [ $fh2 -lt 10 ]; then
 fh2=0$fh2
 fi
-#ln -s $DATADIR/$IDATE/r_sig.f$fh fort.12 #c
-#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh2 fort.13 #c
-##ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sig.f$fh fort.13 #c
-#ln -s $DATADIR/$IDATE/bv${BV_H}h_c${PCYCLE}/r_sigitdt fort.15 #c
 PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${IDATE}"` #a
 echo $PDATE #a
 if [ do$BP = dowbp ];then
@@ -151,63 +132,47 @@ ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
 else
 ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
 fi
-if [ $PCYCLE -eq 1 ]; then
-ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
-else
+#if [ $PCYCLE -eq 1 ]; then
+#ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
+#else
 ln -s $DATADIR/$PDATE/${WDIR}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
-#ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
-#ln -s $DATADIR/$PDATE/bvm${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.12 #a
-#ln -s $DATADIR/$PDATE/bvp${PMEM}${BP}_a$PCYCLE/r_sig.f$fh2 fort.13 #a
-fi
+#fi
 fi
 ### set namelist
-#if [ $CYCLE -lt 5 ];then
+SPINUP=`expr 24 / $BV_H + 1`
+if [ $CYCLE -lt $SPINUP ];then
 cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
- teref=1.0d0,
+ teref=3.0d0,
+ epsq=0.0d0,
  lonw=110.0,
  lone=153.0,
  lats=15.0,
  latn=47.0,
 &end
 EOF
-#else
-##### set rescaling magnitude from ensemble spread statistics
-#cat <<EOF >namelist
-#&namlst_prtb
-# setnorm=T,
-# teref=5.8d0,
-# lonw=120.0,
-# lone=164.0,
-# lats=5.0,
-# latn=39.0,
-#&end
-#EOF
-#fi
+else
+#### set rescaling magnitude from ensemble spread statistics
+cat <<EOF >namelist
+&namlst_prtb
+ setnorm=T,
+ teref=3.0d0,
+ epsq=0.0d0,
+ lonw=110.0,
+ lone=153.0,
+ lats=15.0,
+ latn=47.0,
+&end
+EOF
+fi
 ./${EXEC} < namelist #1>>${EXEC}.log 2>&1
 fh=00 #a
 mv fort.51 $OUTDIR/r_sig.f$fh
 cp $OUTDIR/r_sig.f$fh $OUTDIR/r_sigi
-#mv fort.51 $OUTPDIR/r_sig.f$fh
-#cp $OUTPDIR/r_sig.f$fh $OUTPDIR/r_sigi
-#mv fort.52 $OUTMDIR/r_sig.f$fh
-#cp $OUTMDIR/r_sig.f$fh $OUTMDIR/r_sigi
-#if [ $CYCLE -eq 1 ]; then #c
 cp $OUTDIR/r_sig.f$fh $OUTDIR/r_sigitdt
-#cp $OUTPDIR/r_sig.f$fh $OUTPDIR/r_sigitdt
-#cp $OUTMDIR/r_sig.f$fh $OUTMDIR/r_sigitdt
-#else #c
-#mv fort.54 $OUTDIR/r_sigitdt #c
-#fi #c
 mv fort.53 $OUTDIR/r_sfc.f$fh
 cp $OUTDIR/r_sfc.f$fh $OUTDIR/r_sfci
 ls -l $OUTDIR
-#cp fort.53 $OUTPDIR/r_sfc.f$fh
-#mv fort.53 $OUTMDIR/r_sfc.f$fh
-#cp $OUTPDIR/r_sfc.f$fh $OUTPDIR/r_sfci
-#cp $OUTMDIR/r_sfc.f$fh $OUTMDIR/r_sfci
-#ls -l $OUTPDIR
-#ls -l $OUTMDIR
 rm fort.*
 echo END

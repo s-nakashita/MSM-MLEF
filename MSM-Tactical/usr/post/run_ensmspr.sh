@@ -18,10 +18,10 @@ SRCDIR=${MSMDIR}/usr/post
 while [ $SDATE -le $EDATE ];do
 echo $SDATE
 if [ $IRES -eq 27 ]; then
-DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
-EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
-#DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
-#EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
+#DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
+#EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
+EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2msm9_bv/$SDATE
@@ -101,6 +101,6 @@ fh=`echo $fh + $inc_h | bc`
 done
 ls -ltr $DATADIR/mean | tail -n 10
 ls -ltr $DATADIR/sprd | tail -n 10
-SDATE=`date -j -f "%Y%m%d%H" -v+6H +"%Y%m%d%H" "${SDATE}"`
+SDATE=`date -j -f "%Y%m%d%H" -v+24H +"%Y%m%d%H" "${SDATE}"`
 done
 echo END

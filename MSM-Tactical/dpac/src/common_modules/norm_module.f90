@@ -15,17 +15,17 @@ module norm_module
 !======================================================================
 ! calculate moist total energy
 !======================================================================
-subroutine calc_te(u,v,t,q,ps,clat,si,nlon,nlat,te)
+subroutine calc_te(u,v,t,q,ps,epsq,clat,si,nlon,nlat,te)
   implicit none
   integer, intent(in) :: nlon, nlat ! boundaries
   real(kind=dp), intent(in) :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), intent(in) :: ps(:,:)
+  real(kind=dp), intent(in) :: epsq ! weight for moist term
   real(kind=sp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: te(4)
   ! for energy calculation
   integer, parameter :: kmax=21
   real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
-  real(kind=dp), parameter :: epsq=1.0d0
   real(kind=dp) :: area,coef
   integer :: igrd1, jgrd1
   integer :: n,i,j,k

@@ -17,12 +17,13 @@ program addprtb
   real(kind=dp), parameter :: p0=1000.0d2, ptheta=rd/cp ! potential temperature
   real(kind=dp)            :: tscl,qscl,pscl,tbase,qbase
   real(kind=dp) :: teref=0.0d0 !rescaled total energy [J/kg/m2]
+  real(kind=dp) :: epsq=1.0d0   !weight for moist term (0.0=dry)
   logical       :: setnorm=.FALSE. !whether rescaling norm magnitude is given from namelist or not
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 !calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 !calculation region
   integer       :: ilonw,ilone,jlats,jlatn !calculation region
   integer       :: nlon,nlat
-  namelist /namlst_prtb/ setnorm,teref,lonw,lone,lats,latn
+  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: fact(:,:,:),theta(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
@@ -276,7 +277,7 @@ program addprtb
         !PE(T)
         teref=teref+cp/tr*thetascl*thetascl*coef
         !LE
-        teref=teref+lh**2/cp/tr*qscl*qscl*coef
+        teref=teref+epsq*lh**2/cp/tr*qscl*qscl*coef
       end do
     end do
   end do
@@ -292,7 +293,7 @@ program addprtb
   end if
   print*, 'normalized total energy = ', teref
   ! calculate energy
-  call calc_te(u,v,theta,q,ps,clat(jlats:jlatn),si,nlon,nlat,tecmp)
+  call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
   te=sum(tecmp)
   print *, tecmp
 !  te=0.0d0

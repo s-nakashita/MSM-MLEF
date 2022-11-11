@@ -53,7 +53,7 @@ echo "Domain northbound latitude "$LATMAX  >>$DATADIR/Domain_Info
          $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=ge${mem}.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_HGT=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on&var_RH=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgefs.${YMD}%2F${CYC}%2Fatmos%2Fpgrb2ap5" -${OPN} pgbf$fh2
          PGBNAME=pgrb2b.0p50
          FILTER=filter_gefs_atmos_0p50b
-         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=ge${mem}.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_CLWMR=on&var_HGT=on&var_O3MR=on&var_SPFH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_RH=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgefs.${YMD}%2F${CYC}%2Fatmos%2Fpgrb2bp5" -${OPN} pgbbf$fh2
+         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=ge${mem}.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_CLWMR=on&var_HGT=on&var_ICEC=on&var_LAND=on&var_O3MR=on&var_SPFH=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_RH=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgefs.${YMD}%2F${CYC}%2Fatmos%2Fpgrb2bp5" -${OPN} pgbbf$fh2
          cat pgbbf$fh2 >>pgbf$fh2 && rm pgbbf$fh2
       fi
    fi

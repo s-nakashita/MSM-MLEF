@@ -8,7 +8,6 @@ set -ex
 #  exit 1
 #fi
 IDATE=${IDATE:-2022083000}
-EDATE=${EDATE:-$IDATE}
 IRES=${IRES:-27}
 CYCLE=${CYCLE:-1}
 BV_H=${BV_H:-6}
@@ -20,14 +19,9 @@ CYCLE=${2:-$CYCLE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
-#DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad
-#EXPDIR=$MSMDIR/usr/exp/gfsp2rsm27
 DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
-#DATADIR=/zdata/grmsm/work/rsm2msm9_jpn
-#DATADIR=/zdata/grmsm/work/rsm2msm9_tparc
-#EXPDIR=$MSMDIR/usr/exp/rsm2msm9
 DATADIR=/zdata/grmsm/work/rsm2msm9_bv
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 elif [ $IRES -eq 3 ]; then
@@ -48,10 +42,8 @@ fi
 EXEC=calcte
 cd $SRCDIR
 gmake ${EXEC}
-#mkdir -p $DATADIR/stat
 cd ${EXPDIR}
 . ./configure
-#echo $IGRD $JGRD
 cd -
 mkdir -p tmp
 cd tmp
@@ -65,57 +57,38 @@ fi
 dte=$ENDHOUR
 inch=$PRTHOUR
 SPINUP=`expr 24 / $BV_H + 1`
-if [ $IRES -eq 27 ] && [ $CYCLE -lt $SPINUP ]; then
-#dte=`expr 48 - $fhs` #c
+set +e
+EXTEND=`expr $fhs % 24`
+set -e
+if [ $IRES -eq 27 ]; then
+if [ $EXTEND -ne 0 ] || [ $CYCLE -lt $SPINUP ]; then
 dte=$BV_H #a
 fi
-#for dt in 12 24 36 48;do
+fi
 for dt in $(seq 0 $inch $dte);do
-#dt=0 #hour
 CDATE=$IDATE
-while [ $CDATE -le $EDATE ];do
 # latest forecast
 nsig=11
-if [ $fhs -gt 0 ]; then
-fh=`expr $dt + $fhs`
-else
-fh=$dt
-fi
 fh=$dt #a
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
-#ln -s $DATADIR/$CDATE/r_sig.f$fh fort.$nsig #c
-PDATE=`date -j -f "%Y%m%d%H" -v+${fhs}H +"%Y%m%d%H" "${CDATE}"` #a
+PDATE=`date -j -f "%Y%m%d%H" -v+${fhs}H +"%Y%m%d%H" "${IDATE}"` #a
 ln -s $DATADIR/$PDATE/r_sig.f$fh fort.$nsig #a
 # previous forecast
 nsig=`expr $nsig + 1`
-#PDATE=`date -j -f "%Y%m%d%H" -v-${dt}H +"%Y%m%d%H" "${CDATE}"`
-#echo $PDATE
-#fh=`expr $fh + $dt`
-#if [ $fh -lt 10 ]; then
-#fh=0$fh
-#fi
-#ln -s $DATADIR/$PDATE/r_sig.f$fh fort.$nsig
 fh=$dt
 if [ $fh -lt 10 ]; then
 fh=0$fh
 fi
-#ln -s $DATADIR/$CDATE/bv${BV_H}h_c${CYCLE}/r_sig.f$fh fort.$nsig #c
-#if [ $CYCLE -eq 1 ]; then
-#ln -s $DATADIR/$PDATE/bva${CYCLE}/r_sig.f$fh fort.$nsig #a
-#else
-#ln -s $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/r_sig.f$fh fort.$nsig #a
-#fi
 if [ $BV = yes ];then
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-WDIR=bvhalf${BV_H}h${MEM}${BP}
+WDIR=bvdry${BV_H}h${MEM}${BP}
 else
-WDIR=bvhalf${MEM}${BP}
+WDIR=bvdry${MEM}${BP}
 fi
 if [ $IRES -eq 27 ];then
 ln -s $DATADIR/$PDATE/${WDIR}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
-#ln -s $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/r_sig.f$fh fort.$nsig #a
 else
 ln -s $DATADIR/$PDATE/${WDIR}/r_sig.f$fh fort.$nsig #c
 fi
@@ -126,6 +99,7 @@ if [ $IRES -eq 27 ];then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ epsq=0.0d0,
  lonw=110.0,
  lone=153.0,
  lats=15.0,
@@ -136,6 +110,7 @@ else
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ epsq=,
  lonw=,
  lone=,
  lats=,
@@ -145,17 +120,9 @@ EOF
 fi
 ./${EXEC} < NAMELIST #1>>${EXEC}.log 2>&1
 cat te.dat
-#mv te.dat $DATADIR/stat/te${dt}h${CDATE}.dat
-#mv te.dat $DATADIR/$CDATE/bv${BV_H}h_c${CYCLE}/te${dt}h.dat #c
-#if [ $CYCLE -eq 1 ]; then
-#mv te.dat $DATADIR/$PDATE/bva${CYCLE}/te${dt}h.dat #a
-#else
-#mv te.dat $DATADIR/$PDATE/bv${BV_H}h_a${CYCLE}/te${dt}h.dat #a
-#fi
 if [ $BV = yes ];then
 if [ $IRES -eq 27 ];then
 mv te.dat $DATADIR/$PDATE/${WDIR}_c${CYCLE}/te${dt}h.dat #c
-#mv te.dat $DATADIR/$PDATE/bv${MEM}${BP}_a${CYCLE}/te${dt}h.dat #a
 else
 mv te.dat $DATADIR/$PDATE/${WDIR}/te${dt}h.dat #c
 fi
@@ -163,7 +130,5 @@ else
 mv te.dat $DATADIR/$PDATE/${MEM}/te${dt}h.dat
 fi
 rm fort.*
-CDATE=`date -j -f  "%Y%m%d%H" -v+12H +"%Y%m%d%H" "${CDATE}"`
-done
 done
 echo END

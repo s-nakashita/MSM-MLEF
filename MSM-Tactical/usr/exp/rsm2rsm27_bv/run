@@ -13,12 +13,13 @@ if [ $CYCLE -gt 1 ]; then
    fh=`expr $BV_H \* $PCYCLE`
    SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${SDATE}"`
    export SDATE
+   EXTEND=`expr $fh % 24`
 fi
 SPINUP=`expr 24 / $BV_H + 1`
 
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
-if [ $CYCLE -lt $SPINUP ];then
+if [ $CYCLE -lt $SPINUP ] || [ $EXTEND -ne 0 ];then
 export ENDHOUR=${BV_H}
 fi
 echo $ENDHOUR $BASEDIR $RUNDIR

@@ -44,7 +44,7 @@ module obs_module
 ! 
 ! debug
 !
-  logical, parameter :: debug=.false.
+  logical, parameter :: debug=.true.
 
   public :: obstype, openfile, get_nobs, read_upper 
 contains
@@ -108,7 +108,6 @@ contains
     ntype = int(nrec4/3)
     allocate( did(ntype),ndata(ntype),nobseach(ntype) )
     ! count all data types
-    ndataall=0
     do i=1,ntype
       read(inf,rec=irec) ibuf2
       did(i) = int(ibuf2,kind=4)
@@ -119,14 +118,13 @@ contains
       read(inf,rec=irec) ibuf2
       nobseach(i) = int(ibuf2,kind=4)
       irec=irec+1
-      ndataall=ndataall+ndata(i)
+      print *, did(i), ndata(i), nobseach(i)
     end do
-    if(debug) print *, ntype,ndataall
     ! count all observation number
+    ndataall=0
     nobs=0
     ioffset=nrec_time+nrec_info
     do i=1,ntype
-      if(debug) print *, did(i), ndata(i), nobseach(i)
       do j=1,ndata(i)
         ! read part 1 and extract information
         call read_part1(inf,ioffset,idrec,data1)
@@ -144,14 +142,16 @@ contains
           tmphour=int(ibuf2,kind=4)/100
           tmpminu=int(ibuf2,kind=4)-tmphour*100
           imin=tmphour*60+tmpminu
-      !    if((imin.ge.smin).and.(imin.lt.emin)) then
+          if((imin.ge.smin).and.(imin.lt.emin)) then
             if(debug) print *, 'total minutes =',imin
             nobs=nobs+(nrec4-2)/10*nobstype_upper
-      !    end if
+          end if
         end if
         ioffset=ioffset+nrecall
+        ndataall=ndataall+1
       end do
     end do
+    print *, ntype,ndataall
     return
   end subroutine get_nobs
 
@@ -189,12 +189,6 @@ contains
     do n=1,ndataall
       ! read part 1 and extract information
       call read_part1(inf,ioffset,idrec,data1)
-      if(debug) then
-        print *, 'reading part 1 of record ',idrec
-        print *, '# of address', nrecall
-        print *, nrec1,nrec2,nrec3,nrec4,nrec5
-        print *, data1
-      end if
       nrec_data = nrecall
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
@@ -202,7 +196,7 @@ contains
       if(nn==0) then
         latb=data1(2);lonb=data1(3)
       end if
-      if((nn>0).and.(data1(2)/=latb).and.(data1(3)/=lonb)) then
+      if((data1(2)/=latb).and.(data1(3)/=lonb)) then
         if(debug) then
           print *, 'latlon(previous) ',latb, lonb
           print *, 'latlon(current)  ',data1(2), data1(3)
@@ -215,16 +209,23 @@ contains
       end if
       ! use only 3XXX data type
       if(floor(real(dtype,kind=dp)*1.0d-3).eq.3) then
+        if(debug) then
+          print *, 'reading part 1 of record ',idrec
+          print *, '# of address', nrecall
+          print *, nrec1,nrec2,nrec3,nrec4,nrec5
+          print *, data1
+        end if
         ! read hour and minutes
         irec=ioffset+nrec1+6
         read(inf,rec=irec) ibuf2
         tmphour=int(ibuf2,kind=4)/100
         tmpminu=int(ibuf2,kind=4)-tmphour*100
         imin=tmphour*60+tmpminu
+        if(debug) print *, 'total minutes =',imin
         if((imin.ge.smin).and.(imin.lt.emin)) then
           if(debug) then
-            print *, 'dtype,lat,lon,hour,minutes,total minutes'
-            print *, dtype,tmplat,tmplon,tmphour,tmpminu,imin
+            print *, 'dtype,lat,lon,hour,minutes'
+            print *, dtype,tmplat,tmplon,tmphour,tmpminu
           end if
           irec=ioffset+nrec1+nrec2+nrec3+1
           read(inf,rec=irec) ibuf2
@@ -237,11 +238,13 @@ contains
             irec=irec+2
             read(inf,rec=irec) ibuf2 !accuracy
             write(acc,'(b16.16)') ibuf2
-            if(ibuf2/=0) then
+            if(debug) then
+              print *, 'accuracy'
               print *, ibuf2
-              print '(a16)', acc
+              print *, acc
             end if
-            if(ibuf2<0) then
+            if(ibuf2/=0) then
+            !if(ibuf2<0) then
               irec=irec+8
               cycle
             end if

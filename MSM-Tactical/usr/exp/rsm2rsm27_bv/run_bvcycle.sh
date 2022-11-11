@@ -12,13 +12,15 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-export CYCLE=9
+for CYCLE in $(seq 1 29);do
+export CYCLE
 ### control
+cd $EXPDIR
 export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
-MEM=1
+MEM=2
 while [ $MEM -le 10 ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR
@@ -36,10 +38,19 @@ if [ $GLOBAL != GFS ];then
 ### downscaling
 cd $EXPDIR
 export BV=no
-export SDATE=$IDATE
-./run || exit 2 #1>run.log 2>run.err
-cd $POSTDIR
-./run_calcte.sh || exit 4 #1>out.log 2>out.err
+if [ $CYCLE -gt 1 ]; then
+   PCYCLE=`expr $CYCLE - 1`
+   fh=`expr $BV_H \* $PCYCLE`
+   SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"`
+   export SDATE
+fi
+. ./configure
+#if [ ! -d $RUNDIR ]; then
+#export SDATE=$IDATE
+#./run || exit 2 #1>run.log 2>run.err
+#cd $POSTDIR
+#./run_calcte.sh || exit 4 #1>out.log 2>out.err
+#fi
 fi
 #### breeding
 export BV=yes
@@ -52,16 +63,23 @@ export BP=wbp
 fi
 ### start cycle
 cd $EXPDIR
+if [ $CYCLE -gt 1 ]; then
+   PCYCLE=`expr $CYCLE - 1`
+   fh=`expr $BV_H \* $PCYCLE`
+   SDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"`
+   export SDATE
+fi
 . ./configure
-if [ ! -d $RUNDIR ]; then
+#if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $EXPDIR
-fi
+#fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
 #done
 MEM=`expr $MEM + 1`
+done
 done

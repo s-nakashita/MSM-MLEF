@@ -9,9 +9,10 @@ program calcte
   use norm_module, only: calc_te
   implicit none
   logical :: lprtb=.true. ! False=>calculate for full field
+  real(kind=dp) :: epsq=1.0d0 ! weight for moist term
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 ! calculation region
-  namelist /namlst_prtb/ lprtb, lonw, lone, lats, latn
+  namelist /namlst_prtb/ lprtb, epsq, lonw, lone, lats, latn
   integer :: ilonw, ilone, jlats, jlatn ! calculation region indexes
   integer :: nlon, nlat
   ! for energy calculation
@@ -247,7 +248,7 @@ program calcte
     print *, u(:,67,k)
   end do
   ! calculate energy
-  call calc_te(u,v,theta,q,ps,clat(jlats:jlatn),si,nlon,nlat,te)
+  call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,te)
 !  te=0.0d0
 !  area=0.0d0
 !  do k=1,kmax
