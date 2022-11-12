@@ -12,8 +12,15 @@ fi
 SDATE=${1}
 IRES=${2}
 ENDHOUR=${3}
-MEM=${4:-000}
-if [ $IRES -eq 9 ]; then
+MEM=${4}
+if [ $IRES -eq 27 ]; then
+if [ do$MEM = do ]; then
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
+else
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$MEM/$SDATE
+fi
+elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 #FIGDIR=/zdata/grmsm/fig/rsm2msm9_jpn/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM

@@ -11,8 +11,12 @@ fi
 SDATE=${1}
 IRES=${2}
 ENDHOUR=${3}
-MEM=${4:-000}
+MEM=${4}
 if [ $IRES -eq 27 ]; then
+if [ do$MEM = do ]; then
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
+else
 #DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE/$MEM
 if [ "$MEM" = "000" ]; then
 DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
@@ -20,6 +24,7 @@ else
 DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/$MEM
 fi
 #DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
+fi
 elif [ $IRES -eq 9 ]; then
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE/bvc1
 #DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM

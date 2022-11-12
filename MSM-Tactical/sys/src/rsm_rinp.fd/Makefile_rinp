@@ -12,7 +12,7 @@ LIBS            =$(F_LIBS_RINP)
 FORT_FLAGS      =$(F_FLAG_RINP)
 INCLUDE_DIR     =-I.
 
-OBJ_MOD = machine.o physcons.o istack.o cnttime.o funcphys.o
+OBJ_MOD = machine.o physcons.o istack.o cnttime.o funcphys.o new_sst.o
 
 OBJ_RINP= mainrinp.o gncpus.o g2rinp.o c2rinp.o s2rinp.o rchgr.o extrap.o newps.o newsig.o \
 	sigset.o sg2sg.o trispl.o valts.o setlatlon.o sphpt1.o sphpt2.o rpln2i.o \

@@ -41,6 +41,7 @@
 !
 !$$$
       use machine , only : kind_io4
+      use newsst_module, only : new_sst !added by SN
 !ccj
 #include <paramodel.h>
 !cc
@@ -115,6 +116,12 @@
       integer version
 !
       logical lsig,lmtn,lhor,lc2r,ls2r,lp2r,lsst
+!
+! added by SN
+      integer issttype
+      namelist/namsst/ issttype
+      data issttype/0/
+! added by SN
 !
       print *,' +++++++++++++ start regional chgr ++++++++++ '
       if(lhor) then
@@ -406,9 +413,13 @@
 !
 ! use new sst on sea points
 !
-         call ana_sst(ggrido1,ijdimo,flato,flono)
+         rewind(5)
+         read(5,namsst)
+         call maxmin(ggridn,ijdimo,1,1,1,'before new_sst tsea') !added by SN
+         !call ana_sst(ggrido1,ijdimo,flato,flono)
+         call new_sst(ggrido1,ijdimo,flato,flono,issttype) !added by SN
          do n=1,ijdimo
-           if( slmsk(n).eq.0.0 ) then
+           if( slmsk(n).eq.0.0 .and. ggrido1(n).gt.0.0 ) then
              ggridn(n)= max( ggrido1(n), 271.21e0 )
            endif
          enddo

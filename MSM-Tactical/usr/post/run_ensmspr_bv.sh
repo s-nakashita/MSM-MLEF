@@ -65,7 +65,7 @@ header=bv
 else
 header=bv${BV_H}h
 fi
-header=${header}weak
+header=${header}dry
 rm -rf $DATADIR/${header}mean${BP}${SUF}
 mkdir -p $DATADIR/${header}mean${BP}${SUF}
 rm -rf $DATADIR/${header}sprd${BP}${SUF}
