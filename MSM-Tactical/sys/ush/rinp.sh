@@ -66,13 +66,6 @@ if [ do$dtype = doP2R ] ; then
 fi
 if [ do$NEWSST = do.TRUE. ] ; then
     #ln -fs rb_sstf$fh   sst.grib
-    cymdh=`${UTLDIR}/ndate ${fh} ${SDATE}`
-    cyyyy=`echo ${cymdh} | cut -c1-4`
-    cymd=`echo ${cymdh} | cut -c1-8`
-    if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
-      exit 99
-    fi
-    ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
     echo " &namsst                                         " >>rinpparm
     echo "    issttype=0,                                  " >>rinpparm
     echo " &end                                            " >>rinpparm

@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 
+project(dummy NONE)
 set(CMAKE_Fortran_COMPILER "/home/nakashita/.local/bin/caf")
+#set(CMAKE_Fortran_COMPILER "/home/nakashita/.local/bin/gfortran")
 
 project(dpac)
 enable_language(Fortran)
+set(CMAKE_Fortran_FLAGS "-O2 -fconvert=big-endian")
+#set(CMAKE_Fortran_PREPROCESS ON)
 
 find_package(MPI REQUIRED)
 message(STATUS "MPI_FOUND=${MPI_FOUND}")

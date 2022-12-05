@@ -435,7 +435,8 @@
      &   tsea,smc,sheleg,stc,tg3,zorl,                                   &
      &   cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                 &
      &   uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,           &
-     &   0,nrflip,rsfcsec,lsfcmrg)
+     &   0,nrflip,rsfcsec,lsfcmrg,                                       &
+     &   flon,flat,lnewsst) !added by SN
 #ifdef NONHYD
       if(fhour.eq.0.0) then
         mid=0.5*LNWAVS

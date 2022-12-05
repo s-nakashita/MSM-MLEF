@@ -17,7 +17,7 @@ OBJ_MOD = machine.o  istack.o cnttime.o physcons.o funcphys.o module.o module_pr
         module_sw.o module_ras.o module_rascnv.o physics_module.o \
         radlw_rrtm_param.o radlw_rrtm_datatb.o radlw_rrtm_main.o  radiation_module.o \
         phys_mps_wsm3_p.o phys_mps_wsm5_p.o phys_mps_wsm6_p.o \
-	module_bfmicrophysics.o write_to_grads.o
+	module_bfmicrophysics.o write_to_grads.o new_sst.o
 
 OBJ_FFT99M= fax.o fftrig.o vpassm.o fft99m.o fft99a.o fft99b.o rfftmlt.o
 

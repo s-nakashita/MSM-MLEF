@@ -3,18 +3,18 @@
 #############################
 #### set all definitions ####
 #############################
-#export SDATE=2022090812
+#export SDATE=2022083100
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 echo $RUNDIR
-rm -rf ${TEMP}/${SDATE}
+#rm -rf ${TEMP}/${SDATE}
 ###########################
 #### download gfs data ####
 ###########################
-if [ $RDA = 'no' ]; then
-$USHDIR/download_gfs.sh
-else
+if [ do$RDA = doyes ]; then
 $USHDIR/download_gfspy.sh
+else
+$USHDIR/download_gfs.sh
 fi
 #####################
 #### excute fcst ####

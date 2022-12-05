@@ -2,14 +2,14 @@
 #
 # for control run
 #
-export IDATE=2022083118
-export EDATE=2022083118
-export GLOBAL=GEFS
+export IDATE=2022082900
+export EDATE=2022083100
+export GLOBAL=GFS
 #export IDATE=2022061800
 #export EDATE=2022062000
 #export GLOBAL=GFS
 export SIGN=
-export BV_H=12
+export BV_H=6
 
 RUNDIR=`pwd`
 POSTDIR=`cd ../../post && pwd`

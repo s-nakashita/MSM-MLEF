@@ -11,6 +11,7 @@ IDATE=${IDATE:-2022083000}
 IRES=${IRES:-27}
 CYCLE=${CYCLE:-1}
 BV_H=${BV_H:-6}
+TETYPE=${TETYPE}
 MEM=${MEM:-003}
 BV=${BV:-yes}
 BP=${BP} #with boundary perturbation
@@ -19,10 +20,10 @@ CYCLE=${2:-$CYCLE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
-DATADIR=/zdata/grmsm/work/rsm2msm9_bv
+DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_bv
@@ -83,9 +84,9 @@ fh=0$fh
 fi
 if [ $BV = yes ];then
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-WDIR=bvdry${BV_H}h${MEM}${BP}
+WDIR=bv${TETYPE}${BV_H}h${MEM}${BP}
 else
-WDIR=bvdry${MEM}${BP}
+WDIR=bv${TETYPE}${MEM}${BP}
 fi
 if [ $IRES -eq 27 ];then
 ln -s $DATADIR/$PDATE/${WDIR}_c${CYCLE}/r_sig.f$fh fort.$nsig #c
@@ -99,7 +100,7 @@ if [ $IRES -eq 27 ];then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
- epsq=0.0d0,
+ epsq=,
  lonw=110.0,
  lone=153.0,
  lats=15.0,

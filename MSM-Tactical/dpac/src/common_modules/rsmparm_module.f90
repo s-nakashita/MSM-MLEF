@@ -15,6 +15,9 @@ module rsmparm_module
   !!! horizontal grid numbers
   integer,save,public :: igrd1, jgrd1
   integer,save,public :: lngrd
+  !!! horizontal wave numbers
+  integer,save,public :: iwav1, jwav1
+  integer,save,public :: lnwav
   !!! vertical levels
   integer,save,public :: nlev
   !!! projection parameters
@@ -71,6 +74,7 @@ module rsmparm_module
     integer :: idate(4)
     real(kind=sp) :: fhour,sisl(2*levmax+1),ext(nwext)
     real(kind=sp),allocatable :: sfld(:)
+    integer :: iwav, jwav
     integer :: i,j,k
     
     write(6,'(A)') 'start set_rsmparm'
@@ -84,6 +88,13 @@ module rsmparm_module
     else
       icld=0
     end if
+    ! calculate wave numbers
+    iwav = (igrd1 - 13)/3*2
+    jwav = iwav*(jgrd1-1)/2/(igrd1-1)*2
+    iwav1 = iwav + 1
+    jwav1 = jwav + 1
+    lnwav = iwav1*jwav1
+    write(6,'(A,2i6)') 'iwav1 jwav1=',iwav1,jwav1
     
     allocate( rlon(igrd1), rlat(jgrd1) )
     allocate( sig(nlev), sigh(nlev+1) )

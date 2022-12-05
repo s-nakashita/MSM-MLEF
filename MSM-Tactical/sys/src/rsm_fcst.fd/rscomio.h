@@ -25,6 +25,6 @@
       common/rcomio/  fhseg,fhout,fhswr,fhlwr,fhbas,fhdfi,fhken
       common/rcomioi/ nsseg,nsout,nsswr,nslwr,nsbas,nsdfi
       logical         lfnhr,lsfwd,lsftr,lssav,lsout,lsimp,lsphy,         &  
-     &                lscca,lsswr,lslwr,lsbgt,lsken,lsdmp,lsfcmrg 
+     &                lscca,lsswr,lslwr,lsbgt,lsken,lsdmp,lsfcmrg,lnewsst 
       common/rcomiol/ lfnhr,lsfwd,lsftr,lssav,lsout,lsimp,lsphy,         &  
-     &                lscca,lsswr,lslwr,lsbgt,lsken,lsdmp,lsfcmrg
+     &                lscca,lsswr,lslwr,lsbgt,lsken,lsdmp,lsfcmrg,lnewsst 

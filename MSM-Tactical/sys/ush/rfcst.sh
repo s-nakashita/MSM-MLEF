@@ -40,7 +40,7 @@ rm -f $PROG.x
 #ln -fs $EXPEXE/$PROG.x $PROG.x
 cp $EXPEXE/$PROG.x $PROG.x
 ###$RUNENV ./$PROG.x <rfcstparm >stdout.fcst$hx 2>&1
-$RUNENV $PROG.x <rfcstparm 2>&1 | tee stdout.fcst$hx
+$RUNENV ./$PROG.x <rfcstparm 2>&1 | tee stdout.fcst$hx
 #
 if [ $? -ne 0 ] ; then
    echo " Error after "$PROG.x

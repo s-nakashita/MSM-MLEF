@@ -13,6 +13,7 @@ PMEM=${MEM:-001} #prtb member
 IRES=27
 CYCLE=${CYCLE:-3}
 BV_H=${BV_H:-6}
+TETYPE=${TETYPE}
 BP=${BP} #with boundary perturbation
 CYCLE=${1:-$CYCLE}
 #IDATE=${1}
@@ -22,10 +23,11 @@ SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
 if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
 BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
+BASE=/zdata/grmsm/work/gfsp2rsm27_rda
 else
 BASE=/zdata/grmsm/work/gefs2rsm27_nomad
 fi
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
 BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
@@ -59,9 +61,9 @@ fi
 echo "forecast hour=${fh}"
 IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 fi
-WDIR=bvdry${PMEM}${BP}
+WDIR=bv${TETYPE}${PMEM}${BP}
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-WDIR=bvdry${BV_H}h${PMEM}${BP}
+WDIR=bv${TETYPE}${BV_H}h${PMEM}${BP}
 fi
 OUTDIR=$DATADIR/$IDATE/${WDIR}_c${CYCLE}
 rm -rf $OUTDIR
@@ -139,13 +141,20 @@ ln -s $DATADIR/$PDATE/${WDIR}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
 #fi
 fi
 ### set namelist
+if [ "$TETYPE" = "dry" ];then
+epsq=0.0d0
+elif [ "$TETYPE" = "weak" ]; then
+epsq=0.1d0
+else
+epsq=1.0d0
+fi
 SPINUP=`expr 24 / $BV_H + 1`
 if [ $CYCLE -lt $SPINUP ];then
 cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
  teref=3.0d0,
- epsq=0.0d0,
+ epsq=${epsq},
  lonw=110.0,
  lone=153.0,
  lats=15.0,
@@ -158,7 +167,7 @@ cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
  teref=3.0d0,
- epsq=0.0d0,
+ epsq=${epsq},
  lonw=110.0,
  lone=153.0,
  lats=15.0,

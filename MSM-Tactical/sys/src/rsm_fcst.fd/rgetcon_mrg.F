@@ -37,7 +37,7 @@
      &                basesec,rdfisec,rkensec,                           &
      &                rlxhsec,rlxmsec,rlxzsec,difhsec,difmsec,rsfcsec,   &
      &                isemimp,iimprlx,idmpjet,imdlphy,ioutnhr,           &
-     &                isfcmrg
+     &                isfcmrg,inewsst
 #ifdef RKN
       namelist/namrkn/                                                   &
      &                npoint,idstat,gpdnam,gpdlat,gpdlon,gpdgzs,         & !binbin add: idstat
@@ -74,6 +74,7 @@
       imdlphy=1
       ioutnhr=1
       isfcmrg=0
+      inewsst=0 !added by SN
       dtphys=0
       icen=7
       igen=rgen
@@ -124,6 +125,7 @@
       ilist(10)=imdlphy
       ilist(11)=ioutnhr
       ilist(12)=isfcmrg
+      ilist(13)=inewsst !added by SN
 !
       rlist(1)=runid
       rlist(2)=usrid
@@ -146,7 +148,7 @@
 !
       endif
 !
-      call rmpbcasti(ilist,12)
+      call rmpbcasti(ilist,13) !modified by SN
       call rmpbcastr(rlist,18)
 !
       icen   =ilist(1)
@@ -161,6 +163,7 @@
       imdlphy=ilist(10)
       ioutnhr=ilist(11)
       isfcmrg=ilist(12)
+      inewsst=ilist(13) !added by SN
 !
       runid  =rlist(1)
       usrid  =rlist(2)
@@ -307,6 +310,7 @@
       fhdfi = nsdfi*deltim/3600.
       lfnhr = ioutnhr.eq.1
       lsfcmrg = isfcmrg.eq.1
+      lnewsst = inewsst.eq.1 !added by SN
 #ifdef RKN
       if(npoint.gt.0.and.npoint.le.nptken) then
         if(nsken.le.0) then

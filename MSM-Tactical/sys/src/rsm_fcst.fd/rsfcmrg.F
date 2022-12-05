@@ -1,7 +1,8 @@
        subroutine rsfcmrg(label,fhour,idate,                             &  
      &    tsea,smc,sheleg,stc,tg3,zorl,                                  &
      &    cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                &
-     &    uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf)
+     &    uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,          &
+     &    flon,flat,lnewsst) !added by SN
 !
 ! usage:    call rsfcmrg(fhour,tsea,smc,sheleg,stc,tg3,zorl,
 !          &    cv,cvb,cvt,albed,slmsk,f10m,canopy,hprime,
@@ -25,6 +26,7 @@
 !
 !$$$
       use machine , only : kind_io4
+      use newsst_module , only : new_sst !added by SN
 #include <paramodel.h>
 #ifdef MP
 #include <npesi.h>
@@ -99,6 +101,13 @@
       character cfhour*16,cform*40,filename*100
       data  nsfc/12/
       save nsfc
+! added by SN
+      logical lnewsst
+      integer isst
+      data isst/0/
+      dimension gnewsst(LNGRDS)
+      integer instmsk(LNGRDS)
+! added by SN
 
 !cc
 #ifdef MP
@@ -252,6 +261,23 @@
       endif
  50   continue
 
+      if(lnewsst) then
+        call new_sst(rgs,instmsk,LNGRDS,flat,flon,isst)
+        call sgl2ful(rgs,gnewsst,LNGRDS)
+        do 80 i=1,LNGRDS
+          if( slmsk(i).eq.0.0.and.instmsk(i).eq.0) then
+!.and.gnewsst(i).gt.0.0 ) then
+            gtsea(i) = gnewsst(i)
+          end if
+ 80     continue
+#ifdef MP
+      if( mype.eq.master ) then
+#endif
+        call maxmin(gtsea,LNGRDS,1,1,1,'new tsea')
+#ifdef MP
+      endif
+#endif
+      endif
       do 101 i=1,LNGRDS
         if( slmsk(i) .eq. 0.0 ) tsea(i)= gtsea(i)
  101  continue

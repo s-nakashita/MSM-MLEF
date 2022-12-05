@@ -1,7 +1,8 @@
 #!/bin/sh
-export IDATE=2022083000
-export GLOBAL=GEFS
-export BV_H=24
+export IDATE=2022082900
+export GLOBAL=GFS
+export BV_H=6
+export TETYPE=dry
 #export IDATE=2022061400
 #export GLOBAL=GFS
 #export BV_H=12
@@ -13,7 +14,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-export CYCLE=3
+export CYCLE=9
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`
@@ -35,14 +36,14 @@ else
 MEM=0$MEM
 fi
 export MEM
-if [ $GLOBAL != GFS ];then
-### downscaling
-cd $RUNDIR
-export BV=no
-./run || exit 2 #1>run.log 2>run.err
-cd $POSTDIR
-./run_calcte.sh || exit 4 #1>out.log 2>out.err
-fi
+#if [ $GLOBAL != GFS ];then
+#### downscaling
+#cd $RUNDIR
+#export BV=no
+#./run || exit 2 #1>run.log 2>run.err
+#cd $POSTDIR
+#./run_calcte.sh || exit 4 #1>out.log 2>out.err
+#fi
 #### breeding
 export BV=yes
 #for j in $(seq 0 1 1);do

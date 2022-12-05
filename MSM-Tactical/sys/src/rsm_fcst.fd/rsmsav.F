@@ -116,7 +116,8 @@
      &   tsea,smc,sheleg,stc,tg3,zorl,                                   &
      &   cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                 &
      &   uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,           &
-     &   1,nrflop,rsfcsec,lsfcmrg)
+     &   1,nrflop,rsfcsec,lsfcmrg,                                       &
+     &   flon,flat,lnewsst)
 #ifdef MP
       call rmpsynall
 #endif

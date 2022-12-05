@@ -2,7 +2,8 @@
      &    tsea,smc,sheleg,stc,tg3,zorl,                                  &
      &    cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                &
      &    uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,          &
-     &    ioflag,nunit,rsfcsec,lsfcmrg)
+     &    ioflag,nunit,rsfcsec,lsfcmrg,                                  &
+     &    flon,flat,lnewsst) !added by SN
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:  rfixio
@@ -85,10 +86,12 @@
      &          ffmm  (LNGRDS),   ffhh(LNGRDS),                          &
      &          alvsf (LNGRDS),  alvwf(LNGRDS),                          &
      &          alnsf (LNGRDS),  alnwf(LNGRDS),                          &
-     &          facsf (LNGRDS),  facwf(LNGRDS)
+     &          facsf (LNGRDS),  facwf(LNGRDS),                          &
+     &          flon  (LNGRDS),  flat (LNGRDS) !added by SN
       integer,save :: version
       data version/199802/
       logical lsfcmrg
+      logical lnewsst !added by SN
 #ifdef MP
       allocate (spec(lngrd))
       allocate (spec2(lngrd))
@@ -435,7 +438,8 @@
            call rsfcmrg(label,fhour,idate,                               &   
      &   tsea,smc,sheleg,stc,tg3,zorl,                                   &
      &   cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                 &
-     &   uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf)
+     &   uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,           &
+     &   flon,flat,lnewsst) !added by SN
       endif
 #ifdef MP
       if( mype.eq.master ) then

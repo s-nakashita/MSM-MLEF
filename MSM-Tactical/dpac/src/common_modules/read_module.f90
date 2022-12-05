@@ -6,7 +6,8 @@ module read_module
 ! 
 ! namelist:
 !
-implicit none
+  use kind_module
+  implicit none
   private
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
   integer, parameter, public :: lsoil=2, nfldsfc=26
@@ -31,13 +32,13 @@ subroutine read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
   character(len=8),intent(out) :: label(4)
   integer,intent(out) :: idate(4), nflds
-  real(kind=4),intent(out) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
+  real(kind=sp),intent(out) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
   integer :: iret
   integer :: iymdh
-  real(kind=4) :: sisl(2*levmax+1)
+  real(kind=sp) :: sisl(2*levmax+1)
   ! components of ext
   integer :: iwav1,jwav1,igrd1,jgrd1,levs,nfldx,proj,nonhyd
-  real(kind=4) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
+  real(kind=sp) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
  &                delx, dely
   
   print *, 'read and extract header record'
@@ -106,21 +107,21 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   integer, intent(in) :: igrd1, jgrd1, levs, nflds 
   integer, intent(in) :: nonhyd
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
-  real(kind=4), intent(in)  :: fhour
-  real(kind=4), intent(in)  :: sl(levs)
-  real(kind=4), intent(out) :: dfld(igrd1,jgrd1,nflds)
-  real(kind=4), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
-  real(kind=4), intent(out) :: clat(jgrd1),clon(igrd1)
+  real(kind=sp), intent(in)  :: fhour
+  real(kind=sp), intent(in)  :: sl(levs)
+  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nflds)
+  real(kind=sp), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
+  real(kind=sp), intent(out) :: clat(jgrd1),clon(igrd1)
   integer :: iret
   integer :: nwf, irec
   integer :: i,j,k,l,m
   integer :: igz, ips, it, iu, iv, iq, ioz, icw, ipn, itn, iwn, &
  &           im2
   integer :: iphys3d(3)
-  real(kind=4), allocatable :: sfld(:)
-  real(kind=4), allocatable :: factor(:,:,:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, rad2deg=180.0/pi
+  real(kind=sp), allocatable :: sfld(:)
+  real(kind=sp), allocatable :: factor(:,:,:)
+  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
+  real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
   
   iret = 0
   rewind(iunit)
@@ -398,11 +399,11 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   implicit none
   integer, intent(in) :: iunit
   integer,intent(in) :: igrd1, jgrd1
-  real(kind=4), intent(out) :: dfld(igrd1,jgrd1,nfldsfc)
+  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nfldsfc)
   ! header
   character(len=8) :: label(4)
   integer :: idate(4), iymdh
-  real(kind=4) :: fhour
+  real(kind=sp) :: fhour
   integer :: grdtmp(2), version
   !
   integer :: iret
@@ -411,10 +412,10 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   integer :: itsea, ismc, isheleg, istc, itg3, izorl, icv, icvb, &
 &            icvt, islmsk, ivfrac, if10m, icanopy, ivtype, istype, iuustar, iffmm, &
 &            iffhh, ialvsf, ialvwf, ialnsf, ialnwf, ifacsf, ifacwf
-  real(kind=4), allocatable :: sfld(:), sfldl(:)
-  real(kind=4), allocatable :: tmps2(:,:), tmps4(:,:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, rad2deg=180.0/pi
+  real(kind=sp), allocatable :: sfld(:), sfldl(:)
+  real(kind=sp), allocatable :: tmps2(:,:), tmps4(:,:)
+  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
+  real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
   
   print *, 'read and extract header record'
   iret = 0
@@ -751,10 +752,10 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   implicit none
   integer, intent(in) :: iunit
   integer, intent(in) :: igrd1, jgrd1
-  real(kind=4), intent(out) :: dfld(igrd1,jgrd1,nfldflx)
+  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nfldflx)
   integer, intent(out)      :: ids(255)
   integer, intent(out)      :: iparam(nfldflx)
-  real(kind=4), intent(out) :: fhour, zhour
+  real(kind=sp), intent(out) :: fhour, zhour
   integer, parameter :: iprs=1, itemp=11, iznlw=33, imerw=34, isphum=51, ipwat=54, &
   &                     ipcpr=59, isnowd=65, icldf=71, iccldf=72, islmsk=81, izorl=83, &
   &                     ialbdo=84, isoilm=144, icemsk=91, ilhflx=121, ishflx=122, izws=124, &
@@ -784,13 +785,13 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   integer :: maxbit, iptv, icen, igen, ibm, il1k, il2k, ip1, ip2, ina, inm, &
   &          icen2, inst, iavg, iacc, ifhour, ifday, ifhr, ithr, ilpds, idrt,&
   &          igrd2, jgrd2
-  real(kind=4) :: colat, rlat1, rlon1, rlat2, rlon2, delx, dely, ortru, proj
+  real(kind=sp) :: colat, rlat1, rlon1, rlat2, rlon2, delx, dely, ortru, proj
   integer :: nflds, nwf, irec
   integer :: itype, ilev, itime
   integer :: i,j,k,l,k4
-  real(kind=4), allocatable :: sfld(:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, rad2deg=180.0/pi
+  real(kind=sp), allocatable :: sfld(:)
+  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
+  real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
   
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf

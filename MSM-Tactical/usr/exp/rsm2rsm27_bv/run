@@ -8,6 +8,7 @@ export BV=${BV:-no}
 export BP=${BP}
 export CYCLE=${CYCLE:-0}
 export BV_H=${BV_H:-6}
+export TETYPE=${TETYPE}
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`

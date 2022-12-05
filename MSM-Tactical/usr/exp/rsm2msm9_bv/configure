@@ -15,24 +15,25 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/${EXPN}          #output top directory
+   export TEMP=$WORKUSR/${EXPN}gfs          #output top directory
 fi
 #export RUNDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}/bv${BV}h_c${CYCLE}
 #export RUNDIR=$WORKUSR/rsm2msm9_tparc/${SDATE}/bv${BV}h_c${CYCLE}
 if [ do$BV = doyes ];then #Bred vector
 if [ $BV_H -gt 6 ]; then
-export RUNDIR=$TEMP/${SDATE}/bv${BV_H}h${MEM}${BP}
-export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/bv${BV_H}h${MEM}${BP}_c${CYCLE}
+export RUNDIR=$TEMP/${SDATE}/bv${TETYPE}${BV_H}h${MEM}${BP}
+export BASEDIR=$WORKUSR/rsm2rsm27_bvgfs/${SDATE}/bv${TETYPE}${BV_H}h${MEM}${BP}_c${CYCLE}
 else
-export RUNDIR=$TEMP/${SDATE}/bv${MEM}${BP}
-export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/bv${MEM}${BP}_c${CYCLE}
+export RUNDIR=$TEMP/${SDATE}/bv${TETYPE}${MEM}${BP}
+export BASEDIR=$WORKUSR/rsm2rsm27_bvgfs/${SDATE}/bv${TETYPE}${MEM}${BP}_c${CYCLE}
 fi
 else #GEFS downscaling
 if [ "$MEM" = "000" ];then #control
 export RUNDIR=$TEMP/${SDATE}
-export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}
+export BASEDIR=$WORKUSR/rsm2rsm27_bvgfs/${SDATE}
 else #member
 export RUNDIR=$TEMP/${SDATE}/${MEM}
-export BASEDIR=$WORKUSR/rsm2rsm27_bv/${SDATE}/${MEM}
+export BASEDIR=$WORKUSR/rsm2rsm27_bvgfs/${SDATE}/${MEM}
 fi
 fi
 #export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
@@ -82,15 +83,14 @@ export FCST=yes
 
 # --------------- run option --------------------
 export ENDHOUR=24 
-#export ENDHOUR=48                             # release_test
+export ENDHOUR=48                             # release_test
 #from gfsp2rsm27
 export INCBASE=3
 export INCHOUR=3
-export PRTHOUR=3
 ##from rsm2rsm27
 #export INCBASE=1
 #export INCHOUR=1
-#export PRTHOUR=1
+export PRTHOUR=1
 export TIMESTEP=30
 export IMDLPHY=1                # 1: run model physics, 0: off
 export CLIM=0

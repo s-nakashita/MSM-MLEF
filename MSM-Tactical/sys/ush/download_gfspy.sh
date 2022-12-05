@@ -45,10 +45,13 @@ while [ $fh -le $fend ]; do
    fh=`expr $fh + $INCBASE`
 done
 echo $PRODUCT
-if [ $fend -lt 100 ]; then fend=0$fend; fi
-tarf=gfs.0p25.${SDATE}.f000-${fend}.grib2.tar
+#if [ $fend -lt 100 ]; then fend=0$fend; fi
+#tarf=gfs.0p25.${SDATE}.f000-${fend}.grib2.tar
 #if [ ! -f $tarf ]
-#then
+tarfiles=`ls *.tar`
+echo $tarfiles
+if [ -z "$tarfiles" ] && [ -n "$PRODUCT" ]
+then
 cat << EOF > download.py
 import sys
 sys.path.append('${DISK}/rda-apps-clients/')
@@ -94,16 +97,23 @@ rc.purge_request(rqst_id)
 EOF
 cat download.py
 cp ${DISK}/rda-apps-clients/rdamspw.txt .
-${HOME}/.local/bin/python download.py || exit 99
+set -e
+${HOME}/.local/bin/python3 download.py || exit 99
+set +e
 ls
 rm rdamspw.txt
-#fi
+fi
 #
 fh=000
 fh2=00
 fend=`expr $fh + $ENDHOUR`
-if [ -f $tarf ]; then
+tarfiles=`ls *.tar`
+echo $tarfiles
+#if [ -f $tarf ]; then
+if [ ! -z "$tarfiles" ]; then
+  for tarf in $tarfiles;do
   tar -xvf $tarf
+  done
 fi
 while [ $fh -le $fend ]; do
    fh2=$fh

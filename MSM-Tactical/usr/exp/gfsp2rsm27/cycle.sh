@@ -1,18 +1,12 @@
 #!/bin/sh
 set -e
-year=2022
-month=05
-iday=10
-eday=14
-for day in $(seq ${iday} ${eday});do
-  if [ $day -lt 10 ]; then
-    day=0$day
-  fi
-  for hour in 00 12; do
-    SDATE=${year}${month}${day}${hour}
-    echo $SDATE
-    export SDATE
-    ./run || exit 10
-  done
+SDATE=2022082606
+EDATE=2022082818
+INCH=6
+while [ $SDATE -le $EDATE ];do
+  echo $SDATE
+  export SDATE
+  ./run || exit 10
+  SDATE=`date -j -f "%Y%m%d%H" -v+${INCH}H +"%Y%m%d%H" "${SDATE}"`
 done
 

@@ -50,6 +50,7 @@ ENDHOUR=${ENDHOUR:-$end_hr}
 RUNDIR=${RUNDIR:-$TEMP/$ryyyy$rmm/r${SDATE}.$CASE}
 base_dir=$TEMP/$ryyyy$rmm/g${SDATE}.$CASE
 BASEDIR=${BASEDIR:-$base_dir}
+BASESFCDIR=${BASESFCDIR:-$BASEDIR}
 mkdir -p $RUNDIR
 cd $RUNDIR || exit 1
 #
@@ -64,6 +65,11 @@ if [ $RSFC_MERGE = "yes" ]; then
    ISFC_MERGE=1
 else
    ISFC_MERGE=0
+fi
+if [ do$NEWSST = do.TRUE. ]; then
+   INEWSST=1
+else
+   INEWSST=0
 fi
 #
 # NO NEED TO CHANGE BELOW THIS!
@@ -117,6 +123,8 @@ cat >rsmparm <<EOF
  IMDLPHY=$IMDLPHY,
  IOUTNHR=$IOUTNHR,
  ISFCMRG=$ISFC_MERGE,
+ INEWSST=$INEWSST,
+ RDFISEC=$RDFISEC,
  
  &END
 EOF
@@ -171,11 +179,18 @@ fi
      else
        if [ do$C2R = doyes ] ; then
          ln -fs $BASEDIR/r_sig.f00 rb_sigf00
-         ln -fs $BASEDIR/r_sfc.f00 rb_sfcf00
+         ln -fs $BASESFCDIR/r_sfc.f00 rb_sfcf00
        fi
      fi
      if [ do$NEWSST = do.TRUE. ] ; then
-       ln -fs $BASEDIR/sstf00 rb_sstf00
+       #ln -fs $BASEDIR/sstf00 rb_sstf00
+       cymdh=`${UTLDIR}/ndate 0 ${SDATE}`
+       cyyyy=`echo ${cymdh} | cut -c1-4`
+       cymd=`echo ${cymdh} | cut -c1-8`
+       if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
+         exit 99
+       fi
+       ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
      fi
 
 #
@@ -218,11 +233,18 @@ while [ $h -lt $FEND ]; do
        else
          if [ do$C2R = doyes ] ; then
            ln -fs $BASEDIR/r_sig.f$hhr rb_sigf$hhr
-           ln -fs $BASEDIR/r_sfc.f$hhr rb_sfcf$hhr
+           ln -fs $BASESFCDIR/r_sfc.f$hhr rb_sfcf$hhr
          fi
        fi
        if [ do$NEWSST = do.TRUE. ] ; then
-         ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
+         #ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
+         cymdh=`${UTLDIR}/ndate $hhr ${SDATE}`
+         cyyyy=`echo ${cymdh} | cut -c1-4`
+         cymd=`echo ${cymdh} | cut -c1-8`
+         if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
+           exit 99
+         fi
+         ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
        fi
        hhr=`expr $hhr + $INCBASE`
   done

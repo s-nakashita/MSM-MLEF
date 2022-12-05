@@ -176,7 +176,8 @@
      &   tsea,smc,sheleg,stc,tg3,zorl,                                   &
      &   cv,cvb,cvt,slmsk,f10m,canopy,vfrac,vtype,stype,                 &
      &   uustar,ffmm,ffhh,alvsf,alvwf,alnsf,alnwf,facsf,facwf,           &
-     &   1,nrsfcp,rsfcsec,lsfcmrg)
+     &   1,nrsfcp,rsfcsec,lsfcmrg,                                       &
+     &   flon,flat,lnewsst)
 #ifdef MP
       if( mype.eq.master ) then
 #endif

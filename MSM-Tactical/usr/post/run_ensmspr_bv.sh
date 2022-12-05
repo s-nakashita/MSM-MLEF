@@ -5,7 +5,7 @@
 #SDATE=2022060812
 #IRES=9
 if [ $# -lt 2 ]; then
-  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(27 or 9) [edate, bv_h, wbp]"
+  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(27 or 9) [edate, bv_h, tetype, wbp]"
   exit 1
 fi
 SDATE=${1}
@@ -14,10 +14,11 @@ IRES=${2}
 EDATE=${3:-$SDATE}
 MEM=000
 BV_H=${4:-6}
-BP=${5}
+TETYPE=${5}
+BP=${6}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
-SDATE0=2022083000
+SDATE0=2022082900
 ut0=`date -j -f "%Y%m%d%H" +"%s" "${SDATE0}"`
 echo $SDATE0 $ut0
 while [ $SDATE -le $EDATE ];do
@@ -29,12 +30,12 @@ echo $dt $icyc
 if [ $IRES -eq 27 ]; then
 #DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
 #EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 SUF=_c${icyc}
 elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_bv/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 SUF=
 elif [ $IRES -eq 3 ]; then
@@ -61,11 +62,10 @@ EXEC=ensmspr
 cd $SRCDIR
 gmake ${EXEC}
 if [ $BV_H -eq 6 ]; then
-header=bv
+header=bv${TETYPE}
 else
-header=bv${BV_H}h
+header=bv${TETYPE}${BV_H}h
 fi
-header=${header}dry
 rm -rf $DATADIR/${header}mean${BP}${SUF}
 mkdir -p $DATADIR/${header}mean${BP}${SUF}
 rm -rf $DATADIR/${header}sprd${BP}${SUF}

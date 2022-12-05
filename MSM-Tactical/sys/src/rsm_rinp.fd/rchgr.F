@@ -121,6 +121,7 @@
       integer issttype
       namelist/namsst/ issttype
       data issttype/0/
+      integer instmsk(ijdimo)
 ! added by SN
 !
       print *,' +++++++++++++ start regional chgr ++++++++++ '
@@ -415,11 +416,13 @@
 !
          rewind(5)
          read(5,namsst)
-         call maxmin(ggridn,ijdimo,1,1,1,'before new_sst tsea') !added by SN
+         call maxmin(ggridn,ijdimo,1,1,1,'tsea before') !added by SN
          !call ana_sst(ggrido1,ijdimo,flato,flono)
-         call new_sst(ggrido1,ijdimo,flato,flono,issttype) !added by SN
+         call new_sst(sgrido1,instmsk,ijdimo,flato,flono,issttype) !added by SN
+         call sgl2ful(sgrido1,ggrido1,ijdimo)
          do n=1,ijdimo
-           if( slmsk(n).eq.0.0 .and. ggrido1(n).gt.0.0 ) then
+           if( slmsk(n).eq.0.0.and.instmsk(n).eq.0 ) then
+!              & .and.ggrido1(n).gt.0.0 ) then
              ggridn(n)= max( ggrido1(n), 271.21e0 )
            endif
          enddo
