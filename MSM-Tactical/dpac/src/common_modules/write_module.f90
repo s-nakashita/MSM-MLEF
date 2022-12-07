@@ -6,8 +6,12 @@ module write_module
 ! 
 ! namelist:
 !
-use read_module, only: levmax, nwext, lsoil, nfldsfc, nfldflx, verbose
-implicit none
+  use kind_module
+  use phconst_module, only: deg2rad
+  use rsmcom_module, only: conv_temp
+  use read_module, only: levmax, nwext, lsoil, nfldsfc, nfldflx, verbose
+  
+  implicit none
   private
 
   public :: write_sig, write_sfc, write_flx
@@ -25,24 +29,25 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   integer, intent(in) :: ounit
   character(len=8),intent(in) :: label(4)
   integer,intent(in) :: idate(4)
-  real(kind=4),intent(in) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
+  real(kind=sp),intent(in) :: fhour, ext(nwext) 
+  real(kind=dp),intent(in) :: si(levmax+1), sl(levmax)
   integer, intent(in) :: igrd1, jgrd1, levs, nflds 
   integer, intent(in) :: nonhyd
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
-  real(kind=4), intent(inout) :: dfld(igrd1,jgrd1,nflds)
-  real(kind=4), intent(in) :: mapf(igrd1,jgrd1,3)
-  real(kind=4), intent(in) :: clat(jgrd1), clon(igrd1)
-  real(kind=4) :: sisl(2*levmax+1)
+  real(kind=dp), intent(inout) :: dfld(igrd1,jgrd1,nflds)
+  real(kind=dp), intent(in) :: mapf(igrd1,jgrd1,3)
+  real(kind=dp), intent(in) :: clat(jgrd1), clon(igrd1)
+  real(kind=sp) :: sisl(2*levmax+1)
   integer :: iret
   integer :: nwf, irec
   integer :: i,j,k,l,m
   integer :: igz, ips, it, iu, iv, iq, ioz, icw, ipn, itn, iwn, &
  &           im2
   integer :: iphys3d(3)
-  real(kind=4), allocatable :: sfld(:)
-  real(kind=4), allocatable :: factor(:,:,:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, deg2rad=pi/180.0
+  real(kind=sp), allocatable :: sfld(:)
+  real(kind=sp), allocatable :: factor(:,:,:)
+  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
+  real(kind=sp), parameter :: pi=3.141592, deg2rad=pi/180.0
   
   iret = 0
 ! write label
@@ -71,7 +76,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   igz=1
   do j=1,jgrd1
     do i=1,igrd1
-       sfld(i+(j-1)*igrd1) = dfld(i,j,igz)
+       sfld(i+(j-1)*igrd1) = real(dfld(i,j,igz),kind=sp)
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
@@ -80,21 +85,23 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   ips=igz+1
   do j=1,jgrd1
     do i=1,igrd1
-       sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ips)/1000.0) !Pa=>kPa
+       sfld(i+(j-1)*igrd1) = LOG(real(dfld(i,j,ips),kind=sp)/1000.0) !Pa=>kPa
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
   if(verbose) print *,ips, 'write lnps ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! T
   it=ips+1
+  ! temperature => virtual temperature
+  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),1)
   do k=1, levs
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,it+k-1) 
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,it+k-1),kind=sp)
       end do
     end do 
     write(ounit) (sfld(i),i=1,nwf)
-    if(verbose) print *,it+k-1, 'write T at lev=',k, sfld(1),&
+    if(verbose) print *,it+k-1, 'write Tv at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do  
   ! U,V
@@ -110,7 +117,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     end do
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,iu+k-1) 
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,iu+k-1),kind=sp) 
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -118,7 +125,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &    maxval(sfld(:)), minval(sfld(:))
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,iv+k-1) 
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,iv+k-1),kind=sp) 
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -130,7 +137,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   do k=1, levs
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,iq+k-1) 
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,iq+k-1),kind=sp)
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -142,7 +149,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,ioz+k-1)
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,ioz+k-1),kind=sp)
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -154,28 +161,28 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1)= dfld(i,j,icw+k-1)
+        sfld(i+(j-1)*igrd1)= real(dfld(i,j,icw+k-1),kind=sp)
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
     if(verbose) print *,icw+k-1, 'write CW at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
-  ! factor to fully modify the virtual temperature
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
-      end do
-    end do
-  end do
+!  ! factor to fully modify the virtual temperature
+!  do k=1,levs
+!    do j=1,jgrd1
+!      do i=1,igrd1
+!        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
+!      end do
+!    end do
+!  end do
   if (nonhyd.eq.1) then
   ! pn
   ipn=icw+levs
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-         sfld(i+(j-1)*igrd1) = LOG(dfld(i,j,ipn+k-1)/1000.0) !Pa=>kPa
+         sfld(i+(j-1)*igrd1) = LOG(real(dfld(i,j,ipn+k-1),kind=sp)/1000.0) !Pa=>kPa
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
@@ -187,10 +194,12 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   end do
   ! tn
   itn=ipn+levs
+  ! temperature => virtual temperature
+  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),1)
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-         sfld(i+(j-1)*igrd1) = dfld(i,j,itn+k-1)!*factor(i,j,k)
+         sfld(i+(j-1)*igrd1) = real(dfld(i,j,itn+k-1),kind=sp)
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -202,7 +211,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   do k=1,levs+1
     do j=1,jgrd1
       do i=1,igrd1
-         sfld(i+(j-1)*igrd1) = dfld(i,j,iwn+k-1)
+         sfld(i+(j-1)*igrd1) = real(dfld(i,j,iwn+k-1),kind=sp)
       end do
     end do
     write(ounit) (sfld(i),i=1,nwf)
@@ -214,7 +223,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   im2=iwn+levs+1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = mapf(i,j,1)
+      sfld(i+(j-1)*igrd1) = real(mapf(i,j,1),kind=sp)
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
@@ -223,7 +232,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! fm2x, fm2y
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = mapf(i,j,2)
+      sfld(i+(j-1)*igrd1) = real(mapf(i,j,2),kind=sp)
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf) !fm2x
@@ -231,7 +240,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &  maxval(sfld(:)), minval(sfld(:))
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = mapf(i,j,3)
+      sfld(i+(j-1)*igrd1) = real(mapf(i,j,3),kind=sp)
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf) !fm2y
@@ -240,14 +249,14 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! latitude and longitude
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = clat(j)*deg2rad
+      sfld(i+(j-1)*igrd1) = real(clat(j)*deg2rad,kind=sp)
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
   if(verbose) print *, 'latitude ', sfld(1), sfld(nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = clon(i)*deg2rad
+      sfld(i+(j-1)*igrd1) = real(clon(i)*deg2rad,kind=sp)
     end do
   end do
   write(ounit) (sfld(i),i=1,nwf)
@@ -259,7 +268,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     do k=1,levs
       do j=1,jgrd1
         do i=1,igrd1
-          sfld(i+(j-1)*igrd1)=dfld(i,j,iphys3d(m)+k-1)
+          sfld(i+(j-1)*igrd1)=real(dfld(i,j,iphys3d(m)+k-1),kind=sp)
         end do
       end do
       write(ounit) (sfld(i),i=1,nwf)
@@ -286,11 +295,11 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   implicit none
   integer, intent(in) :: ounit
   integer,intent(in) :: igrd1, jgrd1
-  real(kind=4), intent(in) :: dfld(igrd1,jgrd1,nfldsfc)
+  real(kind=dp), intent(in) :: dfld(igrd1,jgrd1,nfldsfc)
   ! header
   character(len=8),intent(in) :: label(4)
   integer,intent(in) :: idate(4)
-  real(kind=4),intent(in) :: fhour
+  real(kind=sp),intent(in) :: fhour
   integer :: version
   integer :: iymdh
   !
@@ -300,10 +309,8 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   integer :: itsea, ismc, isheleg, istc, itg3, izorl, icv, icvb, &
 &            icvt, islmsk, ivfrac, if10m, icanopy, ivtype, istype, iuustar, iffmm, &
 &            iffhh, ialvsf, ialvwf, ialnsf, ialnwf, ifacsf, ifacwf
-  real(kind=4), allocatable :: sfld(:), sfldl(:)
-  real(kind=4), allocatable :: tmps2(:,:), tmps4(:,:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, rad2deg=180.0/pi
+  real(kind=sp), allocatable :: sfld(:), sfldl(:)
+  real(kind=sp), allocatable :: tmps2(:,:), tmps4(:,:)
   
   print *, 'write header record'
   iret = 0
@@ -324,7 +331,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -337,7 +344,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   do k=1,lsoil
     do j=1,jgrd1
       do i=1,igrd1
-        sfldl(l) = dfld(i,j,ifld)
+        sfldl(l) = real(dfld(i,j,ifld),kind=sp)
         l=l+1
       end do
     end do
@@ -351,7 +358,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do 
@@ -364,7 +371,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   do k=1,lsoil
     do j=1,jgrd1
       do i=1,igrd1
-        sfldl(l) = dfld(i,j,ifld) 
+        sfldl(l) = real(dfld(i,j,ifld),kind=sp)
         l=l+1
       end do
     end do
@@ -378,7 +385,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do 
@@ -390,7 +397,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do 
@@ -402,7 +409,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do 
@@ -414,7 +421,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -426,7 +433,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do 
@@ -439,7 +446,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps4(l,k) = dfld(i,j,ifld) 
+      tmps4(l,k) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do
@@ -450,7 +457,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps4(l,k) = dfld(i,j,ifld) 
+      tmps4(l,k) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do
@@ -461,7 +468,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps4(l,k) = dfld(i,j,ifld) 
+      tmps4(l,k) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do
@@ -472,7 +479,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps4(l,k) = dfld(i,j,ifld) 
+      tmps4(l,k) = real(dfld(i,j,ifld),kind=sp) 
       l=l+1
     end do
   end do
@@ -484,7 +491,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -496,7 +503,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -508,7 +515,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -520,7 +527,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -532,7 +539,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -544,7 +551,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -557,7 +564,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps2(l,k) = dfld(i,j,ifld)
+      tmps2(l,k) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -568,7 +575,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      tmps2(l,k) = dfld(i,j,ifld)
+      tmps2(l,k) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -580,7 +587,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld) 
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -592,7 +599,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -604,7 +611,7 @@ subroutine write_sfc(ounit,igrd1,jgrd1,dfld,label,idate,fhour)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(l) = dfld(i,j,ifld)
+      sfld(l) = real(dfld(i,j,ifld),kind=sp)
       l=l+1
     end do
   end do 
@@ -632,14 +639,14 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   implicit none
   integer, intent(in) :: ounit
   integer, intent(in) :: igrd1, jgrd1
-  real(kind=4), intent(inout) :: dfld(igrd1,jgrd1,nfldflx)
+  real(kind=dp), intent(inout) :: dfld(igrd1,jgrd1,nfldflx)
   integer, intent(inout)      :: ids(255)
   integer, intent(inout)      :: iparam(nfldflx)
-  real(kind=4), intent(in)    :: slmsk(igrd1,jgrd1) ! read from surface file
+  real(kind=dp), intent(in)    :: slmsk(igrd1,jgrd1) ! read from surface file
   integer, intent(in) :: idate(4)
-  real(kind=4), intent(in) :: fhour, zhour
-  real(kind=4), intent(in) :: rdelx, rdely, rtruth, rorient, rproj
-  real(kind=4), intent(in) :: rlat(jgrd1), rlon(igrd1)
+  real(kind=sp), intent(in) :: fhour, zhour
+  real(kind=dp), intent(in) :: rdelx, rdely, rtruth, rorient, rproj
+  real(kind=dp), intent(in) :: rlat(jgrd1), rlon(igrd1)
   integer, parameter :: iprs=1, itemp=11, iznlw=33, imerw=34, isphum=51, ipwat=54, &
   &                     ipcpr=59, isnowd=65, icldf=71, iccldf=72, islmsk=81, izorl=83, &
   &                     ialbdo=84, isoilm=144, icemsk=91, ilhflx=121, ishflx=122, izws=124, &
@@ -669,13 +676,11 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ! components of flux file
   integer :: maxbit, iptv, icen, igen, ibm, ibm0, ibm1, il1k, il2k, ip1, ip2, ina, inm, &
   &          icen2, inst, iavg, iacc, ifhour, ifday, ifhr, ithr, ilpds, idrt
-  real(kind=4) :: colat, rlat1, rlon1, rlat2, rlon2, delx, dely, ortru, proj
+  real(kind=sp) :: colat, rlat1, rlon1, rlat2, rlon2, delx, dely, ortru, proj
   integer :: nflds, nwf, irec
   integer :: itype, ilev, itime
   integer :: i,j,k,l,k4
-  real(kind=4), allocatable :: sfld(:)
-  real(kind=4), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=4), parameter :: pi=3.141592, deg2rad=pi/180.0
+  real(kind=sp), allocatable :: sfld(:)
   
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf
@@ -726,7 +731,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   l=1
   do j=1,jgrd1
     do i=1, igrd1
-      slmask(l) = slmsk(i,j)
+      slmask(l) = real(slmsk(i,j),kind=sp)
       l=l+1
     end do
   end do
@@ -741,7 +746,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -774,7 +779,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -792,7 +797,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -810,7 +815,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -828,7 +833,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -847,7 +852,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=10
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -867,7 +872,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=200
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -887,7 +892,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=10
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -907,7 +912,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=200
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -927,7 +932,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -945,7 +950,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -963,7 +968,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -982,7 +987,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
     write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1003,7 +1008,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     ibm=ibm0
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
       end do
     end do 
     do j=1,nwf
@@ -1023,7 +1028,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     ibm=ibm1
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
       end do
     end do 
     write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1040,7 +1045,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     ibm=ibm1
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
       end do
     end do 
     write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1057,7 +1062,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
     ibm=ibm1
     do j=1,jgrd1
       do i=1,igrd1
-        sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
       end do
     end do 
     write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1076,7 +1081,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1094,7 +1099,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1112,7 +1117,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf
@@ -1133,7 +1138,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1151,7 +1156,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1170,7 +1175,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=10
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1189,7 +1194,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=10
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1208,7 +1213,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1227,7 +1232,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1246,7 +1251,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1265,7 +1270,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1284,7 +1289,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1303,7 +1308,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1322,7 +1327,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=2
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1341,7 +1346,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   il2k=0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf
@@ -1362,7 +1367,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1380,7 +1385,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1398,7 +1403,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1416,7 +1421,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1434,7 +1439,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1452,7 +1457,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1470,7 +1475,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1488,7 +1493,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf
@@ -1509,7 +1514,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1527,7 +1532,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   write(ounit) sfld,lbm,idrt,igrd1,jgrd1,maxbit,colat, &
@@ -1545,7 +1550,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf
@@ -1566,7 +1571,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm1
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf
@@ -1589,7 +1594,7 @@ subroutine write_flx(ounit,igrd1,jgrd1,dfld,ids,iparam,slmsk,&
   ibm=ibm0
   do j=1,jgrd1
     do i=1,igrd1
-      sfld(i+(j-1)*igrd1) = dfld(i,j,l)
+      sfld(i+(j-1)*igrd1) = real(dfld(i,j,l),kind=sp)
     end do
   end do 
   do j=1,nwf

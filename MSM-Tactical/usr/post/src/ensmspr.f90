@@ -1,4 +1,5 @@
 program ensmspr
+  use kind_module
   use read_module
   use write_module
   implicit none
@@ -11,15 +12,15 @@ program ensmspr
   ! output files' units
   integer, parameter :: nmsig=51, nmsfc=52, nmflx=53 !mean
   integer, parameter :: nssig=54, nssfc=55, nsflx=56 !sprd
-  real(kind=4), allocatable :: dfld(:,:,:)
-  real(kind=4), allocatable :: dfldm(:,:,:), dflds(:,:,:)
-  real(kind=4), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
+  real(kind=dp), allocatable :: dfld(:,:,:)
+  real(kind=dp), allocatable :: dfldm(:,:,:), dflds(:,:,:)
+  real(kind=dp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
   character(len=8) :: label(4)
   integer :: idate(4), nfldsig
-  real(kind=4) :: fhour, ext(nwext) 
-  real(kind=4) :: zhour
-  real(kind=4) :: si(levmax+1), sl(levmax)
-  real(kind=4) :: rdelx, rdely, rtruth, rorient, rproj
+  real(kind=sp) :: fhour, ext(nwext) 
+  real(kind=sp) :: zhour
+  real(kind=dp) :: si(levmax+1), sl(levmax)
+  real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
   integer :: igrd1, jgrd1, levs, nonhyd
   integer :: n

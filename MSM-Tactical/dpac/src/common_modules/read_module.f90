@@ -7,6 +7,8 @@ module read_module
 ! namelist:
 !
   use kind_module
+  use phconst_module
+  use rsmcom_module, only : conv_temp
   implicit none
   private
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
@@ -32,7 +34,8 @@ subroutine read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
   character(len=8),intent(out) :: label(4)
   integer,intent(out) :: idate(4), nflds
-  real(kind=sp),intent(out) :: fhour, si(levmax+1), sl(levmax), ext(nwext) 
+  real(kind=dp),intent(out) :: si(levmax+1), sl(levmax)
+  real(kind=sp),intent(out) :: fhour, ext(nwext) 
   integer :: iret
   integer :: iymdh
   real(kind=sp) :: sisl(2*levmax+1)
@@ -108,10 +111,10 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   integer, intent(in) :: nonhyd
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
   real(kind=sp), intent(in)  :: fhour
-  real(kind=sp), intent(in)  :: sl(levs)
-  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nflds)
-  real(kind=sp), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
-  real(kind=sp), intent(out) :: clat(jgrd1),clon(igrd1)
+  real(kind=dp), intent(in)  :: sl(levs)
+  real(kind=dp), intent(out) :: dfld(igrd1,jgrd1,nflds)
+  real(kind=dp), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
+  real(kind=dp), intent(out) :: clat(jgrd1),clon(igrd1)
   integer :: iret
   integer :: nwf, irec
   integer :: i,j,k,l,m
@@ -120,8 +123,6 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   integer :: iphys3d(3)
   real(kind=sp), allocatable :: sfld(:)
   real(kind=sp), allocatable :: factor(:,:,:)
-  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
   
   iret = 0
   rewind(iunit)
@@ -145,7 +146,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,igz) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,igz) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,igz, 'read gz ', dfld(1,1,igz), maxval(dfld(:,:,igz)), minval(dfld(:,:,igz))
@@ -154,20 +155,20 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ips) = EXP(sfld(i+(j-1)*igrd1))*1000.0 !kPa=>Pa
+      dfld(i,j,ips) = EXP(real(sfld(i+(j-1)*igrd1),kind=dp))*1000.0 !kPa=>Pa
     end do
   end do 
   if(verbose) print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
-  ! T
+  ! Tv
   it=ips+1
   do k=1, levs
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,it+k-1) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,it+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
-  if(verbose) print *,it+k-1, 'read T at lev=',k, dfld(1,1,it+k-1),&
+  if(verbose) print *,it+k-1, 'read Tv at lev=',k, dfld(1,1,it+k-1),&
 &  maxval(dfld(:,:,it+k-1)), minval(dfld(:,:,it+k-1))
   end do  
   ! U,V
@@ -177,13 +178,13 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,iu+k-1) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,iu+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,iv+k-1) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,iv+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,iu+k-1, 'read U at lev=',k, dfld(1,1,iu+k-1),&
@@ -197,7 +198,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,iq+k-1) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,iq+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,iq+k-1, 'read Q at lev=',k, dfld(1,1,iq+k-1), &
@@ -209,7 +210,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ioz+k-1)=sfld(i+(j-1)*igrd1)
+      dfld(i,j,ioz+k-1)=real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,ioz+k-1, 'read OZ at lev=',k, dfld(1,1,ioz+k-1),&
@@ -221,20 +222,22 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,icw+k-1)=sfld(i+(j-1)*igrd1)
+      dfld(i,j,icw+k-1)=real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,icw+k-1, 'read CW at lev=',k, dfld(1,1,icw+k-1),&
 &  maxval(dfld(:,:,icw+k-1)), minval(dfld(:,:,icw+k-1))
   end do
-  ! factor to fully modify the virtual temperature
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
-      end do
-    end do
-  end do
+  ! modify the virtual temperature into temperature
+  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),0)
+!  do k=1,levs
+!    do j=1,jgrd1
+!      do i=1,igrd1
+!        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
+!        !dfld(i,j,it+k-1) = dfld(i,j,it+k-1)/factor(i,j,k) !Tv=>T
+!      end do
+!    end do
+!  end do
   if (nonhyd.eq.1) then
   ! pn
   ipn=icw+levs
@@ -242,7 +245,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ipn+k-1) = EXP(sfld(i+(j-1)*igrd1))*1000.0 !kPa=>Pa
+        dfld(i,j,ipn+k-1) = EXP(real(sfld(i+(j-1)*igrd1),kind=dp))*1000.0 !kPa=>Pa
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
@@ -257,19 +260,21 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,itn+k-1) = sfld(i+(j-1)*igrd1)!/factor(i,j,k)
+        dfld(i,j,itn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
+        !dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k) !Tv=>T
       end do
     end do
-  if(verbose) print *,itn+k-1, 'read TN at lev=',k, dfld(1,1,itn+k-1),&
+  if(verbose) print *,itn+k-1, 'read TvN at lev=',k, dfld(1,1,itn+k-1),&
 &  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
   end do  
+  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),0)
   ! wn
   iwn=itn+levs
   do k=1,levs+1
     read(iunit) (sfld(i),i=1,nwf)
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,iwn+k-1) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,iwn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do
   if(verbose) print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
@@ -291,7 +296,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)!/factor(i,j,k)
+        dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)
       end do
     end do
   if(verbose) print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
@@ -313,7 +318,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      mapf(i,j,1) = sfld(i+(j-1)*igrd1)
+      mapf(i,j,1) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,'read XM2 ', mapf(1,1,1), &
@@ -332,7 +337,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf) ! fm2x
   do j=1,jgrd1
     do i=1,igrd1
-      mapf(i,j,2) = sfld(i+(j-1)*igrd1)
+      mapf(i,j,2) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *, 'read FM2X ', mapf(1,1,2), &
@@ -340,7 +345,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf) ! fm2y
   do j=1,jgrd1
     do i=1,igrd1
-      mapf(i,j,3) = sfld(i+(j-1)*igrd1)
+      mapf(i,j,3) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *, 'read FM2Y ', mapf(1,1,3), &
@@ -349,7 +354,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-    clat(j) = sfld(1+(j-1)*igrd1)*rad2deg
+    clat(j) = real(sfld(1+(j-1)*igrd1),kind=dp)*rad2deg
     end do
   end do
   !if(verbose) print *, 'latitude ', clat(1), clat(jgrd1)
@@ -357,7 +362,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      clon(i) = sfld(i+(j-1)*igrd1)*rad2deg
+      clon(i) = real(sfld(i+(j-1)*igrd1),kind=dp)*rad2deg
     end do
   end do
   !if(verbose) print *, 'longitude ', clon(1), clon(igrd1)
@@ -370,7 +375,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,iphys3d(m)+k-1)=sfld(i+(j-1)*igrd1)
+      dfld(i,j,iphys3d(m)+k-1)=real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do
   if(verbose) print *,iphys3d(m)+k-1, 'read phys3d at lev=',k, &
@@ -399,7 +404,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   implicit none
   integer, intent(in) :: iunit
   integer,intent(in) :: igrd1, jgrd1
-  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nfldsfc)
+  real(kind=dp), intent(out) :: dfld(igrd1,jgrd1,nfldsfc)
   ! header
   character(len=8) :: label(4)
   integer :: idate(4), iymdh
@@ -442,7 +447,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -455,7 +460,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   do k=1,lsoil
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ifld) = sfldl(l)
+        dfld(i,j,ifld) = real(sfldl(l),kind=dp)
         l=l+1
       end do
     end do
@@ -468,7 +473,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -481,7 +486,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   do k=1,lsoil
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ifld) = sfldl(l)
+        dfld(i,j,ifld) = real(sfldl(l),kind=dp)
         l=l+1
       end do
     end do
@@ -494,7 +499,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -506,7 +511,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -518,7 +523,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -530,7 +535,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -542,7 +547,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -555,7 +560,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps4(l,k)
+      dfld(i,j,ifld) = real(tmps4(l,k),kind=dp)
       l=l+1
     end do
   end do
@@ -566,7 +571,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps4(l,k)
+      dfld(i,j,ifld) = real(tmps4(l,k),kind=dp)
       l=l+1
     end do
   end do
@@ -577,7 +582,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps4(l,k)
+      dfld(i,j,ifld) = real(tmps4(l,k),kind=dp)
       l=l+1
     end do
   end do
@@ -588,7 +593,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps4(l,k)
+      dfld(i,j,ifld) = real(tmps4(l,k),kind=dp)
       l=l+1
     end do
   end do
@@ -600,7 +605,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -612,7 +617,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -624,7 +629,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -636,7 +641,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -648,7 +653,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -660,7 +665,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -673,7 +678,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps2(l,k)
+      dfld(i,j,ifld) = real(tmps2(l,k),kind=dp)
       l=l+1
     end do
   end do 
@@ -684,7 +689,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = tmps2(l,k)
+      dfld(i,j,ifld) = real(tmps2(l,k),kind=dp)
       l=l+1
     end do
   end do 
@@ -696,7 +701,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -709,7 +714,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -722,7 +727,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   l=1
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ifld) = sfld(l)
+      dfld(i,j,ifld) = real(sfld(l),kind=dp)
       l=l+1
     end do
   end do 
@@ -752,7 +757,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   implicit none
   integer, intent(in) :: iunit
   integer, intent(in) :: igrd1, jgrd1
-  real(kind=sp), intent(out) :: dfld(igrd1,jgrd1,nfldflx)
+  real(kind=dp), intent(out) :: dfld(igrd1,jgrd1,nfldflx)
   integer, intent(out)      :: ids(255)
   integer, intent(out)      :: iparam(nfldflx)
   real(kind=sp), intent(out) :: fhour, zhour
@@ -828,7 +833,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dusfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -859,7 +864,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dvsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -890,7 +895,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dtsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -921,7 +926,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dqsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -952,7 +957,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read tsea ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -983,7 +988,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read smc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1014,7 +1019,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read smc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1045,7 +1050,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read stc(:,1) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1076,7 +1081,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read stc(:,2) ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1107,7 +1112,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read sheleg ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1138,7 +1143,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dlwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1169,7 +1174,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read ulwsfc ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1201,7 +1206,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     end if
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do 
     if(verbose) print *,l,'read raw flux ',k, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1235,7 +1240,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     end if
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do 
     if(verbose) print *,l,'read fixed flux ',k4+1, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1265,7 +1270,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     end if
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do 
     if(verbose) print *,l,'read fixed flux ',k4+2, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1295,7 +1300,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     end if
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do 
     if(verbose) print *,l,'read fixed flux ',k4+3, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1325,7 +1330,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     end if
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+        dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
       end do
     end do 
     if(verbose) print *,l,'read fixed flux ',k4+4, dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1357,7 +1362,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read geshem ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1388,7 +1393,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read bengsh ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1419,7 +1424,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read gflux ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1450,7 +1455,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read slmsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1481,7 +1486,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read cemsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1512,7 +1517,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read u10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1543,7 +1548,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read v10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1574,7 +1579,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read t2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1605,7 +1610,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read q2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1636,7 +1641,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read psurf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1667,7 +1672,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read t2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1698,7 +1703,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read q2max ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1729,7 +1734,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read t2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1760,7 +1765,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read q2min ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1791,7 +1796,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read runoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1822,7 +1827,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read ep ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1853,7 +1858,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read cldwrk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1884,7 +1889,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dugwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1915,7 +1920,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read dvgwd ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1946,7 +1951,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read hpbl ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -1977,7 +1982,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read pwat ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2008,7 +2013,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read albedo ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2039,7 +2044,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read cldf ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2070,7 +2075,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read wvuflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2101,7 +2106,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read wvvflx ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2132,7 +2137,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read srunoff ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2163,7 +2168,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read soilm ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
@@ -2194,7 +2199,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   end if
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,l) = sfld(i+(j-1)*igrd1)
+      dfld(i,j,l) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
   if(verbose) print *,l,'read snwdph ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))

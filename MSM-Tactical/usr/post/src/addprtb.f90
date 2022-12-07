@@ -39,15 +39,15 @@ program addprtb
   ! output file's unit
   integer, parameter :: nosigp=51, nosigm=52 !plus and minus
   integer, parameter :: nosfc=53 !, nosigi=54
-  real(kind=sp), allocatable :: dfld(:,:,:)
-  real(kind=sp), allocatable :: dfldb(:,:,:),dfldp(:,:,:)
-  real(kind=sp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
+  real(kind=dp), allocatable :: dfld(:,:,:)
+  real(kind=dp), allocatable :: dfldb(:,:,:),dfldp(:,:,:)
+  real(kind=dp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
   character(len=8) :: label(4)
   integer :: idate(4), nfldsig
   real(kind=sp) :: fhour, ext(nwext) 
   real(kind=sp) :: zhour
-  real(kind=sp) :: si(levmax+1), sl(levmax)
-  real(kind=sp) :: rdelx, rdely, rtruth, rorient, rproj
+  real(kind=dp) :: si(levmax+1), sl(levmax)
+  real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
   integer :: igrd1, jgrd1, levs, nonhyd, icld
   integer :: n,i,j,k,l
@@ -146,22 +146,14 @@ program addprtb
 !  dfldp(:,:,ips) = dfld(:,:,ips)
   do j=1,nlat
     do i=1,nlon
-      ps(i,j)=real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)
-    end do
-  end do
-  ! factor for virtual temperature
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        fact(i,j,k)=1.0d0+fvirt*real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
-      end do
+      ps(i,j)=dfld(i+ilonw-1,j+jlats-1,ips)
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        t(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        theta(i,j,k) = t(i,j,k) * (p0/real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)/sl(k))**ptheta
+        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+        theta(i,j,k) = t(i,j,k) * (p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
 !    dfldp(:,:,it+k-1)=dfld(:,:,it+k-1)
       end do
     end do
@@ -169,7 +161,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        u(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iu+k-1),kind=dp)
+        u(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iu+k-1)
 !    dfldp(:,:,iu+k-1)=dfld(:,:,iu+k-1)
       end do
     end do
@@ -177,7 +169,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        v(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iv+k-1),kind=dp)
+        v(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iv+k-1)
 !    dfldp(:,:,iv+k-1)=dfld(:,:,iv+k-1)
       end do
     end do
@@ -185,7 +177,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        q(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        q(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iq+k-1)
 !    dfldp(:,:,iq+k-1)=dfld(:,:,iq+k-1)
       end do
     end do
@@ -203,24 +195,16 @@ program addprtb
   dfldp = dfldp - dfld
   do j=1,nlat
     do i=1,nlon
-      ps(i,j)=ps(i,j)-real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)
+      ps(i,j)=ps(i,j)-dfld(i+ilonw-1,j+jlats-1,ips)
 !  dfldp(:,:,ips) = dfldp(:,:,ips) - dfld(:,:,ips)
-    end do
-  end do
-  ! factor for virtual temperature
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        fact(i,j,k)=1.0d0+fvirt*real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
-      end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
         !t(i,j,k) = t(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        t(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        theta(i,j,k) = theta(i,j,k) - t(i,j,k) * (p0/real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)/sl(k))**ptheta
+        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+        theta(i,j,k) = theta(i,j,k) - t(i,j,k) * (p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
 !    dfldp(:,:,it+k-1)=dfldp(:,:,it+k-1)-dfld(:,:,it+k-1)
       end do
     end do
@@ -228,7 +212,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        u(i,j,k) = u(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iu+k-1),kind=dp)
+        u(i,j,k) = u(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iu+k-1)
 !    dfldp(:,:,iu+k-1)=dfldp(:,:,iu+k-1)-dfld(:,:,iu+k-1)
       end do
     end do
@@ -236,7 +220,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        v(i,j,k) = v(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iv+k-1),kind=dp)
+        v(i,j,k) = v(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iv+k-1)
 !    dfldp(:,:,iv+k-1)=dfldp(:,:,iv+k-1)-dfld(:,:,iv+k-1)
       end do
     end do
@@ -244,7 +228,7 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        q(i,j,k) = q(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        q(i,j,k) = q(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iq+k-1)
 !    dfldp(:,:,iq+k-1)=dfldp(:,:,iq+k-1)-dfld(:,:,iq+k-1)
       end do
     end do
@@ -296,31 +280,6 @@ program addprtb
   call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
   te=sum(tecmp)
   print *, tecmp
-!  te=0.0d0
-!  area=0.0d0
-!  do k=1,kmax
-!    do j=1,jgrd1
-!      coef=(si(k)-si(k+1))*cos(clat(j)*deg2rad)
-!      do i=1,igrd1
-!        !KE
-!        te=te+(u(i,j,k)*u(i,j,k)+v(i,j,k)*v(i,j,k))*coef
-!        !PE(T)
-!        !te=te+cp/tr*t(i,j,k)*t(i,j,k)*coef
-!        te=te+cp/tr*theta(i,j,k)*theta(i,j,k)*coef
-!        !LE
-!        te=te+lh**2/cp/tr*q(i,j,k)*q(i,j,k)*coef
-!      end do
-!    end do
-!  end do
-!  do j=1,jgrd1
-!    coef=cos(clat(j)*deg2rad)
-!    do i=1,igrd1
-!      !PE(Ps)
-!      te=te+rd*tr*ps(i,j)*ps(i,j)/pr/pr*coef
-!      area=area+coef
-!    end do
-!  end do
-!  te=te*0.5d0/area
   print*, 'perturbation total energy = ', te
   ! rescaling
   alpha = sqrt(teref / te)

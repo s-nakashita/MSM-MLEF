@@ -6,20 +6,39 @@ module obs_module
 ! 22-10-06 create
 !
   use kind_module
+  use rsmcom_module, only: ndate,nhour
   implicit none
   private
 !
-! observation type
+! observation type (row)
 !
   type :: obstype
-    integer              :: elem
-    integer,dimension(2) :: date !(hour,minu)
-    real(kind=dp)        :: lon
-    real(kind=dp)        :: lat
-    real(kind=dp)        :: lev  !pressure[hPa]
-    real(kind=dp)        :: y
-    real(kind=dp)        :: err
+    integer :: nobs
+    integer,allocatable  :: elem(:)
+!    integer,dimension(2) :: date !(hour,minu)
+    real(kind=dp),allocatable :: lon(:)
+    real(kind=dp),allocatable :: lat(:)
+    real(kind=dp),allocatable :: lev(:) !pressure[hPa]
+    real(kind=dp),allocatable :: dat(:)
+    real(kind=dp),allocatable :: err(:)
+    real(kind=dp),allocatable :: dtrel(:) ! observation time relative to analysis time (minutes)
   end type obstype 
+!
+! observation type (after obsope)
+!
+  type :: obstype2
+    integer :: nobs
+    integer,allocatable  :: elem(:)
+!    integer,dimension(2) :: date !(hour,minu)
+    real(kind=dp),allocatable :: lon(:)
+    real(kind=dp),allocatable :: lat(:)
+    real(kind=dp),allocatable :: lev(:) !pressure[hPa]
+    real(kind=dp),allocatable :: dat(:)
+    real(kind=dp),allocatable :: err(:)
+    real(kind=dp),allocatable :: dtrel(:) ! observation time relative to analysis time (minutes)
+    real(kind=dp),allocatable :: hxf(:,:)   ! h(x) ensemble
+    integer,allocatable       :: qc(:)    ! QC flag
+  end type obstype2
 !
 ! parameters and variables for decoding dcd
 !
@@ -41,31 +60,46 @@ module obs_module
   integer,parameter,public :: id_ws_obs=10   !Wind speed[m/s]
   real(kind=dp),parameter,public :: obserr(nobstype_upper) = &
   & (/1.0d0,1.0d0,5.0d0,1.0d0/)
+!
+! QC flags
+!
+  integer,parameter,public :: iqc_good=0
+  integer,parameter,public :: iqc_gross_err=5
+!  integer,parameter,public :: iqc_ps_ter=10
+!  integer,parameter,public :: iqc_ref_low=11
+!  integer,parameter,public :: iqc_ref_mem=12
+  integer,parameter,public :: iqc_out_vhi=20
+  integer,parameter,public :: iqc_out_vlo=21
+  integer,parameter,public :: iqc_out_h=22
+  integer,parameter,public :: iqc_otype=90
+  integer,parameter,public :: iqc_time=91
 ! 
 ! debug
 !
-  logical, parameter :: debug=.true.
+  logical, parameter :: debug=.false.
 
-  public :: obstype, openfile, get_nobs, read_upper 
+  public :: obstype, obstype2, openfile, get_nobs, read_upper 
 contains
-  subroutine get_nobs(inf,cfile,smin,emin,ndataall,nobs)
+  subroutine get_nobs(inf,cfile,atime,smin,emin,ndataall,nobs)
     implicit none
     integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
-    integer, intent(in) :: smin !hhnn->min
-    integer, intent(in) :: emin !hhnn->min
+    integer, intent(in) :: atime(5) !year,month,day,hour,minutes
+    integer, intent(in) :: smin !observation time window (minutes)
+    integer, intent(in) :: emin !(smin<=otime-atime<=emin)
     integer, intent(out) :: ndataall
     integer, intent(out) :: nobs
     integer :: ioffset
     integer :: idrec
     integer :: ntype
     integer :: data1(7)
-    integer :: imin,tmphour,tmpminu
+    integer :: otime(5)
+    integer :: imin
     integer,dimension(:),allocatable :: did,ndata,nobseach
     integer :: iyy, imm, idd, ihh, inn, iwk
     integer(2) :: ibuf2
     integer(2) :: iymdhnw(6)
-    integer :: i,j,irec
+    integer :: i,j,irec,nloop
     logical :: lopened
 
     inquire(unit=inf,opened=lopened)
@@ -94,6 +128,7 @@ contains
     inn = int(iymdhnw(5),kind=4)
     iwk = int(iymdhnw(6),kind=4)
     print *, iyy,imm,idd,ihh,inn,iwk
+    otime(1)=iyy
     ! get info
     ioffset=nrec_time
     call read_part1(inf,ioffset,idrec,data1)
@@ -105,7 +140,7 @@ contains
     end if
     nrec_info = nrecall
     irec = nrec_time+nrec1+nrec2+nrec3+1
-    ntype = int(nrec4/3)
+    ntype = nrec4/3
     allocate( did(ntype),ndata(ntype),nobseach(ntype) )
     ! count all data types
     do i=1,ntype
@@ -135,16 +170,26 @@ contains
 !          print *, data1
 !        end if
         ! use only 3XXX data type
-        if(floor(real(did(i),kind=dp)*1.0d-3).eq.3) then
+        if(did(i)/1000.eq.3) then
           ! read hour and minutes
-          irec=ioffset+nrec1+6
+          irec=ioffset+nrec1+5
           read(inf,rec=irec) ibuf2
-          tmphour=int(ibuf2,kind=4)/100
-          tmpminu=int(ibuf2,kind=4)-tmphour*100
-          imin=tmphour*60+tmpminu
+          imm=int(ibuf2,kind=4)/100
+          idd=int(ibuf2,kind=4)-imm*100
+          otime(2)=imm; otime(3)=idd
+          irec=irec+1
+          read(inf,rec=irec) ibuf2
+          ihh=int(ibuf2,kind=4)/100
+          inn=int(ibuf2,kind=4)-ihh*100
+          otime(4)=ihh;otime(5)=inn
+          call nhour(atime,otime,imin)
           if((imin.ge.smin).and.(imin.lt.emin)) then
-            if(debug) print *, 'total minutes =',imin
-            nobs=nobs+(nrec4-2)/10*nobstype_upper
+            if(debug) print *, 'obs time =',otime
+            if(debug) print *, 'difference(minutes) =',imin
+            irec=ioffset+nrec1+nrec2+nrec3+2
+            read(inf,rec=irec) ibuf2
+            nloop = int(ibuf2,kind=4)
+            nobs=nobs+nloop*nobstype_upper
           end if
         end if
         ioffset=ioffset+nrecall
@@ -155,37 +200,46 @@ contains
     return
   end subroutine get_nobs
 
-  subroutine read_upper(inf,cfile,smin,emin,ndataall,nobs,nobsuse,obs)
+  subroutine read_upper(inf,cfile,atime,smin,emin,ndataall,nobs,obs)
     implicit none
     integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
-    integer, intent(in) :: smin !hhnn->min
-    integer, intent(in) :: emin !hhnn->min
+    integer, intent(in) :: atime(5) !year,month,day,hour,minutes
+    integer, intent(in) :: smin !observation time window (minutes)
+    integer, intent(in) :: emin !(smin<=otime-atime<=emin)
     integer, intent(in) :: ndataall
-    integer, intent(in) :: nobs
-    integer, intent(out) :: nobsuse
-    type(obstype), intent(out) :: obs(nobs)
+    integer, intent(in) :: nobs !before time selecting
+    type(obstype), intent(inout) :: obs
+    integer :: nobsuse
     integer :: ioffset
     integer :: idrec
     integer :: data1(7)
     integer :: dtype
-    type(obstype), allocatable :: tmpobs(:)
+    type(obstype) :: tmpobs,tmpobs2
     integer :: imin
-    integer :: tmphour, tmpminu, tmpelm
+    integer :: otime(5)
+    integer :: tmpelm !, tmphour, tmpminu
     real(kind=dp) :: tmplon, tmplat
     real(kind=dp) :: tmplev, tmpdat, tmperr
+    real(kind=dp) :: tmpdt
     integer(2) :: ibuf2
     integer :: lonb, latb
-    integer :: nloop
+    integer :: nloop, nsort
     character(len=16) :: acc
     integer :: n,nn,i,irec
     
     ioffset=nrec_time+nrec_info
     print *, 'ioffset ',ioffset
-    allocate( tmpobs(nobs) )
+    ! set obs arrays
+    tmpobs%nobs = nobs
+    tmpobs2%nobs = nobs
+    call obsin_allocate( tmpobs )
+    call obsin_allocate( tmpobs2 )
     ! start reading data
     nobsuse=0
     nn=0
+    nsort=0
+    otime(1)=atime(1)
     do n=1,ndataall
       ! read part 1 and extract information
       call read_part1(inf,ioffset,idrec,data1)
@@ -201,14 +255,27 @@ contains
           print *, 'latlon(previous) ',latb, lonb
           print *, 'latlon(current)  ',data1(2), data1(3)
         end if
+        print *, 'before sort ',nn
         call sortobs(nn,tmpobs)
-        obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
+        print *, 'after sort ',nn
+!        obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
+!        call copyobs(nn,1,nobsuse+1,tmpobs,obs)
+        tmpobs2%elem(nobsuse+1:nobsuse+nn) = tmpobs%elem(1:nn)
+        tmpobs2%lon (nobsuse+1:nobsuse+nn) = tmpobs%lon (1:nn)
+        tmpobs2%lat (nobsuse+1:nobsuse+nn) = tmpobs%lat (1:nn)
+        tmpobs2%lev (nobsuse+1:nobsuse+nn) = tmpobs%lev (1:nn)
+        tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
+        tmpobs2%err (nobsuse+1:nobsuse+nn) = tmpobs%err (1:nn)
+        tmpobs2%dtrel(nobsuse+1:nobsuse+nn) = tmpobs%dtrel(1:nn)
         nobsuse=nobsuse+nn
+        print *, 'nobsuse = ',nobsuse,'/',nobs
         nn=0
         latb=data1(2);lonb=data1(3)
+        nsort=nsort+1
+!        if(nsort.gt.5) exit !debug
       end if
       ! use only 3XXX data type
-      if(floor(real(dtype,kind=dp)*1.0d-3).eq.3) then
+      if(dtype/1000.eq.3) then
         if(debug) then
           print *, 'reading part 1 of record ',idrec
           print *, '# of address', nrecall
@@ -216,16 +283,22 @@ contains
           print *, data1
         end if
         ! read hour and minutes
-        irec=ioffset+nrec1+6
+        irec=ioffset+nrec1+5
         read(inf,rec=irec) ibuf2
-        tmphour=int(ibuf2,kind=4)/100
-        tmpminu=int(ibuf2,kind=4)-tmphour*100
-        imin=tmphour*60+tmpminu
-        if(debug) print *, 'total minutes =',imin
+        otime(2)=int(ibuf2,kind=4)/100
+        otime(3)=int(ibuf2,kind=4)-otime(2)*100
+        irec=irec+1
+        read(inf,rec=irec) ibuf2
+        otime(4)=int(ibuf2,kind=4)/100
+        otime(5)=int(ibuf2,kind=4)-otime(4)*100
+        call nhour(atime,otime,imin)
         if((imin.ge.smin).and.(imin.lt.emin)) then
+          if(debug) print *, 'obs time =',otime
+          if(debug) print *, 'difference(minutes) =',imin
+          tmpdt = real(imin,kind=dp)
           if(debug) then
-            print *, 'dtype,lat,lon,hour,minutes'
-            print *, dtype,tmplat,tmplon,tmphour,tmpminu
+            print *, 'dtype,lat,lon,dtrel'
+            print *, dtype,tmplat,tmplon,tmpdt
           end if
           irec=ioffset+nrec1+nrec2+nrec3+1
           read(inf,rec=irec) ibuf2
@@ -251,7 +324,7 @@ contains
             irec=irec+1
             read(inf,rec=irec) ibuf2
             if(acc(11:11)=='0'.and.ibuf2>0) then
-              tmplev=real(ibuf2,kind=8)*0.1d0 ![hPa]
+              tmplev=real(ibuf2,kind=dp)*0.1d0 ![hPa]
             else
               irec=irec+7
               cycle
@@ -263,10 +336,10 @@ contains
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
               tmperr=obserr(1)
               nn=nn+1
-              call setobs(tmpobs(nn),&
-              &  tmpelm,tmphour,tmpminu,&
+              call setobs(nn,tmpobs,&
+              &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmperr)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
             read(inf,rec=irec) ibuf2
@@ -275,10 +348,10 @@ contains
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
               tmperr=obserr(2)
               nn=nn+1
-              call setobs(tmpobs(nn),&
-              &  tmpelm,tmphour,tmpminu,&
+              call setobs(nn,tmpobs,&
+              &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmperr)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+2 
             read(inf,rec=irec) ibuf2
@@ -287,10 +360,10 @@ contains
               tmpdat=real(ibuf2,kind=dp) ![degree]
               tmperr=obserr(3)
               nn=nn+1
-              call setobs(tmpobs(nn),&
-              &  tmpelm,tmphour,tmpminu,&
+              call setobs(nn,tmpobs,&
+              &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmperr)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
             read(inf,rec=irec) ibuf2
@@ -299,10 +372,10 @@ contains
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![m/s]
               tmperr=obserr(4)
               nn=nn+1
-              call setobs(tmpobs(nn),&
-              &  tmpelm,tmphour,tmpminu,&
+              call setobs(nn,tmpobs,&
+              &  tmpelm,& 
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmperr)
+              &  tmpdat,tmperr,tmpdt)
             end if   
           end do
         end if
@@ -310,10 +383,33 @@ contains
       ioffset=ioffset+nrec_data
     end do
     if(nn>0) then
+      print *, 'before sort ',nn
       call sortobs(nn,tmpobs)
-      obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
+      print *, 'after sort ',nn
+!      call copyobs(nn,1,nobsuse+1,tmpobs,obs)
+!      obs(nobsuse+1:nobsuse+nn)=tmpobs(1:nn)
+      tmpobs2%elem(nobsuse+1:nobsuse+nn) = tmpobs%elem(1:nn)
+      tmpobs2%lon (nobsuse+1:nobsuse+nn) = tmpobs%lon (1:nn)
+      tmpobs2%lat (nobsuse+1:nobsuse+nn) = tmpobs%lat (1:nn)
+      tmpobs2%lev (nobsuse+1:nobsuse+nn) = tmpobs%lev (1:nn)
+      tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
+      tmpobs2%err (nobsuse+1:nobsuse+nn) = tmpobs%err (1:nn)
+      tmpobs2%dtrel(nobsuse+1:nobsuse+nn) = tmpobs%dtrel(1:nn)
       nobsuse=nobsuse+nn
+      print *, 'nobsuse = ',nobsuse,'/',nobs
+      nsort=nsort+1
     end if
+    print *, 'nsort = ',nsort
+    ! output
+    obs%nobs = nobsuse
+    call obsin_allocate( obs )
+    obs%elem(:) = tmpobs2%elem(1:nobsuse)
+    obs%lon (:) = tmpobs2%lon (1:nobsuse)
+    obs%lat (:) = tmpobs2%lat (1:nobsuse)
+    obs%lev (:) = tmpobs2%lev (1:nobsuse)
+    obs%dat (:) = tmpobs2%dat (1:nobsuse)
+    obs%err (:) = tmpobs2%err (1:nobsuse)
+    obs%dtrel(:) = tmpobs2%dtrel(1:nobsuse)
     close(inf)
 
     return
@@ -341,17 +437,19 @@ contains
     return
   end subroutine read_part1
 
-  subroutine setobs(obs1,elem,hour,minu,lat,lon,lev,dat,err)
+  subroutine setobs(n,obs,elem,lat,lon,lev,dat,err,dtrel)
     implicit none
-    type(obstype), intent(out) :: obs1
+    integer, intent(in) :: n
+    type(obstype), intent(inout) :: obs
     integer, intent(in) :: elem
-    integer, intent(in) :: hour, minu
-    real(kind=dp), intent(in) :: lat,lon,lev,dat,err
+!    integer, intent(in) :: hour, minu
+    real(kind=dp), intent(in) :: lat,lon,lev,dat,err,dtrel
 
-    obs1%elem = elem
-    obs1%date(1) = hour; obs1%date(2) = minu
-    obs1%lat = lat; obs1%lon = lon; obs1%lev = lev
-    obs1%y = dat; obs1%err = err
+    obs%elem(n) = elem
+!    obs%date(1) = hour; obs%date(2) = minu
+    obs%lat(n) = lat; obs%lon(n) = lon; obs%lev(n) = lev
+    obs%dat(n) = dat; obs%err(n) = err
+    obs%dtrel(n) = dtrel
     return
   end subroutine setobs
 
@@ -359,23 +457,30 @@ contains
     use stdlib_sorting
     implicit none
     integer, intent(inout) :: nobs
-    type(obstype), intent(inout) :: obs(:)
+    type(obstype), intent(inout) :: obs
     integer :: nobs1
     integer :: nelm(0:nobstype_upper), nelmsum(nobstype_upper)
     integer, dimension(nobstype_upper) :: elemlist=(/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs/)
-    type(obstype), allocatable :: tmpobs(:)
+    type(obstype) :: tmpobs
     real(kind=dp), allocatable :: tmplev(:)
     real(kind=dp) :: clev
     integer(int_size), allocatable :: idx(:)
-    integer :: n,nn,ns,ne
+    integer :: n,nn,ns,ne,ns2
     integer :: i,j
     
     if(debug) print *, nobs
+    tmpobs%nobs = nobs
+    call obsin_allocate( tmpobs )
+    if(debug) then
+      print *, tmpobs%nobs, size(tmpobs%elem), size(tmpobs%lon), size(tmpobs%lat),size(tmpobs%lev),&
+       & size(tmpobs%dat),size(tmpobs%err),size(tmpobs%dtrel)
+    end if
+!    allocate( tmpobs(nobs) )
     ! element sort
     nelm(:)=0
     do j=1,nobstype_upper
       do n=1,nobs
-        if( obs(n)%elem /= elemlist(j) ) cycle
+        if( obs%elem(n) /= elemlist(j) ) cycle
         nelm(j)=nelm(j)+1
       end do
     end do
@@ -385,18 +490,41 @@ contains
     end do
     if(debug) print *, nelm
     if(debug) print *, nelmsum
-    allocate( tmpobs(nobs) )
-    tmpobs(1:nobs) = obs(1:nobs)
+!    call copyobs(nobs,1,1,obs,tmpobs)
+!    tmpobs(1:nobs) = obs(1:nobs)
+    tmpobs%elem(1:nobs) = obs%elem(1:nobs)
+    tmpobs%lon (1:nobs) = obs%lon (1:nobs)
+    tmpobs%lat (1:nobs) = obs%lat (1:nobs)
+    tmpobs%lev (1:nobs) = obs%lev (1:nobs)
+    tmpobs%dat (1:nobs) = obs%dat (1:nobs)
+    tmpobs%err (1:nobs) = obs%err (1:nobs)
+    tmpobs%dtrel(1:nobs) = obs%dtrel(1:nobs)
     do j=1,nobstype_upper
       nn=0
       do n=1,nobs
-        if( tmpobs(n)%elem /= elemlist(j) ) cycle
+        if( tmpobs%elem(n) /= elemlist(j) ) cycle
         nn=nn+1
-        obs(nn+nelmsum(j)) = tmpobs(n)
+!        call copyobs(1,n,nn+nelmsum(j),tmpobs,obs)
+!        obs(nn+nelmsum(j)) = tmpobs(n)
+        obs%elem(nn+nelmsum(j)) = tmpobs%elem(n)
+        obs%lon (nn+nelmsum(j)) = tmpobs%lon (n)
+        obs%lat (nn+nelmsum(j)) = tmpobs%lat (n)
+        obs%lev (nn+nelmsum(j)) = tmpobs%lev (n)
+        obs%dat (nn+nelmsum(j)) = tmpobs%dat (n)
+        obs%err (nn+nelmsum(j)) = tmpobs%err (n)
+        obs%dtrel(nn+nelmsum(j)) = tmpobs%dtrel(n)
       end do
     end do
     ! level sort & delete duplicate data
-    tmpobs(1:nobs) = obs(1:nobs)
+!    call copyobs(nobs,1,1,obs,tmpobs)
+!    tmpobs(1:nobs) = obs(1:nobs)
+    tmpobs%elem(1:nobs) = obs%elem(1:nobs)
+    tmpobs%lon (1:nobs) = obs%lon (1:nobs)
+    tmpobs%lat (1:nobs) = obs%lat (1:nobs)
+    tmpobs%lev (1:nobs) = obs%lev (1:nobs)
+    tmpobs%dat (1:nobs) = obs%dat (1:nobs)
+    tmpobs%err (1:nobs) = obs%err (1:nobs)
+    tmpobs%dtrel(1:nobs) = obs%dtrel(1:nobs)
     nobs=0
     do i=1,nobstype_upper
       if( nelm(i)==0 ) cycle
@@ -406,7 +534,7 @@ contains
       allocate( tmplev(1:nelm(i)) )
       allocate( idx(1:size(tmplev)) )
       do j=1,nelm(i)
-        tmplev(j) = tmpobs(ns+j)%lev
+        tmplev(j) = tmpobs%lev(ns+j)
       end do
       if(debug) print *, tmplev
       ! sorting descending order (lower->upper)
@@ -414,18 +542,39 @@ contains
       if(debug) print *, tmplev
       if(debug) print *, idx
       nobs=nobs+1
-      obs(nobs)=tmpobs(ns+idx(1))
+      ns2=ns+int(idx(1),kind=4)
+      if(debug) print *, ns2
+!      call copyobs(1,ns2,nobs,tmpobs,obs)
+!      obs(nobs)=tmpobs(ns+idx(1))
+      obs%elem(nobs) = tmpobs%elem(ns2)
+      obs%lon (nobs) = tmpobs%lon (ns2)
+      obs%lat (nobs) = tmpobs%lat (ns2)
+      obs%lev (nobs) = tmpobs%lev (ns2)
+      obs%dat (nobs) = tmpobs%dat (ns2)
+      obs%err (nobs) = tmpobs%err (ns2)
+      obs%dtrel(nobs) = tmpobs%dtrel(ns2)
       clev=tmplev(1)
       if( nelm(i).gt.1 ) then
         do j=2,nelm(i)
           if(tmplev(j)==clev) cycle
           nobs=nobs+1
-          obs(nobs)=tmpobs(ns+idx(j))
+!          obs(nobs)=tmpobs(ns+idx(j))
+          ns2=ns+int(idx(j),kind=4)
+          if(debug) print *, ns2
+!          call copyobs(1,ns2,nobs,tmpobs,obs)
+          obs%elem(nobs) = tmpobs%elem(ns2)
+          obs%lon (nobs) = tmpobs%lon (ns2)
+          obs%lat (nobs) = tmpobs%lat (ns2)
+          obs%lev (nobs) = tmpobs%lev (ns2)
+          obs%dat (nobs) = tmpobs%dat (ns2)
+          obs%err (nobs) = tmpobs%err (ns2)
+          obs%dtrel(nobs) = tmpobs%dtrel(ns2)
           clev=tmplev(j)
         end do
       end if
       deallocate(tmplev,idx)
     end do
+    call obsin_deallocate(tmpobs)
     return
   end subroutine sortobs
 
@@ -440,4 +589,93 @@ contains
     return
   end subroutine openfile
   
+  subroutine obsin_allocate(obs)
+    implicit none
+    type(obstype),intent(inout) :: obs
+
+    call obsin_deallocate(obs)
+
+    allocate( obs%elem(obs%nobs) )
+    allocate( obs%lon (obs%nobs) )
+    allocate( obs%lat (obs%nobs) )
+    allocate( obs%lev (obs%nobs) )
+    allocate( obs%dat (obs%nobs) )
+    allocate( obs%err (obs%nobs) )
+    allocate( obs%dtrel(obs%nobs) )
+
+    obs%elem = 0
+    obs%lon = 0.0_dp
+    obs%lat = 0.0_dp
+    obs%lev = 0.0_dp
+    obs%dat = 0.0_dp
+    obs%err = 0.0_dp
+    obs%dtrel = 0.0_dp
+
+    return
+  end subroutine obsin_allocate
+
+  subroutine obsin_deallocate(obs)
+    implicit none
+    type(obstype), intent(inout) :: obs
+    if(allocated(obs%elem)) deallocate(obs%elem)
+    if(allocated(obs%lon))  deallocate(obs%lon)
+    if(allocated(obs%lat))  deallocate(obs%lat)
+    if(allocated(obs%lev))  deallocate(obs%lev)
+    if(allocated(obs%dat))  deallocate(obs%dat)
+    if(allocated(obs%err))  deallocate(obs%err)
+    if(allocated(obs%dtrel)) deallocate(obs%dtrel)
+    return
+  end subroutine obsin_deallocate
+!!
+!! don't work
+!!
+!!  subroutine copyobs(n,ns1,ns2,obs1,obs2)
+!!    implicit none
+!!    integer, intent(in) :: n,ns1,ns2
+!!    type(obstype), intent(in) :: obs1
+!!    type(obstype), intent(out):: obs2
+!!    integer, allocatable :: tmpelm(:)
+!!    real(kind=dp), allocatable :: tmplon(:),tmplat(:),tmplev(:),&
+!!     & tmpdat(:),tmperr(:),tmpdt(:)
+!!    integer :: i
+!!
+!!    if(debug) then
+!!      print *, n, ns1, ns2
+!!      print *, obs2%nobs, size(obs2%elem), size(obs2%lon), size(obs2%lat),size(obs2%lev),&
+!!       & size(obs2%dat),size(obs2%err),size(obs2%dtrel)
+!!    end if
+!!    allocate( tmpelm(n) )
+!!    allocate( tmplon(n),tmplat(n),tmplev(n),tmpdat(n),tmperr(n),tmpdt(n) )
+!!    do i=1,n
+!!      if(debug) then
+!!        print *, i+ns1-1
+!!        print *, obs1%elem(i+ns1-1)
+!!        print *, i+ns2-1
+!!        print *, obs2%elem(i+ns2-1)
+!!      end if
+!!      tmpelm(i) = obs1%elem(i+ns1-1)
+!!      tmplon(i) = obs1%lon (i+ns1-1)
+!!      tmplat(i) = obs1%lat (i+ns1-1)
+!!      tmplev(i) = obs1%lev (i+ns1-1)
+!!      tmpdat(i) = obs1%dat (i+ns1-1)
+!!      tmperr(i) = obs1%err (i+ns1-1)
+!!      tmpdt (i) = obs1%dtrel(i+ns1-1)
+!!!      obs2%elem(i+ns2-1)=obs1%elem(i+ns1-1)
+!!!      obs2%lon (i+ns2-1)=obs1%lon (i+ns1-1)
+!!!      obs2%lat (i+ns2-1)=obs1%lat (i+ns1-1)
+!!!      obs2%lev (i+ns2-1)=obs1%lev (i+ns1-1)
+!!!      obs2%dat (i+ns2-1)=obs1%dat (i+ns1-1)
+!!!      obs2%err (i+ns2-1)=obs1%err (i+ns1-1)
+!!!      obs2%dtrel(i+ns2-1)=obs1%dtrel(i+ns1-1)
+!!    end do
+!!    obs2%elem(ns2:ns2+n-1) = tmpelm(:)
+!!    obs2%lon (ns2:ns2+n-1) = tmplon(:)
+!!    obs2%lat (ns2:ns2+n-1) = tmplat(:)
+!!    obs2%lev (ns2:ns2+n-1) = tmplev(:)
+!!    obs2%dat (ns2:ns2+n-1) = tmpdat(:)
+!!    obs2%err (ns2:ns2+n-1) = tmperr(:)
+!!    obs2%dtrel(ns2:ns2+n-1) = tmpdt(:)
+!!    deallocate( tmpelm,tmplon,tmplat,tmplev,tmpdat,tmperr,tmpdt )
+!!    return
+!!  end subroutine copyobs
 end module obs_module

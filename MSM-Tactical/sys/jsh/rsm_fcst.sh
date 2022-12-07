@@ -71,6 +71,7 @@ if [ do$NEWSST = do.TRUE. ]; then
 else
    INEWSST=0
 fi
+SSTLAG=${SSTLAG:-0}
 #
 # NO NEED TO CHANGE BELOW THIS!
 #
@@ -184,7 +185,8 @@ fi
      fi
      if [ do$NEWSST = do.TRUE. ] ; then
        #ln -fs $BASEDIR/sstf00 rb_sstf00
-       cymdh=`${UTLDIR}/ndate 0 ${SDATE}`
+       slag=$SSTLAG
+       cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
        cyyyy=`echo ${cymdh} | cut -c1-4`
        cymd=`echo ${cymdh} | cut -c1-8`
        if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
@@ -238,7 +240,8 @@ while [ $h -lt $FEND ]; do
        fi
        if [ do$NEWSST = do.TRUE. ] ; then
          #ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
-         cymdh=`${UTLDIR}/ndate $hhr ${SDATE}`
+         slag=`expr $hhr + $SSTLAG`
+         cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
          cyyyy=`echo ${cymdh} | cut -c1-4`
          cymd=`echo ${cymdh} | cut -c1-8`
          if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then

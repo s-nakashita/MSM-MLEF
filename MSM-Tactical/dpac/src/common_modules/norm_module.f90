@@ -21,7 +21,7 @@ subroutine calc_te(u,v,t,q,ps,epsq,clat,si,nlon,nlat,te)
   real(kind=dp), intent(in) :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), intent(in) :: ps(:,:)
   real(kind=dp), intent(in) :: epsq ! weight for moist term
-  real(kind=sp), intent(in) :: clat(:),si(:)
+  real(kind=dp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: te(4)
   ! for energy calculation
   integer, parameter :: kmax=21

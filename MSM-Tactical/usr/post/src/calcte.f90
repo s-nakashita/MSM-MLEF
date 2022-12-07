@@ -28,14 +28,14 @@ program calcte
   ! input files' units (initial, plus 1 for 12h forecast)
   integer, parameter :: nisig=11, nisfc=21, niflx=31
   integer            :: nsig,     nsfc,     nflx
-  real(kind=sp), allocatable :: dfld(:,:,:)
-  real(kind=sp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
+  real(kind=dp), allocatable :: dfld(:,:,:)
+  real(kind=dp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
   character(len=8) :: label(4)
   integer :: idate(4), nfldsig
   real(kind=sp) :: fhour, ext(nwext) 
   real(kind=sp) :: zhour
-  real(kind=sp) :: si(levmax+1), sl(levmax)
-  real(kind=sp) :: rdelx, rdely, rtruth, rorient, rproj
+  real(kind=dp) :: si(levmax+1), sl(levmax)
+  real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
   integer :: igrd1, jgrd1, levs, nonhyd, icld
   integer :: n,i,j,k
@@ -129,43 +129,35 @@ program calcte
 
   do j=1,nlat
     do i=1,nlon
-      ps(i,j)=real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)
+      ps(i,j)=dfld(i+ilonw-1,j+jlats-1,ips)
     end do
   end do
-  ! factor for virtual temperature
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        fact(i,j,k)=1.0d0+fvirt*real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+        theta(i,j,k) = t(i,j,k)*(p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        t(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        theta(i,j,k) = t(i,j,k)*(p0/real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)/sl(k))**ptheta
+        u(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iu+k-1)
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        u(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iu+k-1),kind=dp)
+        v(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iv+k-1)
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        v(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iv+k-1),kind=dp)
-      end do
-    end do
-  end do
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        q(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        q(i,j,k) = dfld(i+ilonw-1,j+jlats-1,iq+k-1)
       end do
     end do
   end do
@@ -189,44 +181,36 @@ program calcte
   call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,0.0,sl,dfld,mapf,clat,clon)
   do j=1,nlat
     do i=1,nlon
-     ps(i,j)=ps(i,j)-real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)
+     ps(i,j)=ps(i,j)-dfld(i+ilonw-1,j+jlats-1,ips)
     end do
   end do
-  ! factor for virtual temperature
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        fact(i,j,k)=1.0d0+fvirt*real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        !t(i,j,k) = t(i,j,k)-dfld(i+ilonw-1,j+jlats-1,it+k-1)
+        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+        theta(i,j,k) = theta(i,j,k) - t(i,j,k)*(p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        !t(i,j,k) = t(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        t(i,j,k) = real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        theta(i,j,k) = theta(i,j,k) - t(i,j,k)*(p0/real(dfld(i+ilonw-1,j+jlats-1,ips),kind=dp)/sl(k))**ptheta
+        u(i,j,k) = u(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iu+k-1)
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        u(i,j,k) = u(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iu+k-1),kind=dp)
+        v(i,j,k) = v(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iv+k-1)
       end do
     end do
   end do
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        v(i,j,k) = v(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iv+k-1),kind=dp)
-      end do
-    end do
-  end do
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        q(i,j,k) = q(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,iq+k-1),kind=dp)
+        q(i,j,k) = q(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iq+k-1)
       end do
     end do
   end do
@@ -249,33 +233,6 @@ program calcte
   end do
   ! calculate energy
   call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,te)
-!  te=0.0d0
-!  area=0.0d0
-!  do k=1,kmax
-!    do j=jlats,jlatn
-!      coef=(si(k)-si(k+1))*cos(clat(j)*deg2rad)
-!      do i=ilonw,ilone
-!        !KE
-!        te(1)=te(1)+(u(i,j,k)*u(i,j,k)+v(i,j,k)*v(i,j,k))*coef
-!        !PE(T)
-!        !te(2)=te(2)+cp/tr*t(i,j,k)*t(i,j,k)*coef
-!        te(2)=te(2)+cp/tr*theta(i,j,k)*theta(i,j,k)*coef
-!        !LE
-!        te(3)=te(3)+lh**2/cp/tr*q(i,j,k)*q(i,j,k)*coef
-!      end do
-!    end do
-!  end do
-!  do j=jlats,jlatn
-!    coef=cos(clat(j)*deg2rad)
-!    do i=ilonw,ilone
-!      !PE(Ps)
-!      te(4)=te(4)+rd*tr*ps(i,j)*ps(i,j)/pr/pr*coef
-!      area=area+coef
-!    end do
-!  end do
-!  do i=1,4
-!    te(i)=te(i)*0.5d0/area
-!  end do
   open(55,file=ofile)
   write(55,'(A1,A12,4A13)') '#','ke','pe(t)','lh','pe(ps)','sum'
   write(55,'(5F13.5)') te(1),te(2),te(3),te(4),sum(te)

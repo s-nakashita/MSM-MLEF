@@ -34,13 +34,13 @@ $(EXECFLX):	$(OBJFLX)
 $(OBJFLX):	$(SRCFLX)
 	$(FC) $(FFLAGS) -c $(SRCFLX)
 
-ensmspr:	read_module.o write_module.o ensmspr.o
+ensmspr:	kind_module.o rsmcom_module.o read_module.o write_module.o ensmspr.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-calcte:	kind_module.o phconst_module.o read_module.o write_module.o norm_module.o calcte.o
+calcte:	kind_module.o phconst_module.o rsmcom_module.o read_module.o write_module.o norm_module.o calcte.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-addprtb:	kind_module.o phconst_module.o read_module.o write_module.o norm_module.o addprtb.o
+addprtb:	kind_module.o phconst_module.o rsmcom_module.o read_module.o write_module.o norm_module.o addprtb.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 test_read:	read_module.o write_module.o test_read.o
@@ -56,6 +56,9 @@ write_module.o:	$(MODDIR)/write_module.f90
 	$(FC) $(FFLAGS) -c $^
 
 phconst_module.o:	$(MODDIR)/phconst_module.f90
+	$(FC) $(FFLAGS) -c $^
+
+rsmcom_module.o:	$(MODDIR)/rsmcom_module.f90
 	$(FC) $(FFLAGS) -c $^
 
 norm_module.o:	$(MODDIR)/norm_module.f90
