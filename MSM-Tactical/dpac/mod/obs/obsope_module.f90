@@ -17,14 +17,13 @@ contains
 !
 ! main routine for observation operator
 !
-  subroutine obsope_serial(nobs,obsin,v3d,v2d,nobsout,obsout)
+  subroutine obsope_serial(obsin,v3d,v2d,obsout)
     implicit none
-    integer, intent(in) :: nobs
-    type(obstype), intent(in) :: obsin(nobs)
+    type(obstype), intent(in) :: obsin
     real(kind=dp), intent(in) :: v3d(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(in) :: v2d(nlon,nlat,nlev,nv2d)
-    integer, intent(out):: nobsout
-    type(obstype2), intent(out):: obsout(nobs)
+    type(obstype2), intent(out):: obsout
+    integer :: nobsin,nobsout
     
     return
   end subroutine obsope_serial
