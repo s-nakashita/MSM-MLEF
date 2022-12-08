@@ -6,7 +6,6 @@ module obs_module
 ! 22-10-06 create
 !
   use kind_module
-  use rsmcom_module, only: ndate,nhour
   implicit none
   private
 !
@@ -93,17 +92,17 @@ module obs_module
   public :: obstype, obstype2, opendcdf, get_nobs_upper, read_upper, &
    &  obsin_allocate, obsin_deallocate, obsout_allocate, obsout_deallocate, &
    &  get_nobs, read_obs, write_obs, &
-   &  obs_preproc
+   &  obs_preproc, ndate, nhour
 contains
-  subroutine get_nobs_upper(inf,cfile,atime,smin,emin,ndataall,nobs)
+  subroutine get_nobs_upper(cfile,atime,smin,emin,ndataall,nobs)
     implicit none
-    integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
     integer, intent(in) :: atime(5) !year,month,day,hour,minutes
     integer, intent(in) :: smin !observation time window (minutes)
     integer, intent(in) :: emin !(smin<=otime-atime<=emin)
     integer, intent(out) :: ndataall
     integer, intent(out) :: nobs
+    integer :: iunit
     integer :: ioffset
     integer :: idrec
     integer :: ntype
@@ -115,15 +114,12 @@ contains
     integer(2) :: ibuf2
     integer(2) :: iymdhnw(6)
     integer :: i,j,irec,nloop
-    logical :: lopened
 
-    inquire(unit=inf,opened=lopened)
-    if(.not.lopened) then
-      call opendcdf(inf,cfile)
-    end if
+    iunit=91
+    call opendcdf(iunit,cfile)
     ! get date
     ioffset=0
-    call read_part1(inf,ioffset,idrec,data1)
+    call read_part1(iunit,ioffset,idrec,data1)
     if(debug) then
       print *, 'reading part 1 of record ',idrec
       print *, '# of address', nrecall
@@ -133,7 +129,7 @@ contains
     nrec_time = nrecall
     irec=1+nrec1+nrec2
     do i=1,nrec3
-      read(inf,rec=irec) iymdhnw(i)
+      read(iunit,rec=irec) iymdhnw(i)
       irec=irec+1
     end do
     iyy = int(iymdhnw(1),kind=4)
@@ -146,7 +142,7 @@ contains
     otime(1)=iyy
     ! get info
     ioffset=nrec_time
-    call read_part1(inf,ioffset,idrec,data1)
+    call read_part1(iunit,ioffset,idrec,data1)
     if(debug) then
       print *, 'reading part 1 of record ',idrec
       print *, '# of address', nrecall
@@ -159,13 +155,13 @@ contains
     allocate( did(ntype),ndata(ntype),nobseach(ntype) )
     ! count all data types
     do i=1,ntype
-      read(inf,rec=irec) ibuf2
+      read(iunit,rec=irec) ibuf2
       did(i) = int(ibuf2,kind=4)
       irec=irec+1
-      read(inf,rec=irec) ibuf2
+      read(iunit,rec=irec) ibuf2
       ndata(i) = int(ibuf2,kind=4)
       irec=irec+1
-      read(inf,rec=irec) ibuf2
+      read(iunit,rec=irec) ibuf2
       nobseach(i) = int(ibuf2,kind=4)
       irec=irec+1
       print *, did(i), ndata(i), nobseach(i)
@@ -177,7 +173,7 @@ contains
     do i=1,ntype
       do j=1,ndata(i)
         ! read part 1 and extract information
-        call read_part1(inf,ioffset,idrec,data1)
+        call read_part1(iunit,ioffset,idrec,data1)
 !        if(debug) then
 !          print *, 'reading part 1 of record ',idrec
 !          print *, '# of address', nrecall
@@ -188,12 +184,12 @@ contains
         if(did(i)/1000.eq.3) then
           ! read hour and minutes
           irec=ioffset+nrec1+5
-          read(inf,rec=irec) ibuf2
+          read(iunit,rec=irec) ibuf2
           imm=int(ibuf2,kind=4)/100
           idd=int(ibuf2,kind=4)-imm*100
           otime(2)=imm; otime(3)=idd
           irec=irec+1
-          read(inf,rec=irec) ibuf2
+          read(iunit,rec=irec) ibuf2
           ihh=int(ibuf2,kind=4)/100
           inn=int(ibuf2,kind=4)-ihh*100
           otime(4)=ihh;otime(5)=inn
@@ -202,7 +198,7 @@ contains
             if(debug) print *, 'obs time =',otime
             if(debug) print *, 'difference(minutes) =',imin
             irec=ioffset+nrec1+nrec2+nrec3+2
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             nloop = int(ibuf2,kind=4)
             nobs=nobs+nloop*nobstype_upper
           end if
@@ -212,12 +208,13 @@ contains
       end do
     end do
     print *, ntype,ndataall
+    close(iunit)
+
     return
   end subroutine get_nobs_upper
 
-  subroutine read_upper(inf,cfile,atime,smin,emin,ndataall,obs)
+  subroutine read_upper(cfile,atime,smin,emin,ndataall,obs)
     implicit none
-    integer, intent(in) :: inf
     character(len=*), intent(in) :: cfile
     integer, intent(in) :: atime(5) !year,month,day,hour,minutes
     integer, intent(in) :: smin !observation time window (minutes)
@@ -226,6 +223,7 @@ contains
     type(obstype), intent(inout) :: obs !input:obs%nobs=before time selecting
                                         !output:obs%nobs=after time selecting
     integer :: nobsuse
+    integer :: iunit
     integer :: ioffset
     integer :: idrec
     integer :: data1(7)
@@ -243,6 +241,8 @@ contains
     character(len=16) :: acc
     integer :: n,nn,i,irec
     
+    iunit=91
+    call opendcdf(iunit,cfile)
     ioffset=nrec_time+nrec_info
     print *, 'ioffset ',ioffset
     ! set temporal obs arrays
@@ -257,7 +257,7 @@ contains
     otime(1)=atime(1)
     do n=1,ndataall
       ! read part 1 and extract information
-      call read_part1(inf,ioffset,idrec,data1)
+      call read_part1(iunit,ioffset,idrec,data1)
       nrec_data = nrecall
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
@@ -299,11 +299,11 @@ contains
         end if
         ! read hour and minutes
         irec=ioffset+nrec1+5
-        read(inf,rec=irec) ibuf2
+        read(iunit,rec=irec) ibuf2
         otime(2)=int(ibuf2,kind=4)/100
         otime(3)=int(ibuf2,kind=4)-otime(2)*100
         irec=irec+1
-        read(inf,rec=irec) ibuf2
+        read(iunit,rec=irec) ibuf2
         otime(4)=int(ibuf2,kind=4)/100
         otime(5)=int(ibuf2,kind=4)-otime(4)*100
         call nhour(atime,otime,imin)
@@ -316,15 +316,15 @@ contains
             print *, dtype,tmplat,tmplon,tmpdt
           end if
           irec=ioffset+nrec1+nrec2+nrec3+1
-          read(inf,rec=irec) ibuf2
+          read(iunit,rec=irec) ibuf2
           if(debug) print *, 'sst ',real(ibuf2,kind=dp)*0.1
           irec=irec+1
-          read(inf,rec=irec) ibuf2
+          read(iunit,rec=irec) ibuf2
           nloop = int(ibuf2,kind=4)
           if(debug) print *, 'nloop ',nloop 
           do i=1,nloop
             irec=irec+2
-            read(inf,rec=irec) ibuf2 !accuracy
+            read(iunit,rec=irec) ibuf2 !accuracy
             write(acc,'(b16.16)') ibuf2
             if(debug) then
               print *, 'accuracy'
@@ -337,7 +337,7 @@ contains
               cycle
             end if
             irec=irec+1
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             if(acc(11:11)=='0'.and.ibuf2>0) then
               tmplev=real(ibuf2,kind=dp)*10.0d0 ![Pa]
             else
@@ -345,7 +345,7 @@ contains
               cycle
             end if
             irec=irec+3
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             if(acc(13:13)=='0'.and.ibuf2>0) then
               tmpelm=id_t_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
@@ -357,7 +357,7 @@ contains
               &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             if(acc(14:14)=='0'.and.ibuf2>0) then
               tmpelm=id_td_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
@@ -369,7 +369,7 @@ contains
               &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+2 
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             if(acc(15:15)=='0'.and.ibuf2>0) then
               tmpelm=id_wd_obs
               tmpdat=real(ibuf2,kind=dp) ![degree]
@@ -381,7 +381,7 @@ contains
               &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
-            read(inf,rec=irec) ibuf2
+            read(iunit,rec=irec) ibuf2
             if(acc(16:16)=='0'.and.ibuf2>0) then
               tmpelm=id_ws_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![m/s]
@@ -425,14 +425,14 @@ contains
     obs%dat (:) = tmpobs2%dat (1:nobsuse)
     obs%err (:) = tmpobs2%err (1:nobsuse)
     obs%dmin(:) = tmpobs2%dmin(1:nobsuse)
-    close(inf)
+    close(iunit)
 
     return
   end subroutine read_upper
 
-  subroutine read_part1(inf,ioffset,idrec,data)
+  subroutine read_part1(iunit,ioffset,idrec,data)
     implicit none
-    integer, intent(in) :: inf
+    integer, intent(in) :: iunit
     integer, intent(in) :: ioffset
     integer, intent(out) :: idrec
     integer, intent(out) :: data(7)
@@ -441,7 +441,7 @@ contains
 
     irec=1+ioffset
     do i=1,nrec1
-      read(inf,rec=irec) ibuf2(i)
+      read(iunit,rec=irec) ibuf2(i)
       irec=irec+1
     end do
     nrecall=int(ibuf2(1),kind=4)
@@ -591,12 +591,12 @@ contains
     return
   end subroutine sortobs
 
-  subroutine opendcdf(inf,cfile)
+  subroutine opendcdf(iunit,cfile)
     implicit none
-    integer, intent(in) :: inf
+    integer, intent(in) :: iunit
     character(len=*), intent(in) :: cfile
 
-    open(inf,file=cfile,status='old',form='unformatted',&
+    open(iunit,file=cfile,status='old',form='unformatted',&
          convert='big_endian',access='direct',recl=2)
  
     return
@@ -605,7 +605,7 @@ contains
 ! convert (ws,wd)=>(u,v) and/or (t,td)=>(t,q)
 !
   subroutine obs_preproc(obs,iwnd,iq)
-    use rsmcom_module, only: calc_q, calc_uv
+    use func_module, only: calc_q, calc_uv
     implicit none
     type(obstype), intent(inout) :: obs
     integer, optional, intent(in) :: iwnd !wind
@@ -866,6 +866,63 @@ contains
 
     return
   end subroutine write_obs
+!
+! calculate date before or after several hours
+! [note] use library w3_4 in sys/lib
+!
+  subroutine ndate(date0,dt,date1)
+    implicit none
+    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
+    integer, intent(in)  :: dt    !minutes
+    integer, intent(out) :: date1(5) !year,month,day,hour,minutes 
+    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
+    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
+
+!    print *, date0
+    idat = 0
+    idat(1:3) = date0(1:3)
+    idat(5:6) = date0(4:5)
+!    print *, idat
+    rinc = 0.0
+    rinc(3) = real(dt,kind=sp)
+!    print *, rinc
+
+    call w3movdat(rinc,idat,jdat)
+!    print *, jdat
+    date1(1:3)=jdat(1:3)
+    date1(4:5)=jdat(5:6)
+
+    return
+  end subroutine ndate
+!
+! calculate hours between two dates
+! [note] use library w3_4 in sys/lib
+!
+  subroutine nhour(date0,date1,dt)
+    implicit none
+    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
+    integer, intent(in)  :: date1(5) !year,month,day,hour,minutes 
+    integer, intent(out) :: dt    !minutes (date1 - date0)
+    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
+    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
+
+!    print *, date0
+    idat = 0
+    idat(1:3) = date0(1:3)
+    idat(5:6) = date0(4:5)
+!    print *, idat
+!    print *, date1
+    jdat = 0
+    jdat(1:3) = date1(1:3)
+    jdat(5:6) = date1(4:5)
+!    print *, jdat
+
+    call w3difdat(jdat,idat,3,rinc)
+!    print *, rinc
+    dt = nint(rinc(3))
+
+    return
+  end subroutine nhour
 !!
 !! don't work
 !!

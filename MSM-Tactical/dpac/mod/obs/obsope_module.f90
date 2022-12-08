@@ -6,8 +6,8 @@ module obsope_module
 ! 22-12-05 create
 !
   use kind_module
-  use rsmparm_module
-  use rsmcom_module, only : calc_td, calc_wd
+  use rsmcom_module
+  use func_module, only : calc_td, calc_wd
   use obs_module
   implicit none
   private
@@ -17,11 +17,11 @@ contains
 !
 ! main routine for observation operator
 !
-  subroutine obsope_serial(obsin,v3d,v2d,obsout)
+  subroutine obsope_serial(obsin,v3dg,v2dg,obsout)
     implicit none
     type(obstype), intent(in) :: obsin
-    real(kind=dp), intent(in) :: v3d(nlon,nlat,nlev,nv3d)
-    real(kind=dp), intent(in) :: v2d(nlon,nlat,nlev,nv2d)
+    real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
+    real(kind=dp), intent(in) :: v2dg(nlon,nlat,nlev,nv2d)
     type(obstype2), intent(out):: obsout
     integer :: nobsin,nobsout
     

@@ -7,8 +7,8 @@ module write_module
 ! namelist:
 !
   use kind_module
-  use phconst_module, only: deg2rad
-  use rsmcom_module, only: conv_temp
+  use phconst_module, only: pi,deg2rad,fvirt
+  use func_module, only: conv_temp
   use read_module, only: levmax, nwext, lsoil, nfldsfc, nfldflx, verbose
   
   implicit none
@@ -23,7 +23,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nflds,nonhyd,icld,dfld,mapf,clat,clon)
 ! input :
 ! ounit sigma file (sequential, with header)
-! dfld  variables (single precision)
+! dfld  variables (double precision)
 !
   implicit none
   integer, intent(in) :: ounit
@@ -46,8 +46,6 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   integer :: iphys3d(3)
   real(kind=sp), allocatable :: sfld(:)
   real(kind=sp), allocatable :: factor(:,:,:)
-  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=sp), parameter :: pi=3.141592, deg2rad=pi/180.0
   
   iret = 0
 ! write label
@@ -92,6 +90,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   if(verbose) print *,ips, 'write lnps ', sfld(1), maxval(sfld(:)), minval(sfld(:))
   ! T
   it=ips+1
+  iq=it+3*levs
   ! temperature => virtual temperature
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),1)
   do k=1, levs
@@ -168,14 +167,6 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     if(verbose) print *,icw+k-1, 'write CW at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
-!  ! factor to fully modify the virtual temperature
-!  do k=1,levs
-!    do j=1,jgrd1
-!      do i=1,igrd1
-!        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
-!      end do
-!    end do
-!  end do
   if (nonhyd.eq.1) then
   ! pn
   ipn=icw+levs

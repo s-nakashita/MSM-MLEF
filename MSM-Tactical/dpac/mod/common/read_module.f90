@@ -8,7 +8,7 @@ module read_module
 !
   use kind_module
   use phconst_module
-  use rsmcom_module, only : conv_temp
+  use func_module, only : conv_temp
   implicit none
   private
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
@@ -87,7 +87,7 @@ subroutine read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
   end if
   !nflds = 8+13*levs
   nflds = 2+9*levs+1 
-  !gz,q,t(levs),u(levs),v(levs),q(levs),oz(levs),cw(levs),pn(levs),tn(levs),wn(levs+1)
+  !gz,lnps,t(levs),u(levs),v(levs),q(levs),oz(levs),cw(levs),pn(levs),tn(levs),wn(levs+1)
   if((icld.eq.1).and.(fhour.gt.0.0)) then !phys3d
     nflds = nflds + 3*levs
   end if
@@ -103,7 +103,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
 ! iunit sigma file (sequential, with header)
 ! 
 ! output:
-! dfld  variables (single precision)
+! dfld  variables (double precision)
 !
   implicit none
   integer, intent(in) :: iunit
