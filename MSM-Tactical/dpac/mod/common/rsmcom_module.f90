@@ -27,7 +27,7 @@ module rsmcom_module
   integer,save :: nproj !0=mercator, 1.or.-1=polar
   real(kind=dp),save :: rtruth,rorient,rdelx,rdely,rcenlat,rcenlon
   real(kind=dp),save :: rlftgrd, rbtmgrd
-  !!! forecast hour
+  !!! other header information (saved for write restart file)
   real(kind=sp),save :: fhour
   character(len=8),save :: label(4)
   integer,save :: idate(4)
@@ -74,9 +74,11 @@ module rsmcom_module
 !
 ! set grid information
 !
-  subroutine set_rsmparm(nsig)
+  subroutine set_rsmparm(cfile)
     implicit none
-    integer,intent(in) :: nsig ! input sigma file unit
+    character(len=*), intent(in) :: cfile !input sigma file
+  !  integer,intent(in) :: nsig ! input sigma file unit
+    integer :: nsig
     integer :: nskip
     real(kind=sp) :: ext(nwext)
     real(kind=dp) :: sisl(2*levmax+1)
@@ -86,6 +88,8 @@ module rsmcom_module
     
     write(6,'(A)') 'start set_rsmparm'
     
+    nsig=70
+    open(nsig,file=cfile,access='sequential',form='unformatted',action='read')
     call read_header(nsig,icld,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
     iwav1  = int(ext(1))
     jwav1  = int(ext(2))
@@ -166,6 +170,9 @@ module rsmcom_module
     end do
     write(6,'(a,f9.2,x,f9.2)') 'rlon=',minval(rlon),maxval(rlon)
     deallocate(sfld)
+    close(nsig)
+    return
+
   end subroutine set_rsmparm
 !
 ! clean up
@@ -178,13 +185,15 @@ module rsmcom_module
 !
 ! read restart file
 !
-  subroutine read_restart(nsig,v3dg,v3dhg,v2dg)
+  subroutine read_restart(cfile,v3dg,v3dhg,v2dg)
     implicit none
-    integer, intent(in) :: nsig
+    character(len=*), intent(in) :: cfile
+    !integer, intent(in) :: nsig
     real(kind=dp), intent(out) :: v3dg(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(out) :: v3dhg(nlon,nlat,nlev+1,nv3dh)
     real(kind=dp), intent(out) :: v2dg(nlon,nlat,nv2d)
 
+    integer :: nsig
     real(kind=dp), allocatable :: dfld(:,:,:)
     real(kind=dp), allocatable :: dummp(:,:,:),dumlat(:),dumlon(:) !dummy
     integer :: k,kk
@@ -192,6 +201,9 @@ module rsmcom_module
     allocate( dfld(igrd1,jgrd1,nflds) )
     allocate( dummp(igrd1,jgrd1,3) )
     allocate( dumlat(jgrd1), dumlon(igrd1) )
+
+    nsig=70
+    open(nsig,file=cfile,access='sequential',form='unformatted',action='read')
     call read_sig( nsig,igrd1,jgrd1,nlev,nflds,nonhyd,icld,fhour,sig,&
       &  dfld,dummp,dumlat,dumlon )
     kk=1
@@ -237,18 +249,22 @@ module rsmcom_module
         kk=kk+1
       end do
     end if
+    close(nsig)
+
     return
   end subroutine read_restart
 !
 ! write restart file
 !
-  subroutine write_restart(nsig,v3dg,v3dhg,v2dg)
+  subroutine write_restart(cfile,v3dg,v3dhg,v2dg)
     implicit none
-    integer, intent(in) :: nsig
+    character(len=*), intent(in) :: cfile
+    !integer, intent(in) :: nsig
     real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(in) :: v3dhg(nlon,nlat,nlev+1,nv3dh)
     real(kind=dp), intent(in) :: v2dg(nlon,nlat,nv2d)
 
+    integer :: nsig
     real(kind=dp), allocatable :: dfld(:,:,:)
     real(kind=sp) :: ext(nwext)
     integer :: k,kk
@@ -313,8 +329,12 @@ module rsmcom_module
         kk=kk+1
       end do
     end if
+    nsig=80
+    open(nsig,file=cfile,form='unformatted',access='sequential')
     call write_sig(nsig,label,idate,fhour,sig,sigh,ext,&
      &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon)
+    close(nsig)
+
     return
   end subroutine write_restart
 !

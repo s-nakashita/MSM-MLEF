@@ -33,7 +33,8 @@ module obs_module
     real(kind=dp),allocatable :: dat(:)
     real(kind=dp),allocatable :: err(:)
     real(kind=dp),allocatable :: dmin(:) ! observation time relative to analysis time (minutes)
-    real(kind=dp),allocatable :: hxf(:,:)   ! h(x) ensemble
+    real(kind=dp),allocatable :: hxf(:)   ! h(x) control
+    real(kind=dp),allocatable :: hxe(:,:)   ! h(x) ensemble
     integer,allocatable       :: qc(:)    ! QC flag
   end type obstype2
 !
@@ -71,9 +72,21 @@ module obs_module
   integer,parameter,public :: id_ws_obs=10   !Wind speed[m/s]
   real(kind=dp),parameter,public :: obserr_upper(nobstype_upper) = &
   & (/1.0d0,1.0d0,5.0d0,1.0d0/)
+  ! all
+  integer,parameter,public :: nobstype=9
+  integer,parameter,public :: elem_id(nobstype)= &
+  & (/id_u_obs,id_v_obs,id_t_obs,id_q_obs,id_rh_obs,id_ps_obs,&
+  &   id_td_obs,id_wd_obs,id_ws_obs/)
+  character(len=3),parameter,public :: obelmlist(nobstype) = &
+  & (/'  U','  V','  T','  Q',' RH',' Ps',&
+  &   ' Td',' Wd',' Ws'/)
+
 !
 ! QC flags
 !
+  integer,parameter,public :: nqctype=5
+  character(len=6),parameter,public :: qctype(nqctype)=&
+  & (/'  Pass','Gerror','  High','   Low','Outreg'/)
   integer,parameter,public :: iqc_good=0
   integer,parameter,public :: iqc_gross_err=5
 !  integer,parameter,public :: iqc_ps_ter=10
@@ -82,24 +95,59 @@ module obs_module
   integer,parameter,public :: iqc_out_vhi=20
   integer,parameter,public :: iqc_out_vlo=21
   integer,parameter,public :: iqc_out_h=22
-  integer,parameter,public :: iqc_otype=90
-  integer,parameter,public :: iqc_time=91
+!  integer,parameter,public :: iqc_otype=90
+!  integer,parameter,public :: iqc_time=91
+
 ! 
 ! debug
 !
   logical, parameter :: debug=.false.
 
-  public :: obstype, obstype2, opendcdf, get_nobs_upper, read_upper, &
+  public :: obstype, obstype2, uid_obs, &
+   &  opendcdf, get_nobs_upper, read_upper, &
    &  obsin_allocate, obsin_deallocate, obsout_allocate, obsout_deallocate, &
-   &  get_nobs, read_obs, write_obs, &
-   &  obs_preproc, ndate, nhour
+   &  get_nobs, read_obs, write_obs, read_obsout, write_obsout, &
+   &  obs_preproc, monit_obsin, ndate, nhour
 contains
-  subroutine get_nobs_upper(cfile,atime,smin,emin,ndataall,nobs)
+!
+! convert obsID to sequential number
+!
+  function uid_obs(id_obs)
+    implicit none
+    integer :: id_obs, uid_obs
+
+    select case(id_obs)
+    case(id_u_obs)
+      uid_obs=1
+    case(id_v_obs)
+      uid_obs=2
+    case(id_t_obs)
+      uid_obs=3
+    case(id_q_obs)
+      uid_obs=4
+    case(id_rh_obs)
+      uid_obs=5
+    case(id_ps_obs)
+      uid_obs=6
+    case(id_td_obs)
+      uid_obs=7
+    case(id_wd_obs)
+      uid_obs=8
+    case(id_ws_obs)
+      uid_obs=9
+    case default
+      uid_obs=-1
+    end select
+  end function uid_obs
+!
+! get # of observation for upper dcdf
+!
+  subroutine get_nobs_upper(cfile,atime,lmin,rmin,ndataall,nobs)
     implicit none
     character(len=*), intent(in) :: cfile
     integer, intent(in) :: atime(5) !year,month,day,hour,minutes
-    integer, intent(in) :: smin !observation time window (minutes)
-    integer, intent(in) :: emin !(smin<=otime-atime<=emin)
+    integer, intent(in) :: lmin !observation time window (minutes)
+    integer, intent(in) :: rmin !(lmin<=otime-atime<=rmin)
     integer, intent(out) :: ndataall
     integer, intent(out) :: nobs
     integer :: iunit
@@ -194,7 +242,7 @@ contains
           inn=int(ibuf2,kind=4)-ihh*100
           otime(4)=ihh;otime(5)=inn
           call nhour(atime,otime,imin)
-          if((imin.ge.smin).and.(imin.lt.emin)) then
+          if((imin.ge.lmin).and.(imin.lt.rmin)) then
             if(debug) print *, 'obs time =',otime
             if(debug) print *, 'difference(minutes) =',imin
             irec=ioffset+nrec1+nrec2+nrec3+2
@@ -212,13 +260,15 @@ contains
 
     return
   end subroutine get_nobs_upper
-
-  subroutine read_upper(cfile,atime,smin,emin,ndataall,obs)
+!
+! get observation for upper dcdf
+!
+  subroutine read_upper(cfile,atime,lmin,rmin,ndataall,obs)
     implicit none
     character(len=*), intent(in) :: cfile
     integer, intent(in) :: atime(5) !year,month,day,hour,minutes
-    integer, intent(in) :: smin !observation time window (minutes)
-    integer, intent(in) :: emin !(smin<=otime-atime<=emin)
+    integer, intent(in) :: lmin !observation time window (minutes)
+    integer, intent(in) :: rmin !(lmin<=otime-atime<=rmin)
     integer, intent(in) :: ndataall
     type(obstype), intent(inout) :: obs !input:obs%nobs=before time selecting
                                         !output:obs%nobs=after time selecting
@@ -307,7 +357,7 @@ contains
         otime(4)=int(ibuf2,kind=4)/100
         otime(5)=int(ibuf2,kind=4)-otime(4)*100
         call nhour(atime,otime,imin)
-        if((imin.ge.smin).and.(imin.lt.emin)) then
+        if((imin.ge.lmin).and.(imin.lt.rmin)) then
           if(debug) print *, 'obs time =',otime
           if(debug) print *, 'difference(minutes) =',imin
           tmpdt = real(imin,kind=dp)
@@ -616,9 +666,10 @@ contains
     real(kind=dp) :: td, q, p
     
     real(kind=dp) :: latb, lonb
-    integer :: nobseach(nobstype_upper,1000)
+    integer, parameter :: npointmax=10000
+    integer :: nobseach(nobstype_upper,npointmax)
     integer :: n_ws, n_wd
-    integer :: n,nn,npoint,i,itype
+    integer :: n,nn,npoint,i,j,itype,iter,itermax
 
     iwnd_=1
     if(present(iwnd)) iwnd_=iwnd
@@ -628,12 +679,18 @@ contains
     tmpobs%nobs = obs%nobs
     call obsin_allocate( tmpobs )
 
+    n=0
+    nn=0
+    do while(.true.)
+    if(n.ge.obs%nobs) exit
     npoint=0
     nobseach=0
     latb=0.0_dp
     lonb=0.0_dp
-    do n=1,obs%nobs
-      if(n.eq.1) then
+!    do n=1,obs%nobs
+    do while (n.le.obs%nobs)
+      n=n+1
+      if(npoint.eq.0) then
         latb=obs%lat(n)
         lonb=obs%lon(n)
         npoint=npoint+1
@@ -644,7 +701,7 @@ contains
         lonb=obs%lon(n)
         npoint=npoint+1
       end if
-      if(npoint > size(nobseach,2) ) exit
+      if(npoint > npointmax ) exit
       select case(obs%elem(n))
       case(id_t_obs)
         nobseach(1,npoint)=nobseach(1,npoint)+1
@@ -660,9 +717,8 @@ contains
     npoint=npoint-1
     print *, 'nobs,npoint=',n,npoint
 
-    nn=0
     do i=1,npoint
-      do n=1,sum(nobseach(:,i))
+      do j=1,sum(nobseach(:,i))
         nn=nn+1
         if(iq_.eq.1.and.obs%elem(nn).eq.id_td_obs) then
           td = obs%dat(nn)
@@ -685,6 +741,7 @@ contains
           obs%err(n_ws) = obserr_conv(2)
         end if
       end do
+    end do
     end do
     return
   end subroutine obs_preproc
@@ -741,7 +798,7 @@ contains
     allocate( obs%dat (obs%nobs) )
     allocate( obs%err (obs%nobs) )
     allocate( obs%dmin(obs%nobs) )
-    allocate( obs%hxf (member,obs%nobs) )
+    allocate( obs%hxf (obs%nobs) )
     allocate( obs%qc  (obs%nobs) )
 
     obs%elem = 0
@@ -753,6 +810,11 @@ contains
     obs%dmin = 0.0_dp
     obs%hxf  = 0.0_dp
     obs%qc   = 0
+
+    if(member.gt.0) then
+      allocate( obs%hxe (member,obs%nobs) )
+      obs%hxe = 0.0_dp
+    end if
 
     return
   end subroutine obsout_allocate
@@ -769,6 +831,7 @@ contains
     if(allocated(obs%err))  deallocate(obs%err)
     if(allocated(obs%dmin)) deallocate(obs%dmin)
     if(allocated(obs%hxf)) deallocate(obs%hxf)
+    if(allocated(obs%hxe)) deallocate(obs%hxe)
     if(allocated(obs%qc)) deallocate(obs%qc)
 
     return
@@ -866,6 +929,146 @@ contains
 
     return
   end subroutine write_obs
+!
+  subroutine read_obsout(cfile,obs,mem)
+    implicit none
+    character(len=*), intent(in) :: cfile
+    type(obstype2), intent(inout) :: obs
+    integer, intent(in) :: mem
+    real(kind=sp) :: wk(9)
+    integer :: n, iunit
+
+    iunit=91
+    open(iunit,file=cfile,form='unformatted',access='sequential')
+    do n=1,obs%nobs
+      read(iunit) wk
+      select case(nint(wk(1)))
+      case(id_ps_obs)
+        wk(5)=wk(5)*100.0 !hPa -> Pa
+        wk(6)=wk(6)*100.0 !hPa -> Pa
+        wk(8)=wk(8)*100.0 !hPa -> Pa
+      case default
+        wk(4)=wk(4)*100.0 !hPa -> Pa
+      end select
+      if(debug) print *, wk
+      obs%elem(n) = nint(wk(1))
+      obs%lon (n) = real(wk(2),kind=dp)
+      obs%lat (n) = real(wk(3),kind=dp)
+      obs%lev (n) = real(wk(4),kind=dp)
+      obs%dat (n) = real(wk(5),kind=dp)
+      obs%err (n) = real(wk(6),kind=dp)
+      obs%dmin(n) = real(wk(7),kind=dp)
+      obs%hxe(mem,n) = real(wk(8),kind=dp)
+      obs%qc  (n) = nint(wk(9))
+    end do
+    close(iunit)
+
+    return
+  end subroutine read_obsout
+!
+  subroutine write_obsout(cfile,obs,mem)
+    implicit none
+    character(len=*), intent(in) :: cfile
+    type(obstype2), intent(in) :: obs
+    integer, intent(in) :: mem
+    real(kind=sp) :: wk(9)
+    integer :: n, iunit
+
+    iunit=92
+    open(iunit,file=cfile,form='unformatted',access='sequential')
+
+    do n=1,obs%nobs
+      wk(1)=real(obs%elem(n),kind=sp)
+      wk(2)=real(obs%lon (n),kind=sp)
+      wk(3)=real(obs%lat (n),kind=sp)
+      wk(4)=real(obs%lev (n),kind=sp)
+      wk(5)=real(obs%dat (n),kind=sp)
+      wk(6)=real(obs%err (n),kind=sp)
+      wk(7)=real(obs%dmin(n),kind=sp)
+      wk(8)=real(obs%hxe(mem,n),kind=sp)
+      wk(9)=real(obs%qc  (n),kind=sp)
+      select case(nint(wk(1)))
+      case(id_ps_obs)
+        wk(5) = wk(5) * 0.01 !Pa->hPa
+        wk(6) = wk(6) * 0.01 !Pa->hPa
+        wk(8) = wk(8) * 0.01 !Pa->hPa
+      case default
+        wk(4) = wk(4) * 0.01 !Pa->hPa
+      end select
+      if(debug) print *, wk
+      write(iunit) wk
+    end do
+    close(iunit)
+
+    return
+  end subroutine write_obsout
+!
+! Monitor input observation
+!
+  subroutine monit_obsin(nobsall,elem,dat)
+    implicit none
+    integer, intent(in) :: nobsall
+    integer, intent(in) :: elem(nobsall)
+    real(kind=dp), intent(in) :: dat(nobsall)
+    integer :: nobs(nobstype)
+    real(kind=dp) :: mean(nobstype)
+    real(kind=dp) :: stdv(nobstype)
+    integer :: n,i
+
+    character(len=12) :: var_show(nobstype)
+    character(len=12) :: nobs_show(nobstype)
+    character(len=12) :: mean_show(nobstype)
+    character(len=12) :: stdv_show(nobstype)
+    character(len=12) :: nqc_show(nobstype,nqctype)
+
+    character(len=4) :: nstr
+    character(len=12) :: tmpstr(nobstype), tmpstr2(nobstype)
+
+    nobs(:) = 0
+    mean(:) = 0.0_dp
+    stdv(:) = 0.0_dp
+    do n=1,nobsall
+      i = uid_obs(elem(n))
+      nobs(i)=nobs(i)+1
+      mean(i)=mean(i)+dat(n)
+      stdv(i)=stdv(i)+dat(n)**2
+    end do
+    do i=1,nobstype
+      if(nobs(i).eq.0) then
+        mean(i)=undef
+        stdv(i)=undef
+      else
+        mean(i)=mean(i)/real(nobs(i),kind=dp)
+        stdv(i)=sqrt(stdv(i)/real(nobs(i),kind=dp)-mean(i)**2)
+      end if
+    end do
+
+    n=0
+    do i=1,nobstype
+      n=n+1
+      write(var_show(n),'(a12)') obelmlist(i)
+      write(nobs_show(n),'(i12)') nobs(i)
+      if(nobs(i).gt.0) then
+        write(mean_show(n),'(es12.3)') mean(i)
+        write(stdv_show(n),'(es12.3)') stdv(i)
+      else
+        write(mean_show(n),'(a12)') 'N/A'
+        write(stdv_show(n),'(a12)') 'N/A'
+      end if
+    end do
+    write(nstr,'(i4)') n
+    tmpstr(1:n) = '============'
+    tmpstr2(1:n) = '------------'
+
+    write(6,'(a,'//trim(nstr)//'a)') '======',tmpstr(1:n)
+    write(6,'(6x,'//trim(nstr)//'a)') var_show(1:n)
+    write(6,'(a,'//trim(nstr)//'a)') '------',tmpstr2(1:n)
+    write(6,'(a,'//trim(nstr)//'a)') 'MEAN  ',mean_show(1:n)
+    write(6,'(a,'//trim(nstr)//'a)') 'STD   ',stdv_show(1:n)
+    write(6,'(a,'//trim(nstr)//'a)') 'NUMBER',nobs_show(1:n)
+    write(6,'(a,'//trim(nstr)//'a)') '======',tmpstr(1:n)
+    return
+  end subroutine monit_obsin
 !
 ! calculate date before or after several hours
 ! [note] use library w3_4 in sys/lib
