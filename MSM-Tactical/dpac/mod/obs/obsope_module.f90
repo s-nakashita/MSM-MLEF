@@ -26,7 +26,6 @@ contains
     integer :: iof
     character(len=filelenmax) :: guesf, outf
     real(kind=dp) :: v3dg(nlon,nlat,nlev,nv3d)
-    real(kind=dp) :: v3dhg(nlon,nlat,nlev+1,nv3dh)
     real(kind=dp) :: v2dg(nlon,nlat,nv2d)
     real(kind=dp) :: p_full(nlon,nlat,nlev)
     real(kind=dp) :: ri,rj,rk
@@ -53,7 +52,7 @@ contains
       nobsout=0
       nn=0
       call file_member_replace(im,fguess_basename,guesf)
-      call read_restart(guesf,v3dg,v3dhg,v2dg)
+      call read_restart(guesf,v3dg,v2dg)
       call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
 !      p_full = v3dg(:,:,:,iv3d_pp)
       do iof=1,obsin_num
