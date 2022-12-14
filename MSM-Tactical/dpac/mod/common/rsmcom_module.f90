@@ -51,15 +51,15 @@ module rsmcom_module
   !!! in r_sig.fNN
   integer,save :: nflds
   !!! 2D variables
-  integer,parameter :: nv2d=2 !gz,ps
+  integer,save      :: nv2d=2    !gz,ps,(wbtm)
   integer,parameter :: iv2d_gz=1 ! terrain height
   integer,parameter :: iv2d_ps=2 ! surface pressure
+  integer,parameter :: iv2d_wb=3 ! vertical velocity at bottom level
   !!! 3D variables
   !!! pp,tt,ww are only for nonhydrostatic
   integer,save      :: nv3d
   integer,parameter :: nv3d_hyd=6    !t,u,v,q,oz,cw 
-  integer,parameter :: nv3d_nonhyd=2 !pp,tt
-  integer,parameter :: nv3dh=1       !ww(nlev+1)
+  integer,parameter :: nv3d_nonhyd=3 !pp,tt,ww(halflevel)
   integer,parameter :: iv3d_t=1  ! temperature
   integer,parameter :: iv3d_u=2  ! x-direction wind
   integer,parameter :: iv3d_v=3  ! y-direction wind
@@ -68,16 +68,18 @@ module rsmcom_module
   integer,parameter :: iv3d_cw=6 ! cloud water
   integer,parameter :: iv3d_pp=7 ! full pressure perturbation
   integer,parameter :: iv3d_tt=8 ! temperature perturbation
-  integer,parameter :: iv3d_ww=1 ! vertical velocity at half levels
+  integer,parameter :: iv3d_ww=9 ! vertical velocity at half levels (except bottom)
   
+  integer,save :: nlevall
+
   contains
 !
 ! set grid information
 !
   subroutine set_rsmparm(cfile)
     implicit none
+!    integer,intent(in) :: nsig ! input sigma file unit
     character(len=*), intent(in) :: cfile !input sigma file
-  !  integer,intent(in) :: nsig ! input sigma file unit
     integer :: nsig
     integer :: nskip
     real(kind=sp) :: ext(nwext)
@@ -127,14 +129,16 @@ module rsmcom_module
     write(6,'(a,f7.5,x,f7.5)') 'sigh=',minval(sigh),maxval(sigh)
 
     if(nonhyd.eq.1) then
+      nv2d=3
       nv3d=nv3d_hyd+nv3d_nonhyd
       write(6,*) 'model version is nonhydrostatic'
-      nskip=2+nv2d+nv3d*nlev+nv3dh*(nlev+1)!+3
     else
+      nv2d=2
       nv3d=nv3d_hyd
       write(6,*) 'model version is hydrostatic'
-      nskip=2+nv2d+nv3d*nlev!+3
     end if
+    nlevall=nv3d*nlev+nv2d
+    nskip=2+nlevall!+3
     allocate( sfld(lngrd) )
     rewind(nsig)
     do i=1,nskip
@@ -185,12 +189,11 @@ module rsmcom_module
 !
 ! read restart file
 !
-  subroutine read_restart(cfile,v3dg,v3dhg,v2dg)
+  subroutine read_restart(cfile,v3dg,v2dg)
     implicit none
     character(len=*), intent(in) :: cfile
     !integer, intent(in) :: nsig
     real(kind=dp), intent(out) :: v3dg(nlon,nlat,nlev,nv3d)
-    real(kind=dp), intent(out) :: v3dhg(nlon,nlat,nlev+1,nv3dh)
     real(kind=dp), intent(out) :: v2dg(nlon,nlat,nv2d)
 
     integer :: nsig
@@ -244,8 +247,10 @@ module rsmcom_module
         v3dg(:,:,k,iv3d_tt) = dfld(:,:,kk)
         kk=kk+1
       end do
-      do k=1,nlev+1
-        v3dhg(:,:,k,iv3d_ww) = dfld(:,:,kk)
+      v2dg(:,:,iv2d_wb) = dfld(:,:,kk)
+      kk=kk+1
+      do k=1,nlev
+        v3dg(:,:,k,iv3d_ww) = dfld(:,:,kk)
         kk=kk+1
       end do
     end if
@@ -256,12 +261,11 @@ module rsmcom_module
 !
 ! write restart file
 !
-  subroutine write_restart(cfile,v3dg,v3dhg,v2dg)
+  subroutine write_restart(cfile,v3dg,v2dg)
     implicit none
     character(len=*), intent(in) :: cfile
     !integer, intent(in) :: nsig
     real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
-    real(kind=dp), intent(in) :: v3dhg(nlon,nlat,nlev+1,nv3dh)
     real(kind=dp), intent(in) :: v2dg(nlon,nlat,nv2d)
 
     integer :: nsig
@@ -324,8 +328,10 @@ module rsmcom_module
         dfld(:,:,kk)=v3dg(:,:,k,iv3d_tt)
         kk=kk+1
       end do
-      do k=1,nlev+1
-        dfld(:,:,kk)=v3dhg(:,:,k,iv3d_ww)
+      dfld(:,:,kk)=v2dg(:,:,iv2d_wb)
+      kk=kk+1
+      do k=1,nlev
+        dfld(:,:,kk)=v3dg(:,:,k,iv3d_ww)
         kk=kk+1
       end do
     end if

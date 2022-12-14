@@ -2,7 +2,7 @@
 set -e
 dcddir=/zdata/grmsm/work/DATA/dcd
 datadir=/zdata/grmsm/work/msm2msm3_bv
-member=1
+member=10
 adate=2022061812
 fhour=0
 lmin=-60

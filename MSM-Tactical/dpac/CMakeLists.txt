@@ -24,7 +24,7 @@ find_package(fortran_stdlib REQUIRED)
 message(STATUS "fortran_stdlib_FOUND=${fortran_stdlib_FOUND}")
 
 add_subdirectory(mod/common)
-#add_subdirectory(mod/lmlef)
+add_subdirectory(mod/lmlef)
 add_subdirectory(mod/obs)
 add_subdirectory(obs)
 add_subdirectory(test)

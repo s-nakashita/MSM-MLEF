@@ -27,6 +27,20 @@ module nml_module
   integer, save :: slot_end = 1
   integer, save :: slot_base = 1
   real(kind=dp), save :: slot_tint = 60.0_dp !minutes
+
+  !! lmlef
+  character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
+  character(filelenmax) :: gues_in_basename = 'gues.@@@@'
+  character(filelenmax) :: anal_out_basename = 'anal.@@@@'
+  !!! 
+  real(kind=dp),save :: sigma_obs=500.0d3
+!  real(kind=dp),save :: sigma_obsv=0.4d0
+  real(kind=dp),save :: sigma_obsv=0.1d0
+  real(kind=dp),save :: sigma_obst=3.0d0
+  real(kind=dp),save :: gross_error=10.0d0
+  logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
+  logical,save      :: tl = .FALSE. ! If True, tangent linear operator used
+  logical,save      :: scl_mem = .FALSE. ! If True, forecast ensemble perturbations are scaled by member size
 contains
   subroutine read_nml_ens
     implicit none
@@ -74,6 +88,35 @@ contains
     write(6,nml=param_obsope)
     return
   end subroutine read_nml_obsope
+
+  subroutine read_nml_lmlef
+    implicit none
+    integer :: ierr
+
+    namelist /param_lmlef/ &
+      obsda_in_basename, &
+      gues_in_basename, &
+      anal_out_basename, &
+      sigma_obs, &
+      sigma_obsv, &
+      sigma_obst, &
+      gross_error, &
+      mean, &
+      tl, &
+      scl_mem
+
+    rewind(5)
+    read (5,nml=param_lmlef,iostat=ierr)
+    if (ierr<0) then
+      write(6,*) 'error: /param_lmlef/ is not found in namelist'
+      stop
+    elseif (ierr>0) then
+      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_lmlef'
+      stop
+    end if
+    write(6,nml=param_lmlef)
+    return
+  end subroutine read_nml_lmlef
 
   subroutine file_member_replace(mem,fin,fout)
     implicit none

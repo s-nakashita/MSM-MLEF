@@ -252,9 +252,9 @@ contains
       ak=(plev(k-1)-rk)/(plev(k-1)-plev(k))
       rk=real(k-1,kind=dp)+ak
     end if
-! debug
-    write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
-! debug
+!! debug
+!    write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
+!! debug
     return
   end subroutine phys2ijk
 !

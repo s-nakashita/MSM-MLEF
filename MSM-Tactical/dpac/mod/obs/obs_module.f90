@@ -958,7 +958,11 @@ contains
       obs%dat (n) = real(wk(5),kind=dp)
       obs%err (n) = real(wk(6),kind=dp)
       obs%dmin(n) = real(wk(7),kind=dp)
+      if(mem.eq.0) then
+      obs%hxf(n) = real(wk(8),kind=dp)
+      else
       obs%hxe(mem,n) = real(wk(8),kind=dp)
+      end if
       obs%qc  (n) = nint(wk(9))
     end do
     close(iunit)
@@ -985,7 +989,11 @@ contains
       wk(5)=real(obs%dat (n),kind=sp)
       wk(6)=real(obs%err (n),kind=sp)
       wk(7)=real(obs%dmin(n),kind=sp)
+      if(mem.eq.0) then
+      wk(8)=real(obs%hxf(n),kind=sp)
+      else
       wk(8)=real(obs%hxe(mem,n),kind=sp)
+      end if
       wk(9)=real(obs%qc  (n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
