@@ -7,6 +7,8 @@ adate=2022061812
 fhour=0
 lmin=-60
 rmin=60
+prep=_prep
+single=T
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -26,8 +28,14 @@ edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
 else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
-obsf=upper_prep.${sdate}-${edate}.dat
-echo $obsf
+obsf=upper${prep}.${sdate}-${edate}
+outf=obsda${prep}
+logf=obsope${prep}
+if [ "$single" = "T" ];then
+  outf=${outf}.single
+  logf=${logf}.single
+fi
+echo $obsf $outf
 cat <<EOF >obsope.nml
 &param_ens
  member=${member},
@@ -36,8 +44,9 @@ cat <<EOF >obsope.nml
  obsin_num=1,
  obsin_name='${obsf}',
  obs_out=,
- obsout_basename=,
+ obsout_basename='${outf}.@@@@',
  fguess_basename=,
+ single_obs=${single},
  slot_start=,
  slot_end=,
  slot_base=,
@@ -46,15 +55,16 @@ cat <<EOF >obsope.nml
 EOF
 cat obsope.nml
 
-rm gues.* obsda.*
+rm -f gues.* ${outf}*
 fh=`printf '%0.2d' $fhour`
-ln -s ${datadir}/${adate}/r_sig.f$fh gues.0000
+ln -s ${datadir}/${adate}/r_sig.f$fh gues.0000.grd
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
-ln -s ${datadir}/${adate}/bv${mem}/r_sig.f$fh gues.0${mem}
+ln -s ${datadir}/${adate}/bv${mem}/r_sig.f$fh gues.0${mem}.grd
 m=`expr $m + 1`
 done
-./obsope_serial < obsope.nml | tee obsope_prep.log
+
+./obsope_serial < obsope.nml | tee ${logf}.log
 
 echo "END"

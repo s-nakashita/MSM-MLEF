@@ -196,39 +196,44 @@ contains
     allocate( v3dm(nij1max,nlev,nv3d)[*], v2dm(nij1max,nv2d)[*] )
     allocate( v3ds(nij1max,nlev,nv3d)[*], v2ds(nij1max,nv2d)[*] )
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
-    v3dm = 0.0_dp
-    v2dm = 0.0_dp
+    call ensmean_grd(member,nij1max,v3d,v2d,v3dm,v2dm)
     v3ds = 0.0_dp
     v2ds = 0.0_dp
-    do m=1,member
-      do n=1,nv3d
-        do k=1,nlev
-          do i=1,nij1
-            v3dm(i,k,n)=v3dm(i,k,n)+v3d(i,k,m,n)
-            v3ds(i,k,n)=v3ds(i,k,n)+v3d(i,k,m,n)**2
+    do n=1,nv3d
+!$OMP PARALLEL DO PRIVATE(i,k,m)
+      do k=1,nlev
+        do i=1,nij1
+          do m=1,member
+            v3ds(i,k,n)=v3ds(i,k,n)+(v3d(i,k,m,n)-v3dm(i,k,n))**2
           end do
         end do
       end do
-      do n=1,nv2d
-        do i=1,nij1
-          v2dm(i,n)=v2dm(i,n)+v2d(i,m,n)
-          v2ds(i,n)=v2ds(i,n)+v2d(i,m,n)**2
-        end do
-      end do
-    end do
-    do n=1,nv3d
-      do k=1,nlev
-        do i=1,nij1
-          v3dm(i,k,n)=v3dm(i,k,n)/real(member,kind=dp)
-          v3ds(i,k,n)=sqrt(v3ds(i,k,n) - (v3dm(i,k,n)**2)*real(member,kind=dp))/sqrt(real(member-1,kind=dp))
-        end do
-      end do
+!$OMP END PARALLEL DO
     end do
     do n=1,nv2d
+!$OMP PARALLEL DO PRIVATE(i,m)
       do i=1,nij1
-        v2dm(i,n)=v2dm(i,n)/real(member,kind=dp)
-        v2ds(i,n)=sqrt(v2ds(i,n) - (v2dm(i,n)**2)*real(member,kind=dp))/sqrt(real(member-1,kind=dp))
+        do m=1,member
+          v2ds(i,n)=v2ds(i,n)+(v2d(i,m,n)-v2dm(i,n))**2
+        end do
       end do
+!$OMP END PARALLEL DO
+    end do
+    do n=1,nv3d
+!$OMP PARALLEL DO PRIVATE(i,k)
+      do k=1,nlev
+        do i=1,nij1
+          v3ds(i,k,n)=sqrt(v3ds(i,k,n)/real(member-1,kind=dp))
+        end do
+      end do
+!$OMP END PARALLEL DO
+    end do
+    do n=1,nv2d
+!$OMP PARALLEL DO PRIVATE(i)
+      do i=1,nij1
+        v2ds(i,n)=sqrt(v2ds(i,n)/real(member-1,kind=dp))
+      end do
+!$OMP END PARALLEL DO
     end do
 
     call gather_grd(1,v3dm,v2dm,v3dg,v2dg)

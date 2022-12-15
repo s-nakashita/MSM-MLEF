@@ -13,7 +13,7 @@ module obsope_module
   implicit none
   private
 
-  public :: obsope_serial, monit_dep, monit_print
+  public :: obsope_serial, obsope_update, monit_dep, monit_print
 contains
 !
 ! main routine for observation operator
@@ -30,11 +30,10 @@ contains
     real(kind=dp) :: p_full(nlon,nlat,nlev)
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn
+!!! for single point observation
+    real(kind=dp) :: lonb,latb
 !!! debug
-!    integer :: nobsmax
 !    real(kind=dp) :: dep
-!    
-!    nobsmax=100 !debug
 !!! debug
 
     nobsin=0
@@ -53,14 +52,55 @@ contains
       nn=0
       call file_member_replace(im,fguess_basename,guesf)
       call read_restart(guesf,v3dg,v2dg)
-      call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
-!      p_full = v3dg(:,:,:,iv3d_pp)
+!      call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
+      p_full = v3dg(:,:,:,iv3d_pp)
+      lonb=undef
+      latb=undef
       do iof=1,obsin_num
         do n=1,obsin(iof)%nobs
-!!! debug
-!          if(nn.ge.nobsmax) exit
-!!! debug
+          if(nobsmax.gt.0.and.nn.ge.nobsmax) exit
+          !!! single point observation
+          if(single_obs) then
+            if(lonb.ne.undef.and.latb.ne.undef) then
+              if(lonb.ne.obsin(iof)%lon(n).or.latb.ne.obsin(iof)%lat(n)) exit
+            end if
+          end if
           nobsout=nobsout+1
+          call phys2ijk(p_full,obsin(iof)%elem(n),&
+             &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
+             &  ri,rj,rk,obsout%qc(nobsout))
+          if(obsout%qc(nobsout).eq.iqc_good) then
+            nn=nn+1
+            if(im.eq.0) then
+              call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
+               &  v3dg,v2dg,p_full,obsout%hxf(nobsout))
+!!! debug
+!              dep = obsin(iof)%dat(n) - obsout%hxf(nobsout)
+!              print *, obsin(iof)%elem(n),obsin(iof)%lon(n),obsin(iof)%lat(n),&
+!               &  obsin(iof)%lev(n)
+!              print *,obsin(iof)%dat(n),obsout%hxf(nobsout), dep
+!!! debug
+            else
+              call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
+               &  v3dg,v2dg,p_full,obsout%hxe(im,nobsout))
+!!! debug
+!              dep = obsin(iof)%dat(n) - obsout%hxe(im,nobsout)
+!              print *, obsin(iof)%elem(n),obsin(iof)%lon(n),obsin(iof)%lat(n),&
+!               &  obsin(iof)%lev(n)
+!              print *,obsin(iof)%dat(n),obsout%hxe(im,nobsout), dep
+!!! debug
+            end if
+            if(single_obs) then
+              if(lonb.eq.undef.and.latb.eq.undef) then
+                lonb=obsin(iof)%lon(n)
+                latb=obsin(iof)%lat(n)
+              end if
+            end if
+          end if
+          if(single_obs.and.obsout%qc(nobsout)/=iqc_good) then
+            nobsout=nobsout-1
+            cycle
+          end if
           obsout%elem(nobsout) = obsin(iof)%elem(n)
           obsout%lon(nobsout)  = obsin(iof)%lon(n)
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
@@ -68,34 +108,18 @@ contains
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
           obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          call phys2ijk(p_full,obsout%elem(nobsout),&
-             &  obsout%lon(nobsout),obsout%lat(nobsout),obsout%lev(nobsout), &
-             &  ri,rj,rk,obsout%qc(nobsout))
-          if(obsout%qc(nobsout).eq.iqc_good) then
-            nn=nn+1
-            if(im.eq.0) then
-              call trans_xtoy(obsout%elem(nobsout),ri,rj,rk,&
-               &  v3dg,v2dg,p_full,obsout%hxf(nobsout))
-!!! debug
-!              dep = obsout%dat(nobsout) - obsout%hxf(nobsout)
-!              print *, obsout%elem(nobsout),obsout%lon(nobsout),obsout%lat(nobsout),&
-!               &  obsout%lev(nobsout)
-!              print *,obsout%dat(nobsout),obsout%hxf(nobsout), dep
-!!! debug
-            else
-              call trans_xtoy(obsout%elem(nobsout),ri,rj,rk,&
-               &  v3dg,v2dg,p_full,obsout%hxe(im,nobsout))
-!!! debug
-!              dep = obsout%dat(nobsout) - obsout%hxe(im,nobsout)
-!              print *, obsout%elem(nobsout),obsout%lon(nobsout),obsout%lat(nobsout),&
-!               &  obsout%lev(nobsout)
-!              print *,obsout%dat(nobsout),obsout%hxe(im,nobsout), dep
-!!! debug
-            end if
-          end if
         end do
       end do
       obsout%nobs = nobsout
+      if(single_obs) then
+        print '(a)','number elem  lon     lat      lev      dat      err      dmin'
+        do n=1,obsout%nobs
+          print '(i6,x,i5,7f10.2,i5)', n,obsout%elem(n),&
+           &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
+           &  obsout%err(n),obsout%dmin(n), &
+           &  obsout%hxf(n),obsout%qc(n)
+        end do
+      end if
       if(obs_out) then
         call file_member_replace(im,obsout_basename,outf)
         call write_obsout(outf,obsout,im)
@@ -103,6 +127,66 @@ contains
     end do
     return
   end subroutine obsope_serial
+!
+! observation operator applied to updated model variables in DA
+!
+  subroutine obsope_update(obs,mem,v3dg,v2dg)
+    implicit none
+    type(obstype2), intent(inout):: obs
+    integer,       intent(in) :: mem
+    real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
+    real(kind=dp), intent(in) :: v2dg(nlon,nlat,nv2d)
+    integer :: nobsin,nobsout
+    real(kind=dp) :: p_full(nlon,nlat,nlev)
+    real(kind=dp) :: ri,rj,rk
+    integer :: im, n, nn
+!!! debug
+!    integer :: nobsmax
+!    real(kind=dp) :: dep
+!    
+!    nobsmax=100 !debug
+!!! debug
+
+    if(obs%nobs==0) then
+      write(6,'(a)') 'no observation to be assimilated'
+      return
+    end if
+   
+    nobsout=0
+    nn=0
+!    call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
+    p_full = v3dg(:,:,:,iv3d_pp)
+    do n=1,obs%nobs
+      nobsout=nobsout+1
+      call phys2ijk(p_full,obs%elem(n),&
+         &  obs%lon(n),obs%lat(n),obs%lev(n), &
+         &  ri,rj,rk,obs%qc(n))
+      if(obs%qc(n).eq.iqc_good) then
+        nn=nn+1
+        if(mem.eq.0) then
+          call trans_xtoy(obs%elem(n),ri,rj,rk,&
+           &  v3dg,v2dg,p_full,obs%hxf(n))
+!!! debug
+!          dep = obs%dat(n) - obs%hxf(n)
+!          print *, obs%elem(n),obs%lon(n),obs%lat(n),&
+!           &  obs%lev(n)
+!          print *,obs%dat(n),obs%hxf(n), dep
+!!! debug
+        else
+          call trans_xtoy(obs%elem(n),ri,rj,rk,&
+           &  v3dg,v2dg,p_full,obs%hxe(mem,n))
+!!! debug
+!          dep = obs%dat(n) - obs%hxe(im,n)
+!          print *, obs%elem(n),obs%lon(n),obs%lat(n),&
+!           &  obs%lev(n)
+!              print *,obs%dat(n),obs%hxe(im,n), dep
+!!! debug
+        end if
+      end if
+    end do
+!    obs%nobs = nobsout
+    return
+  end subroutine obsope_update
 !
 !
 ! model variables => observation
@@ -311,6 +395,7 @@ contains
 ! Monitor departure
 !
   subroutine monit_dep(nobsall,elem,dep,qc,nobs,bias,rmse,nqc)
+    use phconst_module, only: pi, rad2deg
     implicit none
     integer, intent(in) :: nobsall
     integer, intent(in) :: elem(nobsall)
@@ -320,6 +405,7 @@ contains
     real(kind=dp), intent(out) :: bias(nobstype)
     real(kind=dp), intent(out) :: rmse(nobstype)
     integer, intent(out) :: nqc(nobstype,nqctype)
+    real(kind=dp) :: dep1
     integer :: n,i
 
     nobs(:) = 0
@@ -340,8 +426,17 @@ contains
         nqc(i,5)=nqc(i,5)+1
       case(iqc_good)
         nqc(i,1)=nqc(i,1)+1
-        bias(i)=bias(i)+dep(n)
-        rmse(i)=rmse(i)+dep(n)**2
+        dep1 = dep(n)
+        if(elem(n)==id_wd_obs) then !wind direction
+          if(dep1.lt.-180.0d0) then
+            dep1=dep1+360.0d0
+          end if
+          if(dep1.gt.180.0d0) then
+            dep1=dep1-360.0d0
+          end if
+        end if
+        bias(i)=bias(i)+dep1
+        rmse(i)=rmse(i)+dep1**2
       end select
     end do
     do i=1,nobstype

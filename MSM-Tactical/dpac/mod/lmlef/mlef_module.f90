@@ -1047,7 +1047,7 @@ end subroutine line_search
 !  transform matrix : trans = [I+Z^TZ]^{-1/2} = V\Sigma^{-1/2}V^T
 !  where I+Z^TZ = V\SigmaV^T (Eigen value decomposition)
 !=======================================================================
-subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,evalout)
+subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,dfs,dfn,evalout)
   implicit none
   integer, intent(in) :: ne
   integer, intent(in) :: nobs
@@ -1056,12 +1056,14 @@ subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,evalout)
   real(kind=dp), intent(in) :: zxb(nobs,ne)
   real(kind=dp), intent(out) :: trans(ne,ne)
   real(kind=dp), intent(in) :: parm_infl
+  real(kind=dp), intent(out), optional :: dfs ! degree of freedom for signal
+  real(kind=dp), intent(out), optional :: dfn ! degree of freedom for noise
   real(kind=dp), intent(out), optional :: evalout(ne)
 
   real(kind=dp), allocatable :: work(:,:)
   real(kind=dp), allocatable :: eival(:)
   real(kind=dp), allocatable :: eivec(:,:)
-  real(kind=dp) :: rho, w2, wij, cij
+  real(kind=dp) :: rho, w2, wij, cij, evaltmp
   integer :: i, j
 !-----------------------------------------------------------------------
 !  hess = I / (1+parm_infl) + zxb^T @ zxb (Gauss)
@@ -1127,6 +1129,18 @@ subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,evalout)
     !do i=1,ne
     !  print '(i2,'//trim(cn)//'es12.4)', i, work(i,:)
     !enddo
+  end if
+  if(present(dfs).and.present(dfn)) then
+    dfs=0.0_dp
+    dfn=0.0_dp
+    do j=1,i
+      evaltmp = eival(j) - rho
+      if(evaltmp.gt.0.0d0) then
+        dfs = dfs + evaltmp / (1.0d0 + evaltmp)
+        dfn = dfn + 1.0d0 / (1.0d0 + evaltmp)
+      end if
+    end do
+    if(jout) write(6,'(2(a,es13.5))') 'dfs=',dfs,' dfn=',dfn
   end if
   if(present(evalout)) then
     evalout = 0.0_dp

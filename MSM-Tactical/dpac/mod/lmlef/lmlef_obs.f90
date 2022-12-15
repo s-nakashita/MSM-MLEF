@@ -4,7 +4,9 @@ module lmlef_obs
 ! [PURPOSE:] Observational procedures
 !
 ! [HISTORY:]
-!   12/13/2022 created for MSM
+!   06/01/2022 created
+!   07/07/2022 TL option added
+!   12/13/2022 modified for MSM
 !
 !=======================================================================
 !$USE OMP_LIB
@@ -48,12 +50,6 @@ module lmlef_obs
 !  integer,allocatable,save :: obsnode(:)
 
 contains
-!subroutine init_lmlef_obs 
-!  REWIND(5)
-!  READ (5,NAMLST_LMLEF_OBS)
-!  write(6,NAMLST_LMLEF_OBS)
-!  return
-!end subroutine init_lmlef_obs
 !-----------------------------------------------------------------------
 ! Initialize
 !-----------------------------------------------------------------------
@@ -250,6 +246,20 @@ subroutine set_lmlef_obs
       obsda%hxe(i,n) = obsda%hxe(i,n) - obsda%hxf(n) ! Hdx
     end do
     obsda%hxf(n) = obsda%dat(n) - obsda%hxf(n) ! y-Hx
+    if(obsda%elem(n).eq.id_wd_obs) then !wind direction
+      if(obsda%hxf(n).lt.-180.0d0) then
+        obsda%hxf(n)=obsda%hxf(n)+360.0d0
+      else if(obsda%hxf(n).gt.180.0d0) then
+        obsda%hxf(n)=obsda%hxf(n)-360.0d0
+      end if
+      do i=1,member
+        if(obsda%hxe(i,n).lt.-180.0d0) then
+          obsda%hxe(i,n)=obsda%hxe(i,n)+360.0d0
+        else if(obsda%hxe(i,n).gt.180.0d0) then
+          obsda%hxe(i,n)=obsda%hxe(i,n)-360.0d0
+        end if
+      end do
+    end if
     if(abs(obsda%hxf(n)) > gross_error*obsda%err(n)) then !gross error
       if(debug) write(6,*) n, abs(obsda%hxf(n)), '>', gross_error*obsda%err(n)
       obsda%qc(n) = iqc_gross_err
@@ -424,7 +434,7 @@ subroutine set_lmlef_obs
 !$OMP END PARALLEL
   if(debug) then
     do n=1,obsdasort%nobs
-      write(6,'(i6,3f8.2,4f12.4,i3)') &
+      write(6,'(i6,2f8.2,f10.2,4f12.4,i3)') &
        & obsdasort%elem(n),&
        & obsdasort%lon(n),obsdasort%lat(n),obsdasort%lev(n),&
        & obsdasort%dat(n),obsdasort%err(n),obsdasort%dmin(n),&
@@ -432,10 +442,10 @@ subroutine set_lmlef_obs
     end do
     write(6,'(A)') 'nobsgrd'
     do j=1,nlat
-      write(6,'(2I2,24I4)') j,1,nobsgrd(1:24,j)
-      write(6,'(2I2,24I4)') j,2,nobsgrd(25:48,j)
-      write(6,'(2I2,24I4)') j,3,nobsgrd(49:72,j)
-      write(6,'(2I2,24I4)') j,4,nobsgrd(73:96,j)
+      write(6,'(2I4,24I6)') j,1,nobsgrd(1:24,j)
+      write(6,'(2I4,24I6)') j,2,nobsgrd(25:48,j)
+      write(6,'(2I4,24I6)') j,3,nobsgrd(49:72,j)
+      write(6,'(2I4,24I6)') j,4,nobsgrd(73:96,j)
     end do
   end if
   call obsout_deallocate( tmpobs )

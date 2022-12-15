@@ -97,7 +97,10 @@ module obs_module
   integer,parameter,public :: iqc_out_h=22
 !  integer,parameter,public :: iqc_otype=90
 !  integer,parameter,public :: iqc_time=91
-
+!
+! IO
+!
+  character(len=4) :: filesuffix='.dat'
 ! 
 ! debug
 !
@@ -849,9 +852,9 @@ contains
     allocate( wk(nrec) )
     iunit=91
     nn=0
-    inquire(file=cfile,exist=ex)
+    inquire(file=trim(cfile)//filesuffix,exist=ex)
     if(ex) then
-      open(iunit,file=cfile,form='unformatted',access='sequential')
+      open(iunit,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
       do
         read(iunit,iostat=ios) wk
         if(ios/=0) exit
@@ -859,7 +862,7 @@ contains
       end do
       close(iunit)
     else
-      write(6,'(2a)') cfile,' does not exist'
+      write(6,'(2a)') trim(cfile)//filesuffix,' does not exist'
     end if
     deallocate(wk)
     return
@@ -873,7 +876,7 @@ contains
     integer :: n, iunit
 
     iunit=91
-    open(iunit,file=cfile,form='unformatted',access='sequential')
+    open(iunit,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
     do n=1,obs%nobs
       read(iunit) wk
       select case(nint(wk(1)))
@@ -905,7 +908,7 @@ contains
     integer :: n, iunit
 
     iunit=92
-    open(iunit,file=cfile,form='unformatted',access='sequential')
+    open(iunit,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
 
     do n=1,obs%nobs
       wk(1)=real(obs%elem(n),kind=sp)
@@ -939,7 +942,7 @@ contains
     integer :: n, iunit
 
     iunit=91
-    open(iunit,file=cfile,form='unformatted',access='sequential')
+    open(iunit,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
     do n=1,obs%nobs
       read(iunit) wk
       select case(nint(wk(1)))
@@ -979,7 +982,7 @@ contains
     integer :: n, iunit
 
     iunit=92
-    open(iunit,file=cfile,form='unformatted',access='sequential')
+    open(iunit,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
 
     do n=1,obs%nobs
       wk(1)=real(obs%elem(n),kind=sp)

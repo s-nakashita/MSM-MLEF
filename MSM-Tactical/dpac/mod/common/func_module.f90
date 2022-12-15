@@ -6,12 +6,12 @@ module func_module
 ! 22-12-05 SN create
 !
   use kind_module
-  use phconst_module, only : pi, rad2deg, deg2rad, fvirt, t0, rd, rv
+  use phconst_module, only : re, pi, rad2deg, deg2rad, fvirt, t0, rd, rv
   implicit none
   private
 !
   public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, &
-   &        calc_wd, calc_uv
+   &        calc_wd, calc_uv, distll_1
   contains
 !
 ! p_full
@@ -233,4 +233,27 @@ module func_module
 
     return
   end subroutine calc_uv
+!
+! distance between two points (alon,alat)-(blon,blat)
+!
+  subroutine distll_1(alon,alat,blon,blat,dist)
+    implicit none
+    real(kind=dp),intent(in) :: alon, alat, blon, blat
+    real(kind=dp),intent(out):: dist
+    real(kind=dp) :: lon1,lon2,lat1,lat2,cosd
+
+    lon1 = alon * deg2rad
+    lon2 = blon * deg2rad
+    lat1 = alat * deg2rad
+    lat2 = blat * deg2rad
+
+    cosd = sin(lat1)*sin(lat2) + cos(lat1)*cos(lat2)*cos(lon2-lon1)
+    cosd = min(1.0_dp,cosd)
+    cosd = max(-1.0_dp,cosd)
+
+    dist = acos(cosd) * re
+
+    return
+  end subroutine distll_1
+!
 end module func_module

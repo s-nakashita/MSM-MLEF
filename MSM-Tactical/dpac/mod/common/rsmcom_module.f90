@@ -71,7 +71,12 @@ module rsmcom_module
   integer,parameter :: iv3d_ww=9 ! vertical velocity at half levels (except bottom)
   
   integer,save :: nlevall
-
+  character(len=4),allocatable :: varnames(:)
+!
+! IO
+!
+  character(len=4) :: filesuffix='.grd'
+!
   contains
 !
 ! set grid information
@@ -90,8 +95,10 @@ module rsmcom_module
     
     write(6,'(A)') 'start set_rsmparm'
     
-    nsig=70
-    open(nsig,file=cfile,access='sequential',form='unformatted',action='read')
+    !nsig=70
+    call search_fileunit(nsig)
+    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
+    open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
     call read_header(nsig,icld,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
     iwav1  = int(ext(1))
     jwav1  = int(ext(2))
@@ -132,10 +139,16 @@ module rsmcom_module
       nv2d=3
       nv3d=nv3d_hyd+nv3d_nonhyd
       write(6,*) 'model version is nonhydrostatic'
+      allocate( varnames(nv3d+nv2d) )
+      varnames = (/'   T','   U','   V','   Q','  OZ','  CW',&
+                   '  Pn','  Tn','  Wn','  GZ','  Ps','  Wb'/)
     else
       nv2d=2
       nv3d=nv3d_hyd
       write(6,*) 'model version is hydrostatic'
+      allocate( varnames(nv3d+nv2d) )
+      varnames = (/'   T','   U','   V','   Q','  OZ','  CW',&
+                   '  GZ','  Ps'/)
     end if
     nlevall=nv3d*nlev+nv2d
     nskip=2+nlevall!+3
@@ -187,6 +200,46 @@ module rsmcom_module
     deallocate(rlon,rlat,sig,sigh,mapf)
   end subroutine clean_rsmparm
 !
+! ensemble mean
+!
+  subroutine ensmean_grd(mem,nij,v3d,v2d,v3dm,v2dm)
+    implicit none
+    integer, intent(in) :: mem, nij
+    real(kind=dp),intent(in) :: v3d(nij,nlev,mem,nv3d)
+    real(kind=dp),intent(in) :: v2d(nij,     mem,nv2d)
+    real(kind=dp),intent(out):: v3dm(nij,nlev,nv3d)
+    real(kind=dp),intent(out):: v2dm(nij,     nv2d)
+    integer :: i,k,m,n
+
+    do n=1,nv3d
+!$OMP PARALLEL DO PRIVATE(i,k,m)
+      do k=1,nlev
+        do i=1,nij
+          v3dm(i,k,n)=v3d(i,k,1,n)
+          do m=2,mem
+            v3dm(i,k,n)=v3dm(i,k,n)+v3d(i,k,m,n)
+          end do
+          v3dm(i,k,n)=v3dm(i,k,n)/real(mem,kind=dp)
+        end do
+      end do
+!$OMP END PARALLEL DO
+    end do
+
+    do n=1,nv2d
+!$OMP PARALLEL DO PRIVATE(i,m)
+      do i=1,nij
+        v2dm(i,n)=v2d(i,1,n)
+        do m=2,mem
+          v2dm(i,n)=v2dm(i,n)+v2d(i,m,n)
+        end do
+        v2dm(i,n)=v2dm(i,n)/real(mem,kind=dp)
+      end do
+!$OMP END PARALLEL DO
+    end do
+
+    return
+  end subroutine ensmean_grd
+!
 ! read restart file
 !
   subroutine read_restart(cfile,v3dg,v2dg)
@@ -205,8 +258,10 @@ module rsmcom_module
     allocate( dummp(igrd1,jgrd1,3) )
     allocate( dumlat(jgrd1), dumlon(igrd1) )
 
-    nsig=70
-    open(nsig,file=cfile,access='sequential',form='unformatted',action='read')
+    !nsig=70
+    call search_fileunit(nsig)
+    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
+    open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
     call read_sig( nsig,igrd1,jgrd1,nlev,nflds,nonhyd,icld,fhour,sig,&
       &  dfld,dummp,dumlat,dumlon )
     kk=1
@@ -335,13 +390,42 @@ module rsmcom_module
         kk=kk+1
       end do
     end if
-    nsig=80
-    open(nsig,file=cfile,form='unformatted',access='sequential')
+    !nsig=80
+    call search_fileunit(nsig)
+    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
+    open(nsig,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
     call write_sig(nsig,label,idate,fhour,sig,sigh,ext,&
      &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon)
     close(nsig)
 
     return
   end subroutine write_restart
+!
+! search empty file unit (referring to JMA GSM)
+!
+  subroutine search_fileunit(iunit)
+    implicit none
+    integer, intent(out) :: iunit
+    integer, parameter :: iunit_s=11, iunit_e=99
+    integer :: iu
+    logical :: lopened, lexist
+
+    iunit=-999
+
+    do iu=iunit_s,iunit_e
+      inquire(unit=iu,opened=lopened,exist=lexist)
+      if(lexist.and.(.not.lopened)) then
+        iunit=iu
+        exit
+      end if
+    end do
+
+    if(iunit.eq.-999) then
+      write(6,'(a,i3,a,i3,a)') 'search_fileunit : error : unit number from ', &
+       & iunit_s, ' to ', iunit_e, ' are opened.'
+      stop 999
+    end if
+    return
+  end subroutine search_fileunit 
 !
 end module rsmcom_module

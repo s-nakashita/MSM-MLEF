@@ -23,16 +23,20 @@ module nml_module
   character(filelenmax) :: obsout_basename = 'obsda.@@@@'
   character(filelenmax) :: fguess_basename = 'gues.@@@@'
 
+  logical, save :: single_obs=.false.
+  integer, save :: nobsmax=0 !only effective for nobsmax > 0
   integer, save :: slot_start = 1
   integer, save :: slot_end = 1
   integer, save :: slot_base = 1
   real(kind=dp), save :: slot_tint = 60.0_dp !minutes
 
   !! lmlef
+  logical, save :: obsda_in = .true.
   character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
+  character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
   character(filelenmax) :: anal_out_basename = 'anal.@@@@'
-  !!! 
+  !!! lmlef_obs
   real(kind=dp),save :: sigma_obs=500.0d3
 !  real(kind=dp),save :: sigma_obsv=0.4d0
   real(kind=dp),save :: sigma_obsv=0.1d0
@@ -41,6 +45,28 @@ module nml_module
   logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
   logical,save      :: tl = .FALSE. ! If True, tangent linear operator used
   logical,save      :: scl_mem = .FALSE. ! If True, forecast ensemble perturbations are scaled by member size
+  !!! lmlef_tools
+  real(kind=dp),save    :: cov_infl_mul = -0.01d0 !multiplicative inflation
+! > 0: globally constant covariance inflation
+! < 0: 3D inflation values input from a GPV file
+  character(filelenmax) :: infl_mul_in_basename = 'infl'
+  character(filelenmax) :: infl_mul_out_basename = 'infl'
+  real(kind=dp),save    :: sp_infl_add = 0.d0 !additive inflation
+  character(filelenmax) :: infl_add_in_basename = 'addi.@@@@'
+!TVS  logical,parameter :: msw_vbc = .FALSE.
+  integer,save          :: maxiter = 5
+  logical,save          :: nonlinear=.TRUE. ! If True, observation operator is explicitly evaluated for each iteration
+  logical,save          :: zupd = .TRUE. ! If True, Zmat is updated for each iteration
+  logical,save          :: save_info=.FALSE. ! If True, save cost functions and ensemble weights
+  character(filelenmax) :: info_out_basename = 'dainfo'
+  character(filelenmax) :: ewgt_basename = 'ewgt.@@@@'
+!
+  real(kind=dp),save :: q_update_top = 0.0d0 ! watar vapor and hudrometeors are updated only below this pressure level (Pa)
+! monitor
+  logical, save :: oma_monit=.true.
+  logical, save :: obsgues_output=.false.
+  logical, save :: obsanal_output=.false.
+!
 contains
   subroutine read_nml_ens
     implicit none
@@ -71,6 +97,8 @@ contains
       obs_out, &
       obsout_basename, &
       fguess_basename, &
+      single_obs, &
+      nobsmax, &
       slot_start, &
       slot_end, &
       slot_base, &
@@ -95,6 +123,7 @@ contains
 
     namelist /param_lmlef/ &
       obsda_in_basename, &
+      obsda_out_basename, &
       gues_in_basename, &
       anal_out_basename, &
       sigma_obs, &
@@ -103,7 +132,22 @@ contains
       gross_error, &
       mean, &
       tl, &
-      scl_mem
+      scl_mem, &
+      cov_infl_mul, &
+      infl_mul_in_basename, &
+      infl_mul_out_basename, &
+      sp_infl_add, &
+      infl_add_in_basename, &
+      maxiter, &
+      nonlinear, &
+      zupd, &
+      save_info, &
+      info_out_basename, &
+      ewgt_basename, &
+      q_update_top, &
+      oma_monit, &
+      obsgues_output, &
+      obsanal_output
 
     rewind(5)
     read (5,nml=param_lmlef,iostat=ierr)
