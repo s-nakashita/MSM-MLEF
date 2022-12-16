@@ -1,6 +1,8 @@
 #!/bin/sh
 set -e
 dcddir=/zdata/grmsm/work/DATA/dcd
+obsdir=/zdata/grmsm/work/dpac/obs
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 adate=2022061812
 lmin=-60
 rmin=60
@@ -14,9 +16,10 @@ imm=`expr $mm + 0`
 idd=`expr $dd + 0`
 ihh=`expr $hh + 0`
 
-rm -rf tmp
-mkdir -p tmp
-cd tmp
+wdir=${obsdir}/${adate}
+mkdir -p $wdir/tmp
+cd $wdir/tmp
+
 cat <<EOF >decode.nml
 &param_decode
  atime=${yyyy},${imm},${idd},${ihh},0
@@ -27,10 +30,11 @@ cat <<EOF >decode.nml
 EOF
 cat decode.nml
 
+ln -fs ${bindir}/decode_dcdf .
 tarf=dcd${yy}${mm}${dd}.tar.gz
 cp ${dcddir}/${yyyy}/$tarf .
 tar zxvf $tarf
-../decode_dcdf < decode.nml
+./decode_dcdf < decode.nml
 
 cd ..
 mv tmp/*.dat .

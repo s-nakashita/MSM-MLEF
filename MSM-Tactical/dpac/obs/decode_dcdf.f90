@@ -15,7 +15,6 @@ program decode_dcdf
   integer, dimension(4), parameter :: iuse=(/1,0,0,0/)
   character(len=100) :: cfile,ofile
   character(len=15) :: odate='yymmddhhnn-hhnn'
-  character(len=4) :: osuffix='.dat'
   character(len=6) :: cyymmdd
   character(len=4) :: chhnn
   integer :: inn, ihh, idd, imm, iyy
@@ -69,9 +68,9 @@ program decode_dcdf
 !        &  obs%err(i),obs%dmin(i)
 !      end do
       if(lpreproc) then
-      ofile=trim(datatype(iof))//'_prep.'//odate//osuffix
+      ofile=trim(datatype(iof))//'_prep.'//odate
       else
-      ofile=trim(datatype(iof))//'.'//odate//osuffix
+      ofile=trim(datatype(iof))//'.'//odate
       end if
       print *, ofile
       call write_obs(ofile,obs)

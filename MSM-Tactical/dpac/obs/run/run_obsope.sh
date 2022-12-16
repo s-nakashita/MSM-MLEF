@@ -1,7 +1,8 @@
 #!/bin/sh
 set -e
-dcddir=/zdata/grmsm/work/DATA/dcd
 datadir=/zdata/grmsm/work/msm2msm3_bv
+obsdir=/zdata/grmsm/work/dpac/obs
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=10
 adate=2022061812
 fhour=0
@@ -36,6 +37,10 @@ if [ "$single" = "T" ];then
   logf=${logf}.single
 fi
 echo $obsf $outf
+
+wdir=${obsdir}/${adate}
+mkdir -p $wdir
+cd $wdir
 cat <<EOF >obsope.nml
 &param_ens
  member=${member},
@@ -55,7 +60,7 @@ cat <<EOF >obsope.nml
 EOF
 cat obsope.nml
 
-rm -f gues.* ${outf}*
+rm -f gues.*
 fh=`printf '%0.2d' $fhour`
 ln -s ${datadir}/${adate}/r_sig.f$fh gues.0000.grd
 m=1
@@ -65,6 +70,8 @@ ln -s ${datadir}/${adate}/bv${mem}/r_sig.f$fh gues.0${mem}.grd
 m=`expr $m + 1`
 done
 
+ln -fs ${bindir}/obsope_serial .
 ./obsope_serial < obsope.nml | tee ${logf}.log
+rm gues.*
 
 echo "END"

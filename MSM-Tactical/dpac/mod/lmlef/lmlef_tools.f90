@@ -228,7 +228,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     work3dg(:,:,nlev,:) = 0.01d0
   end if
   if(cov_infl_mul < 0.0d0) then ! 3D parameter values are read-in
-    INQUIRE(FILE=infl_mul_in_basename,EXIST=ex)
+    inquire(file=infl_mul_in_basename,exist=ex)
     if(ex) then
       if(myimage == 1) then
         write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is reading.. ',infl_mul_in_basename
@@ -380,9 +380,9 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !        & gdesc,gdold,gwork,alpha,dginit,dgout,gflag)
         gflag=1
       end if
-      if(gflag>0) then
+      if(gflag>=0) then
       !if(jout) then
-        write(6,'(A,I7)')    'ne=',ne
+        write(6,'(A,I12)')    'ne=',ne
         write(6,'(2(A,I7))') 'flagall=',flagall,' / ',lngrd*nlev
         write(6,'(A,ES12.5)') 'J(sum)=',fsum
         write(6,'(A,ES12.5)') 'J(global)=',fall
