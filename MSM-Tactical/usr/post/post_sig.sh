@@ -13,6 +13,7 @@ IRES=${2}
 ENDHOUR=${3}
 MEM=${4}
 if [ $IRES -eq 27 ]; then
+ICLD=0 !hydrostatic
 if [ do$MEM = do ]; then
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
@@ -26,9 +27,11 @@ fi
 #DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
 fi
 elif [ $IRES -eq 9 ]; then
+ICLD=1 !nonhydrostatic
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE/bvc1
 #DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
 elif [ $IRES -eq 3 ]; then
+ICLD=1 !nonhydrostatic
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 else
 echo "Invalid resolution. Specify 9 or 3."
@@ -42,6 +45,11 @@ gmake ${EXEC}
 cd $DATADIR
 pwd
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
+cat <<EOF >read_sig.nml
+&namlst_cld
+ icld=${ICLD},
+&end
+EOF
 fh=0
 end_hour=$ENDHOUR
 inc_h=3

@@ -23,8 +23,10 @@ program readsig
   character(len=8) :: label(4)
   integer :: idate(4), iymdh
   integer :: iret
-  real(kind=sp) :: fhour, si(levmax+1), sl(levmax), sisl(2*levmax+1), &
- &                ext(nwext) 
+  real(kind=dp) :: si(levmax+1), sl(levmax)
+  real(kind=sp) :: fhour, ext(nwext) 
+  integer :: icld=1 !1=include 3D physics, 0=not include
+  namelist /namlst_cld/ icld
   ! components of ext
   integer :: iwav1,jwav1,igrd1,jgrd1,levs,nfldx,proj,nonhyd
   real(kind=sp) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
@@ -34,11 +36,16 @@ program readsig
   integer :: igz, ips, it, iu, iv, iq, ioz, icw, ipn, itn, iwn, &
  &           im2
   integer :: iphys3d(3)
-  real(kind=sp), allocatable :: sfld(:), dfld(:,:,:), mapf(:,:,:)
-  real(kind=sp), allocatable :: clat(:), clon(:), factor(:,:,:)
+  real(kind=dp), allocatable :: dfld(:,:,:), mapf(:,:,:)
+  real(kind=dp), allocatable :: clat(:), clon(:), factor(:,:,:)
+  real(kind=sp), allocatable :: buf4(:,:)
   
+  ! read namelist
+  read(5,nml=namlst_cld)
+  write(6,nml=namlst_cld)
+
   print *, 'read and extract header record'
-  call read_header(iunit,1,label,idate,fhour,si,sl,ext,nflds)
+  call read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
   print '(4a8)', label
   iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   print *, 'posting date ', iymdh, '+', nint(fhour)
@@ -72,10 +79,11 @@ program readsig
   print *, 'nflds', nflds
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf
-  allocate( sfld(nwf), dfld(igrd1,jgrd1,nflds), mapf(igrd1,jgrd1,3) )
+  allocate( dfld(igrd1,jgrd1,nflds), mapf(igrd1,jgrd1,3) )
   allocate( clat(jgrd1),clon(igrd1), factor(igrd1,jgrd1,levs) )
+  allocate( buf4(igrd1,jgrd1) )
   print *, 'start reading and writing data'
-  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,1,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
   igz=1
   ips=igz+1
   it=ips+1
@@ -84,27 +92,28 @@ program readsig
   iq=iv+levs
   ioz=iq+levs
   icw=ioz+levs
-  ! factor to fully modify the virtual temperature
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
-      end do
-    end do
-  end do
+  ! conversion from virtual temperature to temperature is already done in read_sig
+  !! factor to fully modify the virtual temperature
+  !do k=1,levs
+  !  do j=1,jgrd1
+  !    do i=1,igrd1
+  !      factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
+  !    end do
+  !  end do
+  !end do
   ipn=icw+levs
   itn=ipn+levs
-  if(nonhyd.eq.1) then
-    do k=1,levs
-      do j=1,jgrd1
-        do i=1,igrd1
-          dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k)
-        end do
-      end do
-    end do
-  end if
+  !if(nonhyd.eq.1) then
+  !  do k=1,levs
+  !    do j=1,jgrd1
+  !      do i=1,igrd1
+  !        dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k)
+  !      end do
+  !    end do
+  !  end do
+  !end if
   iwn=itn+levs
-  if(fhour > 0.0) then
+  if(icld==1.and.fhour > 0.0) then
   iphys3d(1)=iwn+1
   do m=1,3
     if(m<3) then
@@ -118,64 +127,77 @@ program readsig
 &      convert='big_endian', recl=4*nwf)
   irec=1
   !gz
-  write(ounit, rec=irec) dfld(:,:,igz)
+  buf4 = real(dfld(:,:,igz),kind=sp)
+  write(ounit, rec=irec) buf4
   irec=irec+1
   !ps
-  write(ounit, rec=irec) dfld(:,:,ips)
+  buf4 = real(dfld(:,:,ips),kind=sp)
+  write(ounit, rec=irec) buf4
   irec=irec+1
   !t
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,it+k-1)
+    buf4 = real(dfld(:,:,it+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !u
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,iu+k-1)
+    buf4 = real(dfld(:,:,iu+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !v
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,iv+k-1)
+    buf4 = real(dfld(:,:,iv+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !q
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,iq+k-1)
+    buf4 = real(dfld(:,:,iq+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !oz
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,ioz+k-1)
+    buf4 = real(dfld(:,:,ioz+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !cw
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,icw+k-1)
+    buf4 = real(dfld(:,:,icw+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !pn
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,ipn+k-1)
+    buf4 = real(dfld(:,:,ipn+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !tn
   do k=1,levs
-    write(ounit, rec=irec) dfld(:,:,itn+k-1)
+    buf4 = real(dfld(:,:,itn+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !wn(k=1)
-  write(ounit, rec=irec) dfld(:,:,iwn)
+  buf4 = real(dfld(:,:,iwn),kind=sp)
+  write(ounit, rec=irec) buf4
   irec=irec+1
   !wn(k>1)
   do k=2,levs+1
-    write(ounit, rec=irec) dfld(:,:,iwn+k-1)
+    buf4 = real(dfld(:,:,iwn+k-1),kind=sp)
+    write(ounit, rec=irec) buf4
     irec=irec+1
   end do
   !phys3d
-  if(fhour > 0.0) then
+  if(icld==1.and.fhour > 0.0) then
   do m=1,3
     do k=1,levs
-      write(ounit, rec=irec) dfld(:,:,iphys3d(m)+k-1)
+      buf4 = real(dfld(:,:,iphys3d(m)+k-1),kind=sp)
+      write(ounit, rec=irec) buf4
       irec=irec+1
     end do
   end do
@@ -184,16 +206,16 @@ program readsig
   print *, 'end write output'
   print *, 'generate control file'
   call genctl(cunit,igrd1,jgrd1,levs,proj,idate,fhour,&
-&             clat,clon,nonhyd)
+&             clat,clon,nonhyd,icld)
   stop
 contains
   subroutine genctl(nctl,igrd1,jgrd1,levs,proj,idate,fhour,&
-& clat,clon,nonhyd)
+& clat,clon,nonhyd,icld)
     implicit none
-    integer, intent(in) :: nctl,igrd1,jgrd1,levs,proj,nonhyd
+    integer, intent(in) :: nctl,igrd1,jgrd1,levs,proj,nonhyd,icld
     integer, intent(in) :: idate(4)
     real(kind=sp), intent(in) :: fhour
-    real(kind=sp), intent(in) :: clat(:), clon(:)
+    real(kind=dp), intent(in) :: clat(:), clon(:)
     integer :: i,j
     integer :: ihr,idy,imo,iyr
     integer :: days(12),daysl(12)
@@ -266,7 +288,7 @@ contains
     end if
     write(nctl,'(a)') 'w0 0 99 surface vertical velocity'
     write(nctl,'(a,i2,a)') 'wn ',levs,' 99 vertical velocity'
-  if(fhour > 0.0) then
+  if(icld==1.and.fhour > 0.0) then
     write(nctl,'(a,i2,a)') 'f_ice ',levs,' 99 ice fraction'
     write(nctl,'(a,i2,a)') 'f_rain ',levs,' 99 rain fraction'
     write(nctl,'(a,i2,a)') 'f_rimef ',levs,' 99 mixed fraction'

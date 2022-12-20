@@ -26,7 +26,7 @@ contains
     allocate( nij1node(nimages) )
     i = mod(nlon*nlat,nimages)
     nij1max = (nlon*nlat - i)/nimages + 1
-    if(myimage .le. 1) then
+    if(myimage .le. i) then
       nij1 = nij1max
     else
       nij1 = nij1max - 1

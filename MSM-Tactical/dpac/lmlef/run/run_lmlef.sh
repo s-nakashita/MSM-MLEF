@@ -9,8 +9,10 @@ member=10
 adate=2022061812
 fhour=0
 single=T
-prep=_prep
-maxiter=1
+prep=
+maxiter=10
+hloc=100
+saveens=1 #0:save all ensemble, 1:save only ctrl, mean and spread
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -56,10 +58,10 @@ cat <<EOF >lmlef.nml
 &end
 &param_lmlef
  obsda_in_basename='${obsinf}.@@@@',
- obsda_out_basename='${obsoutf}.@@@@.iter${maxiter}',
+ obsda_out_basename='${obsoutf}.@@@@.iter${maxiter}.l${hloc}',
  gues_in_basename=,
- anal_out_basename='anal${prep}.@@@@.iter${maxiter}',
- sigma_obs=,
+ anal_out_basename='anal${prep}.@@@@.iter${maxiter}.l${hloc}',
+ sigma_obs=${hloc}.0d3,
  sigma_obsv=,
  gross_error=,
  mean=,
@@ -72,7 +74,7 @@ cat <<EOF >lmlef.nml
 EOF
 cat lmlef.nml
 
-rm -f gues.* ${obsinf}.*
+rm -f gues.*.grd ${obsinf}.*.dat
 fh=`printf '%0.2d' $fhour`
 ln -s ${datadir}/${adate}/r_sig.f$fh gues.0000.grd
 ln -s ${obsdir}/${adate}/${obsf}.0000.dat ${obsinf}.0000.dat
@@ -86,6 +88,13 @@ done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
 mpiexec -n $NODE ./lmlef | tee lmlef.log
-mv NOUT-001 stdout${prep}.iter${maxiter}.txt
+mv NOUT-001 stdout${prep}.iter${maxiter}.l${hloc}.txt
+if [ $saveens -eq 1 ];then
+m=1
+while [ $m -le $member ];do
+mem=`printf '%0.4d' $m`
+rm ${obsoutf}.${mem}.iter${maxiter}.l${hloc} anal${prep}.${mem}.iter${maxiter}.l${hloc}
+done
+fi
 
 echo "END"
