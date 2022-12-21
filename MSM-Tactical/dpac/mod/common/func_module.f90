@@ -120,6 +120,7 @@ module func_module
     real(kind=dp) :: es,fact,tc,lnes
 
     if(q.lt.0.0_dp) then
+      print *, 'humidity is less than 0, q=',q
       td = 0.0_dp
       return
     end if

@@ -25,7 +25,7 @@ cat <<EOF >decode.nml
  atime=${yyyy},${imm},${idd},${ihh},0
  lmin=${lmin},
  rmin=${rmin},
- lpreproc=.false.,
+ lpreproc=.true.,
 &end
 EOF
 cat decode.nml

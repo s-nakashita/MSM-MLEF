@@ -32,9 +32,7 @@ contains
     integer :: im, n, nn
 !!! for single point observation
     real(kind=dp) :: lonb,latb
-!!! debug
-!    real(kind=dp) :: dep
-!!! debug
+    real(kind=dp) :: hxf,dep
 
     nobsin=0
     do iof=1,obsin_num
@@ -53,7 +51,9 @@ contains
       call file_member_replace(im,fguess_basename,guesf)
       call read_restart(guesf,v3dg,v2dg)
 !      call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
-      p_full = v3dg(:,:,:,iv3d_pp)
+      if(im.eq.0) then !all members assumed to have the same pressure levels
+        p_full = v3dg(:,:,:,iv3d_pp)
+      end if
       lonb=undef
       latb=undef
       do iof=1,obsin_num
@@ -70,6 +70,9 @@ contains
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout))
           if(obsout%qc(nobsout).eq.iqc_good) then
+            if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
+              obsout%qc(nobsout)=iqc_otype
+            else
             nn=nn+1
             if(im.eq.0) then
               call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
@@ -90,14 +93,21 @@ contains
 !              print *,obsin(iof)%dat(n),obsout%hxe(im,nobsout), dep
 !!! debug
             end if
+            end if !luseobs
             if(single_obs) then
               if(lonb.eq.undef.and.latb.eq.undef) then
                 lonb=obsin(iof)%lon(n)
                 latb=obsin(iof)%lat(n)
+                if(latb.lt.28.0.or.latb.gt.32.0.or.&
+                   lonb.lt.125.0.or.lonb.gt.131.0) then
+                  lonb=undef; latb=undef
+                  obsout%qc(nobsout)=iqc_out_h
+                end if
               end if
             end if
-          end if
-          if(single_obs.and.obsout%qc(nobsout)/=iqc_good) then
+          end if !iqc_good
+          if(single_obs.and.&
+            obsout%qc(nobsout)/=iqc_good) then
             nobsout=nobsout-1
             cycle
           end if
@@ -106,18 +116,23 @@ contains
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
-          obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
+          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
         end do
       end do
       obsout%nobs = nobsout
       if(single_obs) then
-        print '(a)','number elem  lon     lat      lev      dat      err      dmin'
+        print '(10a10)','number','elem','lon','lat','lev','dat','err','dmin','hxf','qc'
         do n=1,obsout%nobs
-          print '(i6,x,i5,7f10.2,i5)', n,obsout%elem(n),&
+          if(im.eq.0) then
+            hxf=obsout%hxf(n)
+          else
+            hxf=obsout%hxe(im,n)
+          end if
+          print '(i10,a10,2f10.2,f10.1,4es10.2,i10)', n,obelmlist(uid_obs(obsout%elem(n))),&
            &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
            &  obsout%err(n),obsout%dmin(n), &
-           &  obsout%hxf(n),obsout%qc(n)
+           &  hxf,obsout%qc(n)
         end do
       end if
       if(obs_out) then
@@ -424,15 +439,14 @@ contains
         nqc(i,4)=nqc(i,4)+1
       case(iqc_out_h)
         nqc(i,5)=nqc(i,5)+1
+      case(iqc_otype)
+        nqc(i,6)=nqc(i,6)+1
       case(iqc_good)
         nqc(i,1)=nqc(i,1)+1
         dep1 = dep(n)
         if(elem(n)==id_wd_obs) then !wind direction
-          if(dep1.lt.-180.0d0) then
-            dep1=dep1+360.0d0
-          end if
-          if(dep1.gt.180.0d0) then
-            dep1=dep1-360.0d0
+          if(abs(dep1).gt.180.0d0) then
+            dep1=dep1-sign(360.0d0,dep1)
           end if
         end if
         bias(i)=bias(i)+dep1

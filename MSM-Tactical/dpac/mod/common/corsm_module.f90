@@ -19,7 +19,7 @@ contains
   subroutine set_corsm
     implicit none
     real(kind=dp), allocatable :: v2dg(:,:,:)
-    real(kind=dp), allocatable :: v2d(:,:)[:]
+    real(kind=dp), allocatable :: buf(:,:)
     integer :: i,n
 
     write(6,'(a)') 'Hello from set_corsm'
@@ -39,29 +39,34 @@ contains
         nij1node(n) = nij1max - 1
       end if
     end do
+    write(6,*) 'grid points per node: ',nij1node,' sum: ',sum(nij1node)
 
     allocate( myrlon(nij1max)[*] )
     allocate( myrlat(nij1max)[*] )
     allocate( v2dg(nlon,nlat,2) )
-    allocate( v2d(nij1max,2)[*] )
+    allocate( buf(nij1max,nimages) )
     if(myimage.eq.1) then
       do i=1,nlat
         v2dg(:,i,1) = rlon(:)
         v2dg(:,i,2) = rlat(i)
       end do
-      call grd_to_buf(v2dg(:,:,1),v2d(:,1))
-      call grd_to_buf(v2dg(:,:,2),v2d(:,2))
+      call grd_to_buf(v2dg(:,:,1),buf)
+      do n=1,nimages
+        myrlon(:)[n] = buf(:,n)
+      end do
+      call grd_to_buf(v2dg(:,:,2),buf)
+      do n=1,nimages
+        myrlat(:)[n] = buf(:,n)
+      end do
     end if
     sync all
-    myrlon(1:nij1) = v2d(1:nij1,1)
-    myrlat(1:nij1) = v2d(1:nij1,2)
 
     write(6,'(a,i4.4,a,10f8.3)') &
     & 'MYIMAGE ',myimage,' lon = ',myrlon(1:10)
     write(6,'(a,i4.4,a,10f8.3)') &
     & 'MYIMAGE ',myimage,' lat = ',myrlat(1:10)
 
-    deallocate( v2dg,v2d )
+    deallocate( v2dg,buf )
     return
   end subroutine set_corsm
 !
@@ -262,41 +267,62 @@ contains
     real(kind=dp), intent(out):: v3d(nij1max,nlev,nv3d)[*]
     real(kind=dp), intent(out):: v2d(nij1max,nv2d)[*]
 
-    real(kind=dp), allocatable :: buf(:,:)[:]
+    real(kind=dp), allocatable :: buf3d(:,:,:,:), buf2d(:,:,:), buf(:,:)
     integer :: j,k,n
 
-    allocate( buf(nij1max,nlevall)[*] )
+    allocate( buf(nij1max,nimages) )
+    allocate( buf3d(nij1max,nlev,nv3d,nimages) )
+    allocate( buf2d(nij1max,     nv2d,nimages) )
     if(myimage .eq. nrank) then
-      j=0
       do n=1,nv3d
         do k=1,nlev
-          j=j+1
-          call grd_to_buf(v3dg(:,:,k,n),buf(:,j))
+          call grd_to_buf(v3dg(:,:,k,n),buf)
+          do j=1,nimages
+            buf3d(:,k,n,j) = buf(:,j)
+          end do
         end do
       end do
       do n=1,nv2d
-        j=j+1
-        call grd_to_buf(v2dg(:,:,n),buf(:,j))
+        call grd_to_buf(v2dg(:,:,n),buf)
+        do j=1,nimages
+          buf2d(:,n,j) = buf(:,j)
+        end do
+      end do
+
+      do j=1,nimages
+        v3d(:,:,:)[j]=buf3d(:,:,:,j)
+        v2d(:,  :)[j]=buf2d(:,:,j)
       end do
     end if
     sync all
 
-    j=0
-    do n=1,nv3d
-      do k=1,nlev
-        j=j+1
-        v3d(1:nij1,k,n)=buf(1:nij1,j)
-      end do
-    end do
-    do n=1,nv2d
-      j=j+1
-      v2d(1:nij1,n)=buf(1:nij1,j)
-    end do
-    sync all
-
-    deallocate( buf )
+    deallocate( buf,buf3d,buf2d )
     return
   end subroutine scatter_grd
+!
+! gridded data -> buffer
+!
+  subroutine grd_to_buf(grd,buf)
+    implicit none
+    real(kind=dp), intent(in) :: grd(nlon,nlat)
+    real(kind=dp), intent(out):: buf(nij1max,nimages)
+    integer :: i,j,m,ilon,ilat
+
+    do m=1,nimages
+      do i=1,nij1node(m)
+        j = m-1 + nimages * (i-1)
+        ilon = mod(j,nlon) + 1
+        ilat = (j-ilon+1)/nlon + 1
+        buf(i,m) = grd(ilon,ilat)
+      end do
+    end do
+ 
+    do m=1,nimages
+      if(nij1node(m)<nij1max) buf(nij1max,m) = undef
+    end do
+
+    return
+  end subroutine grd_to_buf
 !
 ! gather gridded data from processes (all -> nrank)
 !
@@ -307,71 +333,40 @@ contains
     real(kind=dp), intent(out):: v3dg(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(out):: v2dg(nlon,nlat,nv2d)
 
-    real(kind=dp), allocatable :: buf(:,:)[:]
+    real(kind=dp), allocatable :: buf3d(:,:,:,:), buf2d(:,:,:), buf(:,:)
     integer :: j,k,n
 
-    allocate( buf(nij1max,nlevall)[*] )
-    j=0
-    do n=1,nv3d
-      do k=1,nlev
-        j=j+1
-        buf(1:nij1,j) = v3d(1:nij1,k,n)
-      end do
-    end do
-    do n=1,nv2d
-      j=j+1
-      buf(1:nij1,j) = v2d(1:nij1,n)
-    end do
-    sync all
+    allocate( buf(nij1max,nimages) )
+    allocate( buf3d(nij1max,nlev,nv3d,nimages) )
+    allocate( buf2d(nij1max,     nv2d,nimages) )
 
     if(myimage.eq.nrank) then
-      j=0
+      do j=1,nimages
+        buf3d(:,:,:,j)=v3d(:,:,:)[j]
+        buf2d(:,:,  j)=v2d(:,  :)[j]
+      end do
       do n=1,nv3d
         do k=1,nlev
-          j=j+1
-          call buf_to_grd(buf(:,j),v3dg(:,:,k,n))
+          buf = buf3d(:,k,n,:)
+          call buf_to_grd(buf,v3dg(:,:,k,n))
         end do
       end do
       do n=1,nv2d
-        j=j+1
-        call buf_to_grd(buf(:,j),v2dg(:,:,n))
+        buf = buf2d(:,n,:)
+        call buf_to_grd(buf,v2dg(:,:,n))
       end do
     end if
     sync all
 
-    deallocate( buf )
+    deallocate( buf3d,buf2d,buf )
     return
   end subroutine gather_grd
-!
-! gridded data -> buffer
-!
-  subroutine grd_to_buf(grd,buf)
-    implicit none
-    real(kind=dp), intent(in) :: grd(nlon,nlat)
-    real(kind=dp), intent(out):: buf(nij1max)[*]
-    integer :: i,j,m,ilon,ilat
-
-    do m=1,nimages
-      do i=1,nij1node(m)
-        j = m-1 + nimages * (i-1)
-        ilon = mod(j,nlon) + 1
-        ilat = (j-ilon+1)/nlon + 1
-        buf(i)[m] = grd(ilon,ilat)
-      end do
-    end do
- 
-    do m=1,nimages
-      if(nij1node(m)<nij1max) buf(nij1max)[m] = undef
-    end do
-
-    return
-  end subroutine grd_to_buf
 !
 ! buffer -> gridded data
 !
   subroutine buf_to_grd(buf,grd)
     implicit none
-    real(kind=dp), intent(in) :: buf(nij1max)[*]
+    real(kind=dp), intent(in) :: buf(nij1max,nimages)
     real(kind=dp), intent(out):: grd(nlon,nlat)
     integer :: i,j,m,ilon,ilat
 
@@ -380,11 +375,10 @@ contains
         j = m-1 + nimages * (i-1)
         ilon = mod(j,nlon) + 1
         ilat = (j-ilon+1)/nlon + 1
-        grd(ilon,ilat) = buf(i)[m]
+        grd(ilon,ilat) = buf(i,m)
       end do
     end do
 
     return
   end subroutine buf_to_grd
-!
 end module corsm_module

@@ -10,6 +10,7 @@ lmin=-60
 rmin=60
 prep=_prep
 single=T
+useobs='q'
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -36,7 +37,25 @@ if [ "$single" = "T" ];then
   outf=${outf}.single
   logf=${logf}.single
 fi
+if [ "$useobs" = "all" ];then
+  luseobs=
+else
+  outf=${outf}.${useobs}
+  logf=${logf}.${useobs}
+  case $useobs in
+    'u'  ) luseobs="T,F,F,F,F,F,F,F,F" ;;
+    'v'  ) luseobs="F,T,F,F,F,F,F,F,F" ;;
+    't'  ) luseobs="F,F,T,F,F,F,F,F,F" ;;
+    'q'  ) luseobs="F,F,F,T,F,F,F,F,F" ;;
+    'rh' ) luseobs="F,F,F,F,T,F,F,F,F" ;;
+    'ps' ) luseobs="F,F,F,F,F,T,F,F,F" ;;
+    'td' ) luseobs="F,F,F,F,F,F,T,F,F" ;;
+    'wd' ) luseobs="F,F,F,F,F,F,F,T,F" ;;
+    'ws' ) luseobs="F,F,F,F,F,F,F,F,T" ;;
+  esac
+fi
 echo $obsf $outf
+echo "luseobs="$luseobs
 
 wdir=${obsdir}/${adate}
 mkdir -p $wdir
@@ -52,6 +71,7 @@ cat <<EOF >obsope.nml
  obsout_basename='${outf}.@@@@',
  fguess_basename=,
  single_obs=${single},
+ luseobs=${luseobs},
  slot_start=,
  slot_end=,
  slot_base=,

@@ -2,16 +2,18 @@
 set -e
 obsdir=/zdata/grmsm/work/dpac/obs
 datadir=/zdata/grmsm/work/msm2msm3_bv
-outdir=/zdata/grmsm/work/dpac/singletest
+outdir=/zdata/grmsm/work/dpac/single
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
-NODE=1
+bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
+NODE=8
 member=10
 adate=2022061812
 fhour=0
 single=T
-prep=
-maxiter=10
-hloc=100
+selobs=all
+prep=_prep
+maxiter=1
+hloc=300
 saveens=1 #0:save all ensemble, 1:save only ctrl, mean and spread
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -25,11 +27,36 @@ ihh=`expr $hh + 0`
 obsf=obsda${prep}
 obsinf=obsg${prep}
 obsoutf=obsa${prep}
+anloutf=anal${prep}
+logf=stdout${prep}
 if [ "${single}" = "T" ];then
 obsf=${obsf}.single
 obsinf=${obsinf}.single
 obsoutf=${obsoutf}.single
+anloutf=${anloutf}.single
+logf=${logf}.single
 fi
+if [ "${selobs}" != "all" ];then
+obsf=${obsf}.${selobs}
+obsinf=${obsinf}.${selobs}
+obsoutf=${obsoutf}.${selobs}
+anloutf=${anloutf}.${selobs}
+logf=${logf}.${selobs}
+fi
+if [ ! -z $maxiter ];then
+obsoutf=${obsoutf}.iter${maxiter}
+anloutf=${anloutf}.iter${maxiter}
+logf=${logf}.iter${maxiter}
+fi
+if [ ! -z $hloc ];then
+sigh=${hloc}.0d3
+obsoutf=${obsoutf}.l${hloc}
+anloutf=${anloutf}.l${hloc}
+logf=${logf}.l${hloc}
+fi
+echo $obsoutf
+echo $anloutf
+echo $logf
 
 wdir=${outdir}/${adate}
 mkdir -p $wdir
@@ -58,21 +85,23 @@ cat <<EOF >lmlef.nml
 &end
 &param_lmlef
  obsda_in_basename='${obsinf}.@@@@',
- obsda_out_basename='${obsoutf}.@@@@.iter${maxiter}.l${hloc}',
+ obsda_out_basename='${obsoutf}.@@@@',
  gues_in_basename=,
- anal_out_basename='anal${prep}.@@@@.iter${maxiter}.l${hloc}',
- sigma_obs=${hloc}.0d3,
- sigma_obsv=,
- gross_error=,
+ anal_out_basename='${anloutf}.@@@@',
  mean=,
  tl=,
  scl_mem=,
+ debug_obs=T,
+ sigma_obs=${sigh},
+ sigma_obsv=,
+ gross_error=,
+ cov_infl_mul=0.0d0,
  maxiter=${maxiter},
  oma_monit=T,
  obsanal_output=T,
 &end
 EOF
-cat lmlef.nml
+#cat lmlef.nml
 
 rm -f gues.*.grd ${obsinf}.*.dat
 fh=`printf '%0.2d' $fhour`
@@ -87,14 +116,40 @@ m=`expr $m + 1`
 done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
-mpiexec -n $NODE ./lmlef | tee lmlef.log
-mv NOUT-001 stdout${prep}.iter${maxiter}.l${hloc}.txt
+mpiexec -n $NODE ./lmlef | tee lmlef.log || exit 11
+mv NOUT-001 ${logf}_n${NODE}.txt
+
 if [ $saveens -eq 1 ];then
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.4d' $m`
-rm ${obsoutf}.${mem}.iter${maxiter}.l${hloc} anal${prep}.${mem}.iter${maxiter}.l${hloc}
+rm ${obsoutf}.${mem}.dat
+rm ${anloutf}.${mem}.grd
+m=`expr $m + 1`
 done
 fi
 
+# postprocess
+for emem in ctrl sprd;do
+if [ $emem = ctrl ];then
+in=${anloutf}.0000.grd
+else
+in=${anloutf}.${emem}.grd
+fi
+out=${anloutf}.${emem}.bin
+ctl=${anloutf}.${emem}.ctl
+rm fort.* read_sig
+ln -s ${in} fort.11
+ln -s ${out} fort.51
+ln -s ${ctl} fort.61
+ln -s ${bindir2}/read_sig .
+cat << EOF > read_sig.nml
+&namlst_cld
+ icld=0,
+&end
+EOF
+./read_sig < read_sig.nml
+sed -i -e 's/DATAFILE/'$out'/g' $ctl
+rm ${ctl}-e
+done
 echo "END"

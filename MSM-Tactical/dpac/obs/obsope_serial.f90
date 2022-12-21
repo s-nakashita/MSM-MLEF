@@ -31,7 +31,7 @@ program obsope
 ! read observation
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
-    call get_nobs(obsin_name(iof),7,obs(iof)%nobs)
+    call get_nobs(obsin_name(iof),6,obs(iof)%nobs)
     call obsin_allocate(obs(iof))
     call read_obs(obsin_name(iof),obs(iof))
     !write(6,'(3a,i8)') 'reading obs ',trim(obsin_name(iof)),' #',obs(iof)%nobs

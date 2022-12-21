@@ -8,6 +8,8 @@ link_directories(../../sys/lib)
 
 add_executable(lmlef lmlef.f90)
 target_link_libraries(lmlef common modobs modlmlef)
+add_executable(test_corr test_corr.f90)
+target_link_libraries(test_corr common modlmlef)
 include_directories(${CMAKE_BINARY_DIR}/mod/common
                     ${CMAKE_BINARY_DIR}/mod/obs
                     ${CMAKE_BINARY_DIR}/mod/lmlef)

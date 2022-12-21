@@ -68,9 +68,8 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
    & ,(/nv3d+nv2d,nobstype/))
-  var_update = (/&
-!!   T  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
-   & 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0/)
+!!              T  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
+  var_update=(/ 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0/)
   else !hydrostatic
   var_local = reshape( &
 !!          T      U      V      Q     OZ     CW     GZ     Ps 
@@ -84,9 +83,8 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
    & ,(/nv3d+nv2d,nobstype/))
-  var_update = (/&
-!!   T  U  V  Q OZ CW GZ Ps
-   & 1, 1, 1, 1, 1, 1, 0, 1/)
+!!                 T  U  V  Q OZ CW GZ Ps
+   var_update = (/ 1, 1, 1, 1, 1, 1, 0, 1/)
   end if
   return
 end subroutine init_das_lmlef
@@ -169,7 +167,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   do n=2,nv3d+nv2d
     do i=1,n
       var_local_n2n(n) = i
-      if(MAXVAL(ABS(var_local(i,:)-var_local(n,:))) < TINY(var_local)) EXIT
+      if(maxval(abs(var_local(i,:)-var_local(n,:))) < TINY(var_local)) EXIT
     end do
   end do
   write(cn,'(i4)') nv3d+nv2d
@@ -216,8 +214,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   !
   ! multiplicative inflation
   !
-  allocate( work3d(nij1,nlev,nv3d)[*] )
-  allocate( work2d(nij1,nv2d)[*] )
+  allocate( work3d(nij1max,nlev,nv3d)[*] )
+  allocate( work2d(nij1max,nv2d)[*] )
   allocate( work3dg(nlon,nlat,nlev,nv3d) ) !also used for saving cost
   allocate( work2dg(nlon,nlat,nv2d) ) !also used for saving cost
   if(cov_infl_mul >= 0.0d0) then ! fixed multiplicative inflation parameter
@@ -264,10 +262,10 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   allocate( rloc(1:nobstotal) )
   allocate( obsdepk(1:nobstotal),obshdxk(1:nobstotal,1:member) )
   !! local arrays
-  allocate( w(1:member,1:nij1,1:nlev)[*] )
-  allocate( grad(1:member,1:nij1,1:nlev)[*], gold(1:member,1:nij1,1:nlev)[*] )
-  allocate( desc(1:member,1:nij1,1:nlev)[*], dold(1:member,1:nij1,1:nlev)[*] )
-  allocate( fval(1:nij1,1:nlev)[*], gnorm(1:nij1,1:nlev)[*], flag(1:nij1,1:nlev)[*] )
+  allocate( w(1:member,1:nij1max,1:nlev)[*] )
+  allocate( grad(1:member,1:nij1max,1:nlev)[*], gold(1:member,1:nij1max,1:nlev)[*] )
+  allocate( desc(1:member,1:nij1max,1:nlev)[*], dold(1:member,1:nij1max,1:nlev)[*] )
+  allocate( fval(1:nij1max,1:nlev)[*], gnorm(1:nij1max,1:nlev)[*], flag(1:nij1max,1:nlev)[*] )
   allocate( nfun(1:nij1,1:nlev) )
   !! global arrays
   allocate( gw(1:member,1:lngrd,1:nlev) )
@@ -279,12 +277,12 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !  allocate( trans(member,member,nij1,nlev) )
   if(save_info) then
     ! for save local cost functions and local DFS (dummy)
-    allocate( jwork3d(nij1,nlev,nv3d)[*] )
-    allocate( jwork2d(nij1,nv2d)[*] )
+    allocate( jwork3d(nij1max,nlev,nv3d)[*] )
+    allocate( jwork2d(nij1max,nv2d)[*] )
     jwork3d = 0.0d0
     jwork2d = 0.0d0
     ! for save ensemble weights
-    allocate( work3de(nij1,nlev,member,nv3d)[*], work2de(nij1,member,nv2d)[*] )
+    allocate( work3de(nij1max,nlev,member,nv3d)[*], work2de(nij1max,member,nv2d)[*] )
     allocate( evalout(member) )
     work3de = 0.0d0
     work2de = 0.0d0
@@ -1005,11 +1003,11 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
 !    use common_obs_speedy_tl, only: Trans_XtoY_tl
     implicit none
 !    integer,intent(in) :: member ! ensemble size
-    real(kind=dp),intent(in) :: gues3dc(nij1,nlev,nv3d)[*]    !control or mean
-    real(kind=dp),intent(in) :: gues2dc(nij1,nv2d)[*]         !control or mean
-    real(kind=dp),intent(in) :: gues3d(nij1,nlev,member,nv3d)[*] !ensemble perturbation
-    real(kind=dp),intent(in) :: gues2d(nij1,member,nv2d)[*]      !ensemble perturbation
-    real(kind=dp),intent(in) :: w(member,nij1,nlev)[*]           !ensemble weights
+    real(kind=dp),intent(in) :: gues3dc(nij1max,nlev,nv3d)[*]    !control or mean
+    real(kind=dp),intent(in) :: gues2dc(nij1max,nv2d)[*]         !control or mean
+    real(kind=dp),intent(in) :: gues3d(nij1max,nlev,member,nv3d)[*] !ensemble perturbation
+    real(kind=dp),intent(in) :: gues2d(nij1max,member,nv2d)[*]      !ensemble perturbation
+    real(kind=dp),intent(in) :: w(member,nij1max,nlev)[*]           !ensemble weights
     real(kind=dp),allocatable :: tmphxf(:,:)[:]
     real(kind=dp),allocatable :: v3d(:,:,:,:),v2d(:,:,:)
     real(kind=dp),allocatable :: v3dp(:,:,:,:),v2dp(:,:,:)
@@ -1022,7 +1020,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     integer :: monit_nqc(nobstype,nqctype)
   
     allocate( tmphxf(obsdasort%nobs,0:member)[*] )
-    allocate( work3d(nij1,nlev,nv3d)[*], work2d(nij1,nv2d)[*] )
+    allocate( work3d(nij1max,nlev,nv3d)[*], work2d(nij1max,nv2d)[*] )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! update control
@@ -1110,16 +1108,12 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
         end if
       end if
       if(obsdasort%elem(n).eq.id_wd_obs) then !wind direction
-        if(obsdepk(n).lt.-180.0d0) then
-          obsdepk(n)=obsdepk(n)+360.0d0
-        else if(obsdepk(n).gt.180.0d0) then
-          obsdepk(n)=obsdepk(n)-360.0d0
+        if(abs(obsdepk(n)).gt.180.0d0) then
+          obsdepk(n)=obsdepk(n)-sign(360.0d0,obsdepk(n))
         end if
         do m=1,member
-          if(obshdxk(n,m).lt.-180.0d0) then
-            obshdxk(n,m)=obshdxk(n,m)+360.0d0
-          else if(obshdxk(n,m).gt.180.0d0) then
-            obshdxk(n,m)=obshdxk(n,m)-360.0d0
+          if(abs(obshdxk(n,m)).gt.180.0d0) then
+            obshdxk(n,m)=obshdxk(n,m)-sign(360.0d0,obshdxk(n,m))
           end if
         end do
       end if

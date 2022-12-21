@@ -7,7 +7,7 @@ program decode_dcdf
   use kind_module
   use obs_module, only : obstype, get_nobs_upper, read_upper, &
      & obsin_allocate, obs_preproc, monit_obsin, &
-     & write_obs
+     & write_obs, ndate
 
   implicit none
   character(len=5), dimension(4), parameter :: datatype=&
@@ -21,6 +21,7 @@ program decode_dcdf
   integer :: ndataall
   type(obstype) :: obs
   integer :: i, iof
+  integer, dimension(5) :: btime
   integer, dimension(5) :: atime = (/2022,1,1,0,0/)
   integer :: lmin=0, rmin=1
   logical :: lpreproc=.true.
@@ -33,16 +34,12 @@ program decode_dcdf
   idd = atime(3)
   write(cyymmdd,'(3i2.2)') iyy,imm,idd
   write(odate(1:6),'(a6)') cyymmdd
-  inn = atime(4)*60 + atime(5) + lmin
-  ihh = inn / 60
-  inn = inn - ihh*60
-  write(chhnn,'(2i2.2)') ihh,inn
+  call ndate(atime,lmin,btime)
+  write(chhnn,'(2i2.2)') btime(4:5)
   print *, chhnn
   write(odate(7:10),'(a4)') chhnn
-  inn = atime(4)*60 + atime(5) + rmin
-  ihh = inn / 60
-  inn = inn - ihh*60
-  write(chhnn,'(2i2.2)') ihh,inn
+  call ndate(atime,rmin,btime)
+  write(chhnn,'(2i2.2)') btime(4:5)
   print *, chhnn
   write(odate(12:15),'(a4)') chhnn
   print *, odate
@@ -63,9 +60,9 @@ program decode_dcdf
         call monit_obsin(obs%nobs,obs%elem,obs%dat)
       end if
 !      do i=1,min(obs%nobs,100)
-!        print '(i6,x,i5,3f9.1,es15.4,2f7.1)', i,obs%elem(i),&
+!        print '(i6,x,i5,3f9.1,es15.4,f7.1)', i,obs%elem(i),&
 !        &  obs%lon(i),obs%lat(i),obs%lev(i),obs%dat(i),&
-!        &  obs%err(i),obs%dmin(i)
+!        &  obs%dmin(i)
 !      end do
       if(lpreproc) then
       ofile=trim(datatype(iof))//'_prep.'//odate

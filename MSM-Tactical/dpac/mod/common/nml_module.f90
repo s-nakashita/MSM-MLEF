@@ -5,6 +5,7 @@ module nml_module
 ! 22-12-08 SN create
 !
   use kind_module
+  use obs_module, only: nobstype
   implicit none
   public
 
@@ -17,14 +18,18 @@ module nml_module
   !! obsope
   integer, parameter :: nobsfilemax=10
   integer, save :: obsin_num=1
-  character(filelenmax) :: obsin_name(nobsfilemax) = 'obs.dat'
+  character(filelenmax) :: obsin_name(nobsfilemax) = 'obs'
 !  logical, save :: obsda_run(nobsfilemax) = .true.
   logical, save :: obs_out = .true.
   character(filelenmax) :: obsout_basename = 'obsda.@@@@'
   character(filelenmax) :: fguess_basename = 'gues.@@@@'
 
   logical, save :: single_obs=.false.
+  logical, save :: luseobs(nobstype)=(/&
+  !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
+  & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0
+
   integer, save :: slot_start = 1
   integer, save :: slot_end = 1
   integer, save :: slot_base = 1
@@ -36,15 +41,16 @@ module nml_module
   character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
   character(filelenmax) :: anal_out_basename = 'anal.@@@@'
+  logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
+  logical,save      :: tl = .FALSE. ! If True, tangent linear operator used
+  logical,save      :: scl_mem = .FALSE. ! If True, forecast ensemble perturbations are scaled by member size
   !!! lmlef_obs
+  logical,save :: debug_obs=.false.
   real(kind=dp),save :: sigma_obs=500.0d3
 !  real(kind=dp),save :: sigma_obsv=0.4d0
   real(kind=dp),save :: sigma_obsv=0.1d0
   real(kind=dp),save :: sigma_obst=3.0d0
   real(kind=dp),save :: gross_error=10.0d0
-  logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
-  logical,save      :: tl = .FALSE. ! If True, tangent linear operator used
-  logical,save      :: scl_mem = .FALSE. ! If True, forecast ensemble perturbations are scaled by member size
   !!! lmlef_tools
   real(kind=dp),save    :: cov_infl_mul = -0.01d0 !multiplicative inflation
 ! > 0: globally constant covariance inflation
@@ -98,6 +104,7 @@ contains
       obsout_basename, &
       fguess_basename, &
       single_obs, &
+      luseobs, &
       nobsmax, &
       slot_start, &
       slot_end, &
@@ -126,13 +133,14 @@ contains
       obsda_out_basename, &
       gues_in_basename, &
       anal_out_basename, &
+      mean, &
+      tl, &
+      scl_mem, &
+      debug_obs, &
       sigma_obs, &
       sigma_obsv, &
       sigma_obst, &
       gross_error, &
-      mean, &
-      tl, &
-      scl_mem, &
       cov_infl_mul, &
       infl_mul_in_basename, &
       infl_mul_out_basename, &
