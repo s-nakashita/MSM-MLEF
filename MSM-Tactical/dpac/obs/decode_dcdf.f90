@@ -25,7 +25,8 @@ program decode_dcdf
   integer, dimension(5) :: atime = (/2022,1,1,0,0/)
   integer :: lmin=0, rmin=1
   logical :: lpreproc=.true.
-  namelist /param_decode/ atime, lmin, rmin, lpreproc
+  integer :: iwnd=1,iq=1
+  namelist /param_decode/ atime, lmin, rmin, lpreproc, iwnd, iq
 
   read(5,nml=param_decode)
   write(6,nml=param_decode)
@@ -56,7 +57,7 @@ program decode_dcdf
       call monit_obsin(obs%nobs,obs%elem,obs%dat)
 
       if(lpreproc) then
-        call obs_preproc(obs)
+        call obs_preproc(obs,iwnd,iq)
         call monit_obsin(obs%nobs,obs%elem,obs%dat)
       end if
 !      do i=1,min(obs%nobs,100)
@@ -65,7 +66,11 @@ program decode_dcdf
 !        &  obs%dmin(i)
 !      end do
       if(lpreproc) then
+      if(iq.eq.2) then
+      ofile=trim(datatype(iof))//'_preprh.'//odate
+      else
       ofile=trim(datatype(iof))//'_prep.'//odate
+      end if
       else
       ofile=trim(datatype(iof))//'.'//odate
       end if

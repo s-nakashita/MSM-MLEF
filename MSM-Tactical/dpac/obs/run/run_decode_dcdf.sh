@@ -6,6 +6,8 @@ bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 adate=2022061812
 lmin=-60
 rmin=60
+lprep=T
+iq=2
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -25,7 +27,9 @@ cat <<EOF >decode.nml
  atime=${yyyy},${imm},${idd},${ihh},0
  lmin=${lmin},
  rmin=${rmin},
- lpreproc=.true.,
+ lpreproc=${lprep},
+ iwnd=,
+ iq=${iq},
 &end
 EOF
 cat decode.nml

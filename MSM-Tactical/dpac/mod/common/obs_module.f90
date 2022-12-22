@@ -56,7 +56,7 @@ module obs_module
   integer,parameter,public :: id_q_obs=3330
   integer,parameter,public :: id_rh_obs=3331
 !  real(kind=dp),parameter,public :: obserr_conv(nobstype_conv) = &
-!  & (/1.0d0,1.0d0,1.0d-3,10.0d0/)
+!  & (/1.0d0,1.0d0,1.0d-3,1.0d-1/)
   ! surface
   integer,parameter,public :: nobstype_surf=1 !Ps[,rain]
   integer,parameter,public :: id_ps_obs=14593
@@ -644,10 +644,10 @@ contains
     return
   end subroutine opendcdf
 !
-! convert (ws,wd)=>(u,v) and/or (t,td)=>(t,q)
+! convert (ws,wd)=>(u,v) and/or (t,td)=>(t,q[iq=1] or rh[iq=2])
 !
   subroutine obs_preproc(obs,iwnd,iq)
-    use func_module, only: calc_q, calc_uv
+    use func_module, only: calc_q, calc_rh, calc_uv
     implicit none
     type(obstype), intent(inout) :: obs
     integer, optional, intent(in) :: iwnd !wind
@@ -655,12 +655,12 @@ contains
     integer :: iwnd_, iq_
     type(obstype) :: tmpobs
     real(kind=dp) :: u, v
-    real(kind=dp) :: td, q, p
+    real(kind=dp) :: t, td, q, p, rh
     
     real(kind=dp) :: latb, lonb
     integer, parameter :: npointmax=10000
     integer :: nobseach(nobstype_upper,npointmax)
-    integer :: n_ws, n_wd
+    integer :: n_t, n_ws, n_wd
     integer :: n,nn,npoint,i,j,itype,iter,itermax
 
     iwnd_=1
@@ -712,12 +712,23 @@ contains
     do i=1,npoint
       do j=1,sum(nobseach(:,i))
         nn=nn+1
-        if(iq_.eq.1.and.obs%elem(nn).eq.id_td_obs) then
+        if(iq_.ge.1.and.obs%elem(nn).eq.id_td_obs) then
           td = obs%dat(nn)
           p  = obs%lev(nn)
-          call calc_q(td,p,q)
-          obs%elem(nn)=id_q_obs
-          obs%dat(nn) = q
+          if(iq_.eq.1) then !Td=>Q
+            call calc_q(td,p,q)
+            obs%elem(nn)=id_q_obs
+            obs%dat(nn) = q
+          else if(iq_.eq.2) then !Td=>rh
+            n_t=nn-nobseach(1,i)
+            !print *, obs%elem(nn), obs%elem(n_t)
+            !print *, obs%lev(nn), obs%lev(n_t)
+            t = obs%dat(n_t)
+            call calc_q(td,p,q)
+            call calc_rh(t,q,p,rh)
+            obs%elem(nn)=id_rh_obs
+            obs%dat(nn) = rh
+          end if
         end if
         if(iwnd_.eq.1.and.obs%elem(nn).eq.id_wd_obs) then
           n_ws=nn+nobseach(3,i)
