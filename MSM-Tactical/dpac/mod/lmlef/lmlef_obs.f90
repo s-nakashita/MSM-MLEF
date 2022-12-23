@@ -52,6 +52,7 @@ subroutine set_lmlef_obs
 !  real(kind=dp),allocatable :: tmphxf(:,:)[:]
   integer,allocatable :: tmpqc0(:,:)[:]
   integer,allocatable :: nobslots(:)[:]
+  integer,allocatable :: tmpimg(:)[:]
   integer :: n,i,j,ierr,islot,nn,l,im
   integer, allocatable :: nj(:)
   integer, allocatable :: njs(:)
@@ -70,9 +71,9 @@ subroutine set_lmlef_obs
   dist_zero = sigma_obs * sqrt(10.0d0/3.0d0) * 2.0d0
   dist_zerov = sigma_obsv * sqrt(10.0d0/3.0d0) * 2.0d0
   dlat_zero = dist_zero / re * rad2deg
-  allocate(dlon_zero(nij1max))
-  do i=1,nij1
-    dlon_zero(i) = dlat_zero / cos(myrlat(i)*deg2rad)
+  allocate(dlon_zero(nj1max))
+  do j=1,nj1
+    dlon_zero(j) = dlat_zero / cos(myrlat(j)*deg2rad)
   end do
 
   allocate( nobslots(nslots)[*] )
@@ -256,39 +257,33 @@ subroutine set_lmlef_obs
 !      & * exp(0.25d0 * (real(islot-nbslot,kind=dp) / sigma_obst)**2)
 !    nn = nn + nobslots(islot)
 !  end do
-!!
-!! select OBS IN THE NODE
-!!
-!  nn = 0
-!  do n=1,nobs
-!    if(obsda%qc(n) /= 1) CYCLE
-!    if(obsda%lat(n) < MINVAL(myrlat) .OR. MAXVAL(myrlat) < obsda%lat(n)) then
-!      dlat = MIN( ABS(MINVAL(myrlat)-obsda%lat(n)),ABS(MAXVAL(myrlat)-obsda%lat(n)) )
-!      if(dlat > dlat_zero) CYCLE
-!    end if
-!    if(obsda%lon(n) < MINVAL(myrlon) .OR. MAXVAL(myrlon) < obsda%lon(n)) then
-!      dlon1 = ABS(MINVAL(myrlon) - obsda%lon(n))
-!      dlon1 = MIN(dlon1,360.0d0-dlon1)
-!      dlon2 = ABS(MAXVAL(myrlon) - obsda%lon(n))
-!      dlon2 = MIN(dlon2,360.0d0-dlon2)
-!      dlon =  MIN(dlon1,dlon2) &
-!         & * pi*re*COS(obsda%lat(n)*pi/180.d0)/180.0d0
-!      if(dlon > dist_zero) CYCLE
-!    end if
-!    nn = nn+1
-!    obsda%elem(nn) = obsda%elem(n)
-!    obsda%lon(nn) = obsda%lon(n)
-!    obsda%lat(nn) = obsda%lat(n)
-!    obsda%lev(nn) = obsda%lev(n)
-!    obsda%dat(nn) = obsda%dat(n)
-!    obsda%err(nn) = obsda%err(n)
-!!    tmpk(nn) = tmpk(n)
-!    obsda%hxf(nn) = obsda%hxf(n)
-!    obsda%hxe(:,nn) = obsda%hxe(:,n)
-!    obsda%qc(nn) = obsda%qc(n)
-!  end do
-!  nobs = nn
-!  write(6,'(I10,A,I3.3)') nobs,' OBSERVATIONS TO BE ASSIMILATED IN MYIMAGE ',myimage
+!
+! search which image contains observation
+!
+  allocate( tmpimg(obsda%nobs)[*] )
+  tmpimg = 0
+  nn=0
+  do n=1,obsda%nobs
+    if(obsda%qc(n) /= iqc_good) cycle
+    if(obsda%lat(n) < myrlat(1) .or. myrlat(nj1) < obsda%lat(n)) & ! latitude's order is S->N
+      cycle
+    if(obsda%lon(n) < myrlon(1) .or. myrlon(ni1) < obsda%lon(n)) & ! longitude's order is W->E
+      cycle
+    tmpimg(n) = myimage
+    nn=nn+1
+  end do
+  if(myimage.eq.1) then
+    do l=2,nimages
+      tmpimg(:)[1] = tmpimg(:)[1]+tmpimg(:)[l]
+    end do
+    do l=2,nimages
+      tmpimg(:)[l] = tmpimg(:)[1]
+    end do
+  end if
+  sync all
+  obsda%img(:) = tmpimg
+  if(debug_obs) write(6,*) 'obs%img ',obsda%img(:)
+  write(6,'(I10,A,I3.3)') nn,' OBSERVATIONS TO BE PROCESSED IN MYIMAGE ',myimage
 !
 ! SORT
 !
@@ -342,6 +337,7 @@ subroutine set_lmlef_obs
       tmpobs%hxf(njs(j)+nn) = obsda%hxf(n)
       tmpobs%hxe(:,njs(j)+nn) = obsda%hxe(:,n)
       tmpobs%qc(njs(j)+nn) = obsda%qc(n)
+      tmpobs%img(njs(j)+nn) = obsda%img(n)
     end do
   end do
 !$OMP END DO
@@ -372,6 +368,7 @@ subroutine set_lmlef_obs
         obsdasort%hxf(njs(j)+nn) = tmpobs%hxf(n)
         obsdasort%hxe(:,njs(j)+nn) = tmpobs%hxe(:,n)
         obsdasort%qc(njs(j)+nn) = tmpobs%qc(n)
+        obsdasort%img(njs(j)+nn) = tmpobs%img(n)
 !        obsnode(njs(j)+nn) = tmpnode
 !        obsij1(njs(j)+nn) = tmpij1
       end do
@@ -390,11 +387,11 @@ subroutine set_lmlef_obs
   if(debug_obs) then
     write(6,'(9a10)') 'elem','lon','lat','lev','dat','err','dmin','dep','qc'
     do n=1,obsdasort%nobs
-      write(6,'(i10,2f10.2,f10.1,4es10.2,i10)') &
+      write(6,'(i10,2f10.2,f10.1,4es10.2,2i10)') &
        & obsdasort%elem(n),&
        & obsdasort%lon(n),obsdasort%lat(n),obsdasort%lev(n),&
        & obsdasort%dat(n),obsdasort%err(n),obsdasort%dmin(n),&
-       & obsdasort%hxf(n),obsdasort%qc(n)
+       & obsdasort%hxf(n),obsdasort%qc(n),obsdasort%img(n)
     end do
 !    write(6,'(A)') 'nobsgrd'
 !    do j=1,nlat

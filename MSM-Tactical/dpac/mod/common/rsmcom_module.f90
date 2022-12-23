@@ -202,37 +202,41 @@ module rsmcom_module
 !
 ! ensemble mean
 !
-  subroutine ensmean_grd(mem,nij,v3d,v2d,v3dm,v2dm)
+  subroutine ensmean_grd(mem,ni,nj,v3d,v2d,v3dm,v2dm)
     implicit none
-    integer, intent(in) :: mem, nij
-    real(kind=dp),intent(in) :: v3d(nij,nlev,mem,nv3d)
-    real(kind=dp),intent(in) :: v2d(nij,     mem,nv2d)
-    real(kind=dp),intent(out):: v3dm(nij,nlev,nv3d)
-    real(kind=dp),intent(out):: v2dm(nij,     nv2d)
-    integer :: i,k,m,n
+    integer, intent(in) :: mem, ni,nj
+    real(kind=dp),intent(in) :: v3d(ni,nj,nlev,mem,nv3d)
+    real(kind=dp),intent(in) :: v2d(ni,nj,     mem,nv2d)
+    real(kind=dp),intent(out):: v3dm(ni,nj,nlev,nv3d)
+    real(kind=dp),intent(out):: v2dm(ni,nj,     nv2d)
+    integer :: i,j,k,m,n
 
     do n=1,nv3d
-!$OMP PARALLEL DO PRIVATE(i,k,m)
+!$OMP PARALLEL DO PRIVATE(i,j,k,m)
       do k=1,nlev
-        do i=1,nij
-          v3dm(i,k,n)=v3d(i,k,1,n)
-          do m=2,mem
-            v3dm(i,k,n)=v3dm(i,k,n)+v3d(i,k,m,n)
+        do j=1,nj
+          do i=1,ni
+            v3dm(i,j,k,n)=v3d(i,j,k,1,n)
+            do m=2,mem
+              v3dm(i,j,k,n)=v3dm(i,j,k,n)+v3d(i,j,k,m,n)
+            end do
+            v3dm(i,j,k,n)=v3dm(i,j,k,n)/real(mem,kind=dp)
           end do
-          v3dm(i,k,n)=v3dm(i,k,n)/real(mem,kind=dp)
         end do
       end do
 !$OMP END PARALLEL DO
     end do
 
     do n=1,nv2d
-!$OMP PARALLEL DO PRIVATE(i,m)
-      do i=1,nij
-        v2dm(i,n)=v2d(i,1,n)
-        do m=2,mem
-          v2dm(i,n)=v2dm(i,n)+v2d(i,m,n)
+!$OMP PARALLEL DO PRIVATE(i,j,m)
+      do i=1,ni
+        do j=1,nj
+          v2dm(i,j,n)=v2d(i,j,1,n)
+          do m=2,mem
+            v2dm(i,j,n)=v2dm(i,j,n)+v2d(i,j,m,n)
+          end do
+          v2dm(i,j,n)=v2dm(i,j,n)/real(mem,kind=dp)
         end do
-        v2dm(i,n)=v2dm(i,n)/real(mem,kind=dp)
       end do
 !$OMP END PARALLEL DO
     end do

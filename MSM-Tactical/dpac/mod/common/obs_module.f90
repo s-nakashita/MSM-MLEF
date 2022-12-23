@@ -35,6 +35,7 @@ module obs_module
     real(kind=dp),allocatable :: hxf(:)   ! h(x) control
     real(kind=dp),allocatable :: hxe(:,:)   ! h(x) ensemble
     integer,allocatable       :: qc(:)    ! QC flag
+    integer,allocatable       :: img(:)   ! image number whose domain includes obs location
   end type obstype2
 !
 ! parameters and variables for decoding dcd
@@ -80,7 +81,7 @@ module obs_module
   & (/'  U','  V','  T','  Q',' RH',' Ps',&
   &   ' Td',' Wd',' Ws'/)
   real(kind=dp),parameter,public :: obserr(nobstype) = &
-  & (/1.0d0,1.0d0,1.0d0,1.0d-3,10.0d0,1.0d2,&
+  & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
   &   2.0d0,10.0d0,1.0d0/)
 
 !
@@ -797,6 +798,7 @@ contains
     allocate( obs%dmin(obs%nobs) )
     allocate( obs%hxf (obs%nobs) )
     allocate( obs%qc  (obs%nobs) )
+    allocate( obs%img (obs%nobs) )
 
     obs%elem = 0
     obs%lon  = 0.0_dp
@@ -807,6 +809,7 @@ contains
     obs%dmin = 0.0_dp
     obs%hxf  = 0.0_dp
     obs%qc   = 0
+    obs%img  = 0
 
     if(member.gt.0) then
       allocate( obs%hxe (member,obs%nobs) )
@@ -830,6 +833,7 @@ contains
     if(allocated(obs%hxf)) deallocate(obs%hxf)
     if(allocated(obs%hxe)) deallocate(obs%hxe)
     if(allocated(obs%qc)) deallocate(obs%qc)
+    if(allocated(obs%img)) deallocate(obs%img)
 
     return
   end subroutine obsout_deallocate

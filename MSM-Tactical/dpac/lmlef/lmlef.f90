@@ -21,14 +21,14 @@ program lmlef
 !  &, monit_cntl, monit_mean
 
   implicit none
-  real(kind=dp),allocatable :: gues3dc(:,:,:)[:]  !control
-  real(kind=dp),allocatable :: gues2dc(:,:)[:]    !control
-  real(kind=dp),allocatable :: anal3dc(:,:,:)[:]  !control
-  real(kind=dp),allocatable :: anal2dc(:,:)[:]    !control
-  real(kind=dp),allocatable :: gues3d(:,:,:,:)[:] !ensemble
-  real(kind=dp),allocatable :: gues2d(:,:,:)[:]   !ensemble
-  real(kind=dp),allocatable :: anal3d(:,:,:,:)[:] !ensemble
-  real(kind=dp),allocatable :: anal2d(:,:,:)[:]   !ensemble
+  real(kind=dp),allocatable :: gues3dc(:,:,:,:)[:]  !control
+  real(kind=dp),allocatable :: gues2dc(:,:,:)[:]    !control
+  real(kind=dp),allocatable :: anal3dc(:,:,:,:)[:]  !control
+  real(kind=dp),allocatable :: anal2dc(:,:,:)[:]    !control
+  real(kind=dp),allocatable :: gues3d(:,:,:,:,:)[:] !ensemble
+  real(kind=dp),allocatable :: gues2d(:,:,:,:)[:]   !ensemble
+  real(kind=dp),allocatable :: anal3d(:,:,:,:,:)[:] !ensemble
+  real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
   real(kind=dp) :: rtimer00,rtimer
   integer :: im,ierr
   character(8) :: stdoutf='NOUT-000'
@@ -51,8 +51,14 @@ program lmlef
 !
   call read_nml_ens
   call read_nml_obsope
-!  call mlef_init
-!  call read_nml_lmlef
+  call mlef_init
+  call read_nml_lmlef
+!
+! initial setting
+!
+  call file_member_replace(0,gues_in_basename,guesf)
+  call set_rsmparm(guesf)
+  call set_corsm
   call init_das_lmlef
 !
   write(6,'(A)') '============================================='
@@ -85,20 +91,15 @@ program lmlef
   write(6,'(A,F15.2)') '   sigma_obsv :',sigma_obsv
   write(6,'(A,F15.2)') '   sigma_obst :',sigma_obst
   write(6,'(A)') '============================================='
-!
-! initial setting
-!
-  call file_member_replace(0,gues_in_basename,guesf)
-  call set_rsmparm(guesf)
-  call set_corsm
-  allocate(gues3dc(nij1max,nlev,nv3d)[*])
-  allocate(gues2dc(nij1max,     nv2d)[*])
-  allocate(anal3dc(nij1max,nlev,nv3d)[*])
-  allocate(anal2dc(nij1max,     nv2d)[*])
-  allocate(gues3d(nij1max,nlev,member,nv3d)[*])
-  allocate(gues2d(nij1max,     member,nv2d)[*])
-  allocate(anal3d(nij1max,nlev,member,nv3d)[*])
-  allocate(anal2d(nij1max,     member,nv2d)[*])
+
+  allocate(gues3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
+  allocate(gues2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
+  allocate(anal3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
+  allocate(anal2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
+  allocate(gues3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
+  allocate(gues2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
+  allocate(anal3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
+  allocate(anal2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
   sync all
 !
   call cpu_time(rtimer)

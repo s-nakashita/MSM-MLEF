@@ -2,19 +2,20 @@
 set -e
 obsdir=/zdata/grmsm/work/dpac/obs
 datadir=/zdata/grmsm/work/msm2msm3_bv
+#outdir=/zdata/grmsm/work/dpac/msm3test
 outdir=/zdata/grmsm/work/dpac/single
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
-NODE=8
+NODE=5
 member=10
 adate=2022061812
 fhour=0
 single=T
 selobs=all
-prep=_prep
+prep=_preprh
 maxiter=1
 hloc=300
-saveens=1 #0:save all ensemble, 1:save only ctrl, mean and spread
+saveens=0 #0:save all ensemble, 1:save only ctrl, mean and spread
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -83,6 +84,12 @@ cat <<EOF >lmlef.nml
  slot_base=,
  slot_tint=,
 &end
+&param_corsm
+ njsep=${NODE},
+ nisep=1,
+ jghost=1,
+ ighost=0,
+&end
 &param_lmlef
  obsda_in_basename='${obsinf}.@@@@',
  obsda_out_basename='${obsoutf}.@@@@',
@@ -117,7 +124,8 @@ done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
 mpiexec -n $NODE ./lmlef | tee lmlef.log || exit 11
-mv NOUT-001 ${logf}_n${NODE}.txt
+mv NOUT-001 ${logf}_n${NODE}.new.txt
+#rm NOUT-00*
 
 if [ $saveens -eq 1 ];then
 m=1
@@ -130,15 +138,15 @@ done
 fi
 
 # postprocess
-for emem in ctrl sprd;do
+for emem in ctrl mean sprd;do
 if [ $emem = ctrl ];then
-in=${anloutf}.0000.grd
+in=gues.0000.grd
 else
-in=${anloutf}.${emem}.grd
+in=gues.${emem}.grd
 fi
-out=${anloutf}.${emem}.bin
-ctl=${anloutf}.${emem}.ctl
-rm fort.* read_sig
+out=gues.${emem}.bin
+ctl=gues.${emem}.ctl
+rm -f fort.* read_sig
 ln -s ${in} fort.11
 ln -s ${out} fort.51
 ln -s ${ctl} fort.61
@@ -152,4 +160,50 @@ EOF
 sed -i -e 's/DATAFILE/'$out'/g' $ctl
 rm ${ctl}-e
 done
+
+for emem in ctrl mean sprd;do
+if [ $emem = ctrl ];then
+in=${anloutf}.0000.grd
+else
+in=${anloutf}.${emem}.grd
+fi
+out=${anloutf}.${emem}.new.bin
+ctl=${anloutf}.${emem}.new.ctl
+rm -f fort.* read_sig
+ln -s ${in} fort.11
+ln -s ${out} fort.51
+ln -s ${ctl} fort.61
+ln -s ${bindir2}/read_sig .
+cat << EOF > read_sig.nml
+&namlst_cld
+ icld=0,
+&end
+EOF
+./read_sig < read_sig.nml
+sed -i -e 's/DATAFILE/'$out'/g' $ctl
+rm ${ctl}-e
+done
+if [ $saveens -eq 0 ];then
+m=1
+while [ $m -le $member ];do
+mem=`printf '%0.4d' $m`
+in=${anloutf}.${mem}.grd
+out=${anloutf}.${mem}.new.bin
+ctl=${anloutf}.${mem}.new.ctl
+rm -f fort.* read_sig
+ln -s ${in} fort.11
+ln -s ${out} fort.51
+ln -s ${ctl} fort.61
+ln -s ${bindir2}/read_sig .
+cat << EOF > read_sig.nml
+&namlst_cld
+ icld=0,
+&end
+EOF
+./read_sig < read_sig.nml
+sed -i -e 's/DATAFILE/'$out'/g' $ctl
+rm ${ctl}-e
+m=`expr $m + 1`
+done
+fi
 echo "END"

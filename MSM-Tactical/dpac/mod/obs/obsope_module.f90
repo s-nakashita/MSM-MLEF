@@ -7,7 +7,9 @@ module obsope_module
 !
   use kind_module
   use nml_module
+  use co_module
   use rsmcom_module
+  use corsm_module
   use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh
   use obs_module
   implicit none
@@ -16,7 +18,7 @@ module obsope_module
   public :: obsope_serial, obsope_update, monit_dep, monit_print
 contains
 !
-! main routine for observation operator
+! (serial) main routine for observation operator
 !
   subroutine obsope_serial(obsin,obsout)
     implicit none
@@ -129,7 +131,8 @@ contains
           else
             hxf=obsout%hxe(im,n)
           end if
-          print '(i10,a10,2f10.2,f10.1,4es10.2,i10)', n,obelmlist(uid_obs(obsout%elem(n))),&
+          print '(i10,a10,2f10.2,f10.1,4es10.2,i10)', &
+           &  n,obelmlist(uid_obs(obsout%elem(n))),&
            &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
            &  obsout%err(n),obsout%dmin(n), &
            &  hxf,obsout%qc(n)
@@ -143,16 +146,16 @@ contains
     return
   end subroutine obsope_serial
 !
-! observation operator applied to updated model variables in DA
+! (parallel) observation operator applied to updated model variables in DA
 !
-  subroutine obsope_update(obs,mem,v3dg,v2dg)
+  subroutine obsope_update(obs,mem,v3d,v2d)
     implicit none
     type(obstype2), intent(inout):: obs
     integer,       intent(in) :: mem
-    real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
-    real(kind=dp), intent(in) :: v2dg(nlon,nlat,nv2d)
+    real(kind=dp), intent(in) :: v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
+    real(kind=dp), intent(in) :: v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
     integer :: nobsin,nobsout
-    real(kind=dp) :: p_full(nlon,nlat,nlev)
+    real(kind=dp),allocatable :: p_full(:,:,:)
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn
 !!! debug
@@ -169,18 +172,26 @@ contains
    
     nobsout=0
     nn=0
-!    call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
-    p_full = v3dg(:,:,:,iv3d_pp)
+    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
+!    call calc_pfull(nlon,nlat,nlev,sig,v2d(:,:,iv2d_ps),p_full)
+    p_full = v3d(:,:,:,iv3d_pp)
+    write(6,*) 'p_full ',minval(p_full(1:ni1,1:nj1,:)),maxval(p_full(1:ni1,1:nj1,:))
+    if(mem.eq.0) then
+      obs%hxf(:) = 0.0d0
+    else
+      obs%hxe(mem,:) = 0.0d0
+    end if
     do n=1,obs%nobs
+      if(obs%img(n)/=myimage) cycle
       nobsout=nobsout+1
       call phys2ijk(p_full,obs%elem(n),&
          &  obs%lon(n),obs%lat(n),obs%lev(n), &
-         &  ri,rj,rk,obs%qc(n))
+         &  ri,rj,rk,obs%qc(n),.true.)
       if(obs%qc(n).eq.iqc_good) then
         nn=nn+1
         if(mem.eq.0) then
           call trans_xtoy(obs%elem(n),ri,rj,rk,&
-           &  v3dg,v2dg,p_full,obs%hxf(n))
+           &  v3d,v2d,p_full,obs%hxf(n))
 !!! debug
 !          dep = obs%dat(n) - obs%hxf(n)
 !          print *, obs%elem(n),obs%lon(n),obs%lat(n),&
@@ -189,7 +200,7 @@ contains
 !!! debug
         else
           call trans_xtoy(obs%elem(n),ri,rj,rk,&
-           &  v3dg,v2dg,p_full,obs%hxe(mem,n))
+           &  v3d,v2d,p_full,obs%hxe(mem,n))
 !!! debug
 !          dep = obs%dat(n) - obs%hxe(im,n)
 !          print *, obs%elem(n),obs%lon(n),obs%lat(n),&
@@ -199,10 +210,136 @@ contains
         end if
       end if
     end do
-!    obs%nobs = nobsout
     return
   end subroutine obsope_update
 !
+!
+! coordinate conversion
+!
+  subroutine phys2ijk(p_full,elm,rlon1,rlat1,rlev1,ri,rj,rk,qc,local)
+    implicit none
+    real(kind=dp),intent(in) :: p_full(:,:,:) !(nlon,nlat,nlev) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
+    integer,intent(in) :: elm
+    real(kind=dp),intent(in) :: rlon1,rlat1
+    real(kind=dp),intent(in) :: rlev1 !pressure level
+    real(kind=dp),intent(out):: ri,rj,rk
+    integer,      intent(out):: qc
+    logical,optional,intent(in) :: local
+    real(kind=dp) :: ai,aj,ak
+    real(kind=dp),allocatable :: lnps(:,:) !(nlon,nlat) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost)
+    real(kind=dp) :: plev(nlev)
+    real(kind=dp) :: ptmp
+    logical :: local_
+    integer :: igrdtmp,jgrdtmp
+    integer :: i,j,k
+
+    local_=.false.
+    if(present(local)) local_=local
+
+    qc=iqc_good
+    
+    if(local_) then
+      allocate( lnps(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost) )
+      ! rlon1 -> ri
+      do i=1-ighost,ni1+ighost
+        if(rlon1.lt.myrlon(i)) exit
+      end do
+      ai=(rlon1-myrlon(i-1))/(rlon(i)-rlon(i-1))
+      ri=real(i-1,kind=dp)+ai
+      ! rlat1 -> rj
+      do j=1-jghost,nj1+jghost
+        if(rlat1.lt.myrlat(j)) exit
+      end do
+      aj=(rlat1-myrlat(j-1))/(rlat(j)-rlat(j-1))
+      rj=real(j-1,kind=dp)+aj
+      write(6,'(6(a,f8.2))') & !debug
+        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',myrlon(i),' rlat=',myrlat(j)
+      ri=ri+ighost
+      rj=rj+jghost
+    else
+      allocate( lnps(nlon,nlat) )
+      ! rlon1 -> ri
+      if(rlon1.lt.rlon(1)) then
+        ri=0.0
+      else
+        do i=1,nlon
+          if(rlon1.lt.rlon(i)) exit
+        end do
+        if(i.ge.nlon) then
+          ri=real(nlon+1,kind=dp)
+        else
+          ai=(rlon1-rlon(i-1))/(rlon(i)-rlon(i-1))
+          ri=real(i-1,kind=dp)+ai 
+        end if
+      end if
+      ! rlat1 -> rj
+      if(rlat1.lt.rlat(1)) then
+        rj=0.0
+      else
+        do j=1,nlat
+          if(rlat1.lt.rlat(j)) exit
+        end do
+        if(j.ge.nlat) then
+          rj=real(nlat+1,kind=dp)
+        else
+          aj=(rlat1-rlat(j-1))/(rlat(j)-rlat(j-1))
+          rj=real(j-1,kind=dp)+aj
+        end if
+      end if
+      ! check whether observation is within horizontal domain or not
+      if(ri.lt.1.0.or.ri.gt.nlon.or.rj.lt.1.0.or.rj.gt.nlat) then
+        write(0,'(a,4(a,f8.2))') &
+        & 'warning: observation is outside of the horizontal domain ', &
+        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj
+        qc=iqc_out_h
+        return
+      end if
+    end if
+    ! rlev1 -> rk
+    if(elm.gt.9999) then !surface observation
+      rk=0.0
+    else
+      ! horizontal interpolation
+      do k=1,nlev
+!        print *, i,j,p_full(i-1,j-1,k),p_full(i,j-1,k),p_full(i-1,j,k),p_full(i,j,k)
+        lnps=0.0_dp
+        lnps(i-1:i,j-1:j)=log(p_full(i-1:i,j-1:j,k))
+!        print *, i,j,lnps(i-1,j-1),lnps(i,j-1),lnps(i-1,j),lnps(i,j)
+        call itpl_2d(lnps,ri,rj,plev(k))
+!        print *, exp(plev(k))
+      end do
+      ! find rk
+      rk=log(rlev1)
+      if(local_) write(6,'(a,2f8.5,a,f8.5)') 'plev ',plev(1),plev(nlev),' rk ',rk !debug
+      if(rk.gt.plev(1)) then
+!        call itpl_2d(p_full(:,:,1),ri,rj,ptmp)
+        ptmp=exp(plev(1))
+        write(0,'(a,f8.1,a,f8.1,a,i5)') &
+        & 'warning: observation is too low, pbtm=',ptmp,', lev=',rlev1,' elem=',elm
+        qc=iqc_out_vlo
+        return
+      end if
+      if(rk.lt.plev(nlev)) then
+!        call itpl_2d(p_full(:,:,nlev),ri,rj,ptmp)
+        ptmp=exp(plev(nlev))
+        write(0,'(a,f8.1,a,f8.1,a,i5)') &
+        & 'warning: observation is too high, ptop=',ptmp,', lev=',rlev1,' elem=',elm
+        qc=iqc_out_vhi
+        return
+      end if
+      do k=1,nlev
+        if(plev(k).lt.rk) exit
+      end do
+      ak=(plev(k-1)-rk)/(plev(k-1)-plev(k))
+      rk=real(k-1,kind=dp)+ak
+    end if
+    
+!! debug
+    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
+!! debug
+    deallocate( lnps )
+    return
+  end subroutine phys2ijk
 !
 ! model variables => observation
 !
@@ -210,9 +347,9 @@ contains
     implicit none
     integer, intent(in) :: elm
     real(kind=dp), intent(in) :: ri,rj,rk
-    real(kind=dp), intent(in) :: v3d(nlon,nlat,nlev,nv3d)
-    real(kind=dp), intent(in) :: v2d(nlon,nlat,nv2d)
-    real(kind=dp), intent(in) :: p_full(nlon,nlat,nlev)
+    real(kind=dp), intent(in) :: v3d(:,:,:,:) !(nlon,nlat,nlev,nv3d) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
+    real(kind=dp), intent(in) :: v2d(:,:,:)   !(nlon,nlat,nv2d) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)
+    real(kind=dp), intent(in) :: p_full(:,:,:) !(nlon,nlat,nlev) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
     real(kind=dp), intent(out):: yobs
     
     real(kind=dp) :: t,q,p
@@ -260,107 +397,11 @@ contains
 
   end subroutine trans_xtoy
 !
-! coordinate conversion
-!
-  subroutine phys2ijk(p_full,elm,rlon1,rlat1,rlev1,ri,rj,rk,qc)
-    implicit none
-    real(kind=dp),intent(in) :: p_full(nlon,nlat,nlev)
-    integer,intent(in) :: elm
-    real(kind=dp),intent(in) :: rlon1,rlat1
-    real(kind=dp),intent(in) :: rlev1 !pressure level
-    real(kind=dp),intent(out):: ri,rj,rk
-    integer,      intent(out):: qc
-    real(kind=dp) :: ai,aj,ak
-    real(kind=dp) :: lnps(nlon,nlat)
-    real(kind=dp) :: plev(nlev)
-    real(kind=dp) :: ptmp
-    integer :: i,j,k
-
-    qc=iqc_good
-    ! rlon1 -> ri
-    if(rlon1.lt.rlon(1)) then
-      ri=0.0
-    else
-      do i=1,nlon
-        if(rlon1.lt.rlon(i)) exit
-      end do
-      if(i.ge.nlon) then
-        ri=real(nlon+1,kind=dp)
-      else
-        ai=(rlon1-rlon(i-1))/(rlon(i)-rlon(i-1))
-        ri=real(i-1,kind=dp)+ai 
-      end if
-    end if
-    ! rlat1 -> rj
-    if(rlat1.lt.rlat(1)) then
-      rj=0.0
-    else
-      do j=1,nlat
-        if(rlat1.lt.rlat(j)) exit
-      end do
-      if(j.ge.nlat) then
-        rj=real(nlat+1,kind=dp)
-      else
-        aj=(rlat1-rlat(j-1))/(rlat(j)-rlat(j-1))
-        rj=real(j-1,kind=dp)+aj
-      end if
-    end if
-    ! check whether observation is within horizontal domain or not
-    if(ri.lt.1.0.or.ri.gt.nlon.or.rj.lt.1.0.or.rj.gt.nlat) then
-      write(0,'(a,4(a,f8.2))') &
-        & 'warning: observation is outside of the horizontal domain ', &
-        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj
-      qc=iqc_out_h
-      return
-    end if
-    ! rlev1 -> rk
-    if(elm.gt.9999) then !surface observation
-      rk=0.0
-    else
-      ! horizontal interpolation
-      i = ceiling(ri)
-      j = ceiling(rj)
-      do k=1,nlev
-        lnps=0.0_dp
-        lnps(i-1:i,j-1:j)=log(p_full(i-1:i,j-1:j,k))
-        call itpl_2d(lnps,ri,rj,plev(k))
-      end do
-      !print *, 'plev ',plev(1),plev(nlev) !debug
-      ! find rk
-      rk=log(rlev1)
-      if(rk.gt.plev(1)) then
-!        call itpl_2d(p_full(:,:,1),ri,rj,ptmp)
-        ptmp=exp(plev(1))
-        write(0,'(a,f8.1,a,f8.1,a,i5)') &
-        & 'warning: observation is too low, pbtm=',ptmp,', lev=',rlev1,' elem=',elm
-        qc=iqc_out_vlo
-        return
-      end if
-      if(rk.lt.plev(nlev)) then
-!        call itpl_2d(p_full(:,:,nlev),ri,rj,ptmp)
-        ptmp=exp(plev(nlev))
-        write(0,'(a,f8.1,a,f8.1,a,i5)') &
-        & 'warning: observation is too high, ptop=',ptmp,', lev=',rlev1,' elem=',elm
-        qc=iqc_out_vhi
-        return
-      end if
-      do k=1,nlev
-        if(plev(k).lt.rk) exit
-      end do
-      ak=(plev(k-1)-rk)/(plev(k-1)-plev(k))
-      rk=real(k-1,kind=dp)+ak
-    end if
-!! debug
-!    write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
-!! debug
-    return
-  end subroutine phys2ijk
-!
 ! 2-dimensional interpolation
 !
   subroutine itpl_2d(v2d,ri,rj,vout)
     implicit none
-    real(kind=dp), intent(in) :: v2d(nlon,nlat)
+    real(kind=dp), intent(in) :: v2d(:,:) !(nlon,nlat) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost)
     real(kind=dp), intent(in) :: ri, rj
     real(kind=dp), intent(out):: vout
     real(kind=dp) :: ai, aj
@@ -370,6 +411,7 @@ contains
     ai = ri - real(i-1,kind=dp)
     j = ceiling(rj)
     aj = rj - real(j-1,kind=dp)
+!    print *, i,j,v2d(i-1,j-1),v2d(i,j-1),v2d(i-1,j),v2d(i,j)
 
     vout = v2d(i-1,j-1) * (1.0 - ai) * (1.0 - aj) &
        & + v2d(i  ,j-1) *        ai  * (1.0 - aj) &
@@ -382,7 +424,7 @@ contains
 !
   subroutine itpl_3d(v3d,ri,rj,rk,vout)
     implicit none
-    real(kind=dp), intent(in) :: v3d(nlon,nlat,nlev)
+    real(kind=dp), intent(in) :: v3d(:,:,:) !(nlon,nlat,nlev) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
     real(kind=dp), intent(in) :: ri,rj,rk
     real(kind=dp), intent(out):: vout
     real(kind=dp) :: ai,aj,ak

@@ -39,8 +39,6 @@ module lmlef_tools
 contains
 subroutine init_das_lmlef
   implicit none
-  call mlef_init
-  call read_nml_lmlef
   if (scl_mem) then
   if (mean) then
     pscale = 1.0d0 / dsqrt(real(member-1,kind=dp))
@@ -50,7 +48,7 @@ subroutine init_das_lmlef
   else 
     pscale = 1.0d0
   end if
-  if(debug) write(6,'(A,F7.4)') 'pscale=', pscale
+  write(6,'(A,F7.4)') 'pscale=', pscale
 !! variable localization
   allocate( var_local(nv3d+nv2d,nobstype) )
   allocate( var_local_n2n(nv3d+nv2d) )
@@ -86,6 +84,10 @@ subroutine init_das_lmlef
 !!                 T  U  V  Q OZ CW GZ Ps
    var_update = (/ 1, 1, 1, 1, 1, 1, 0, 1/)
   end if
+  write(cn,'(i4)') nv3d+nv2d
+  write(6,'(a4)') cn
+  write(6,'('//trim(cn)//'a4)') varnames
+  write(6,'('//trim(cn)//'i4)') var_update
   return
 end subroutine init_das_lmlef
 !-----------------------------------------------------------------------
@@ -93,16 +95,16 @@ end subroutine init_das_lmlef
 !-----------------------------------------------------------------------
 subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2d)
   implicit none
-  real(kind=dp),intent(inout) :: gues3dc(nij1max,nlev,nv3d)[*] ! background control
-  real(kind=dp),intent(inout) :: gues2dc(nij1max,nv2d)[*]      !  output: destroyed
-  real(kind=dp),intent(inout) :: gues3d(nij1max,nlev,member,nv3d)[*] ! background ensemble
-  real(kind=dp),intent(inout) :: gues2d(nij1max,member,nv2d)[*]      !  output: destroyed
-  real(kind=dp),intent(out) :: anal3dc(nij1max,nlev,nv3d)[*] ! analysis control
-  real(kind=dp),intent(out) :: anal2dc(nij1max,nv2d)[*]
-  real(kind=dp),intent(out) :: anal3d(nij1max,nlev,member,nv3d)[*] ! analysis ensemble
-  real(kind=dp),intent(out) :: anal2d(nij1max,member,nv2d)[*]
-  real(kind=dp),allocatable :: mean3d(:,:,:)
-  real(kind=dp),allocatable :: mean2d(:,:)
+  real(kind=dp),intent(inout) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] ! background control
+  real(kind=dp),intent(inout) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*]      !  output: destroyed
+  real(kind=dp),intent(inout) :: gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] ! background ensemble
+  real(kind=dp),intent(inout) :: gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nv2d)[*]      !  output: destroyed
+  real(kind=dp),intent(out) :: anal3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] ! analysis control
+  real(kind=dp),intent(out) :: anal2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*]
+  real(kind=dp),intent(out) :: anal3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] ! analysis ensemble
+  real(kind=dp),intent(out) :: anal2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nv2d)[*]
+  real(kind=dp),allocatable :: mean3d(:,:,:,:)
+  real(kind=dp),allocatable :: mean2d(:,:,:)
   real(kind=dp),allocatable :: zxb(:,:)
   real(kind=dp),allocatable :: dep(:)
   real(kind=dp),allocatable :: rloc(:)
@@ -122,12 +124,12 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   real(kind=dp),allocatable :: gdold(:,:,:) !ensemble size * (global)horizontal grids * levels
   real(kind=dp),allocatable :: gwork(:,:,:) !ensemble size * (global)horizontal grids * levels
   integer      ,save        :: gflag[*]
-  real(kind=dp),allocatable :: work3d(:,:,:)[:]
-  real(kind=dp),allocatable :: work2d(:,:)[:]
-  real(kind=dp),allocatable :: work3de(:,:,:,:)[:]
-  real(kind=dp),allocatable :: work2de(:,:,:)[:]
-  real(kind=dp),allocatable :: jwork3d(:,:,:)[:]
-  real(kind=dp),allocatable :: jwork2d(:,:)[:]
+  real(kind=dp),allocatable :: work3d(:,:,:,:)[:]
+  real(kind=dp),allocatable :: work2d(:,:,:)[:]
+  real(kind=dp),allocatable :: work3de(:,:,:,:,:)[:]
+  real(kind=dp),allocatable :: work2de(:,:,:,:)[:]
+  real(kind=dp),allocatable :: jwork3d(:,:,:,:)[:]
+  real(kind=dp),allocatable :: jwork2d(:,:,:)[:]
   real(kind=dp),allocatable :: work3dg(:,:,:,:)
   real(kind=dp),allocatable :: work2dg(:,:,:)
   real(kind=dp),allocatable :: logpfm(:,:)[:]
@@ -177,19 +179,23 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! FCST PERTURBATIONS
   !
   if(mean) then
-    allocate(mean3d(nij1,nlev,nv3d))
-    allocate(mean2d(nij1,nv2d))
-    call ensmean_grd(member,nij1,gues3d(1:nij1,:,:,:),gues2d(1:nij1,:,:),mean3d,mean2d)
+    allocate(mean3d(ni1,nj1,nlev,nv3d))
+    allocate(mean2d(ni1,nj1,nv2d))
+    call ensmean_grd(member,ni1,nj1,gues3d(1:ni1,1:nj1,:,:,:),gues2d(1:ni1,1:nj1,:,:),mean3d,mean2d)
     do n=1,nv3d
       do k=1,nlev
-        do i=1,nij1
-          gues3dc(i,k,n) = mean3d(i,k,n)
+        do j=1,nj1
+          do i=1,ni1
+            gues3dc(i,j,k,n) = mean3d(i,j,k,n)
+          end do
         end do
       end do
     end do
     do n=1,nv2d
-      do i=1,nij1
-        gues2dc(i,n) = mean2d(i,n)
+      do j=1,nj1
+        do i=1,ni1
+          gues2dc(i,j,n) = mean2d(i,j,n)
+        end do
       end do
     end do
     deallocate(mean3d,mean2d)
@@ -198,30 +204,34 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   do n=1,nv3d
     do m=1,member
       do k=1,nlev
-        do i=1,nij1
-          gues3d(i,k,m,n) = (gues3d(i,k,m,n) - gues3dc(i,k,n))*pscale
+        do j=1,nj1
+          do i=1,ni1
+            gues3d(i,j,k,m,n) = (gues3d(i,j,k,m,n) - gues3dc(i,j,k,n))*pscale
+          end do
         end do
       end do
     end do
   end do
   do n=1,nv2d
     do m=1,member
-      do i=1,nij1
-        gues2d(i,m,n) = (gues2d(i,m,n) - gues2dc(i,n))*pscale
+      do j=1,nj1
+        do i=1,ni1
+          gues2d(i,j,m,n) = (gues2d(i,j,m,n) - gues2dc(i,j,n))*pscale
+        end do
       end do
     end do
   end do
   !
   ! multiplicative inflation
   !
-  allocate( work3d(nij1max,nlev,nv3d)[*] )
-  allocate( work2d(nij1max,nv2d)[*] )
+  allocate( work3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
+  allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
   allocate( work3dg(nlon,nlat,nlev,nv3d) ) !also used for saving cost
   allocate( work2dg(nlon,nlat,nv2d) ) !also used for saving cost
   if(cov_infl_mul >= 0.0d0) then ! fixed multiplicative inflation parameter
     work3d = cov_infl_mul
     work2d = cov_infl_mul
-    work3d(:,nlev,:) = 0.01d0
+    work3d(:,:,nlev,:) = 0.01d0
     work3dg = cov_infl_mul !for global cost
     work3dg(:,:,nlev,:) = 0.01d0
   end if
@@ -246,9 +256,13 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   !
   ! p_full for background control
   !
-  allocate(logpfm(nij1max,nlev)[*])
-!  call calc_pfull(nij1max,1,gues2dc(1:nij1,iv2d_ps),logpfm)
-  logpfm = gues3dc(:,:,iv3d_pp)
+  allocate(logpfm(1:nij1max,nlev)[*])
+!  call calc_pfull(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,1,gues2dc(1:nij1,iv2d_ps),logpfm)
+  do ij=1,nij1
+    i=mod(ij-1,ni1)+1
+    j=(ij-1)/ni1 + 1
+    logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
+  end do
   logpfm = log(logpfm)
   if(debug) then
     write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm), maxval(logpfm)
@@ -264,7 +278,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   !! local arrays
   allocate( w(1:member,1:nij1max,1:nlev)[*] )
   allocate( grad(1:member,1:nij1max,1:nlev)[*], gold(1:member,1:nij1max,1:nlev)[*] )
-  allocate( desc(1:member,1:nij1max,1:nlev)[*], dold(1:member,1:nij1max,1:nlev)[*] )
+  allocate( desc(1:member,1:nij1max,1:nlev)[*], dold(1:member,1:nij1max+1,1:nlev)[*] )
   allocate( fval(1:nij1max,1:nlev)[*], gnorm(1:nij1max,1:nlev)[*], flag(1:nij1max,1:nlev)[*] )
   allocate( nfun(1:nij1,1:nlev) )
   !! global arrays
@@ -277,12 +291,13 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !  allocate( trans(member,member,nij1,nlev) )
   if(save_info) then
     ! for save local cost functions and local DFS (dummy)
-    allocate( jwork3d(nij1max,nlev,nv3d)[*] )
-    allocate( jwork2d(nij1max,nv2d)[*] )
+    allocate( jwork3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
+    allocate( jwork2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
     jwork3d = 0.0d0
     jwork2d = 0.0d0
     ! for save ensemble weights
-    allocate( work3de(nij1max,nlev,member,nv3d)[*], work2de(nij1max,member,nv2d)[*] )
+    allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nv2d)[*] )
     allocate( evalout(member) )
     work3de = 0.0d0
     work2de = 0.0d0
@@ -308,6 +323,9 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     do ilev=1,nlev
       write(6,'(A,I3)') 'ilev = ',ilev
       do ij=1,nij1
+        i=mod(ij-1,ni1)+1
+        j=(ij-1)/ni1 + 1
+        if(debug) write(6,'(3(a,i6))') 'ij ',ij,' i ',i,' j ',j
         if(flag(ij,ilev)/=0.and.flag(ij,ilev).ge.-1) then
           flag(ij,ilev) = gflag
           if(niter==maxiter) flag(ij,ilev) = -2
@@ -316,21 +334,21 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           call obs_local(ij,ilev,n,zxb,dep,rloc,&
           & nobsl(ij,ilev),nobs_use(:,ij,ilev),&
           & logpfm,hfirst)
-          parm = work3d(ij,ilev,n)
+          parm = work3d(i,j,ilev,n)
           ! adaptive inflation
           parm_upd = parm
           if((cov_infl_mul < 0.0d0).and.(nobsl(ij,ilev).gt.0).and.hfirst) then
             call est_infl(parm_upd,nobsl(ij,ilev),zxb,dep,rloc)
           end if
-          work3d(ij,ilev,n) = parm_upd   
+          work3d(i,j,ilev,n) = parm_upd   
           call mlef_core(member,nobstotal,nobsl(ij,ilev),nfun(ij,ilev),&
             & zxb,dep,parm,alpha,w(:,ij,ilev),flag(ij,ilev)&
 !            & ,trans(:,:,ij,ilev)&
             & ,jb1,jo1,gnorm(ij,ilev))
           fval(ij,ilev) = jb1 + jo1
           if(save_info) then
-            jwork3d(ij,ilev,1) = jb1
-            jwork3d(ij,ilev,2) = jo1
+            jwork3d(i,j,ilev,1) = jb1
+            jwork3d(i,j,ilev,2) = jo1
           end if
           if(debug) write(6,'(2I4,A,I4)') ij, ilev, ' flag=', flag(ij,ilev) 
         end if
@@ -352,19 +370,21 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       gnormall=0.0d0
       fsum=0.0D0
       ne=0
+      n=0
       do k=1,nimages
         do ilev=1,nlev
-          do ij=1,nij1
+          do ij=1,nij1node(k)
             ne=ne+member
             fsum = fsum + fval(ij,ilev)[k]
             gnormall = gnormall + gnorm(ij,ilev)[k]**2
-            gw   (:,(k-1)*nij1+ij,ilev) = w   (:,ij,ilev)[k]
-            ggrad(:,(k-1)*nij1+ij,ilev) = grad(:,ij,ilev)[k]
-            ggold(:,(k-1)*nij1+ij,ilev) = gold(:,ij,ilev)[k]
-            gdesc(:,(k-1)*nij1+ij,ilev) = desc(:,ij,ilev)[k]
-            gdold(:,(k-1)*nij1+ij,ilev) = dold(:,ij,ilev)[k]
+            gw   (:,n+ij,ilev) = w   (:,ij,ilev)[k]
+            ggrad(:,n+ij,ilev) = grad(:,ij,ilev)[k]
+            ggold(:,n+ij,ilev) = gold(:,ij,ilev)[k]
+            gdesc(:,n+ij,ilev) = desc(:,ij,ilev)[k]
+            gdold(:,n+ij,ilev) = dold(:,ij,ilev)[k]
           end do
         end do
+        n=n+nij1node(k)
       end do
       if(debug) then
         write(6,'(A,2F13.5)') 'inflation = ', minval(work3dg(:,:,:,1)), maxval(work3dg(:,:,:,1))
@@ -387,17 +407,19 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
       !end if
       end if
+!      n=0
       do k=1,nimages
         gflag[k] = gflag[myimage]
-        do ilev=1,nlev
-          do ij=1,nij1
-            w   (:,ij,ilev)[k] = gw   (:,(k-1)*nij1+ij,ilev)
-            grad(:,ij,ilev)[k] = ggrad(:,(k-1)*nij1+ij,ilev)
-            gold(:,ij,ilev)[k] = ggold(:,(k-1)*nij1+ij,ilev)
-            desc(:,ij,ilev)[k] = gdesc(:,(k-1)*nij1+ij,ilev)
-            dold(:,ij,ilev)[k] = gdold(:,(k-1)*nij1+ij,ilev)
-          end do
-        end do
+!        do ilev=1,nlev
+!          do ij=1,nij1node(k)
+!            w   (:,ij,ilev)[k] = gw   (:,n+ij,ilev)
+!            grad(:,ij,ilev)[k] = ggrad(:,n+ij,ilev)
+!            gold(:,ij,ilev)[k] = ggold(:,n+ij,ilev)
+!            desc(:,ij,ilev)[k] = gdesc(:,n+ij,ilev)
+!            dold(:,ij,ilev)[k] = gdold(:,n+ij,ilev)
+!          end do
+!        end do
+!        n=n+nij1node(k)
       end do      
     end if
     sync all
@@ -415,20 +437,22 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! update analysis
   do ilev=1,nlev
    do ij=1,nij1
+      i=mod(ij-1,ni1)+1
+      j=(ij-1)/ni1 + 1
       ! calculate trans (inverse Hessian)
       n=1 !dummy
       call obs_local(ij,ilev,n,zxb,dep,rloc,&
       & nobsl(ij,ilev),nobs_use(:,ij,ilev),&
       & logpfm,hfirst)
-      parm = work3d(ij,ilev,n)
+      parm = work3d(i,j,ilev,n)
       if(save_info) then
         call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm,&
         & dfs,dfn,evalout)
-        jwork3d(ij,ilev,3) = dfs
-        jwork3d(ij,ilev,4) = dfn
+        jwork3d(i,j,ilev,3) = dfs
+        jwork3d(i,j,ilev,4) = dfn
         ! save eigenvalues
         do m=1,member
-          work3de(ij,ilev,m,2) = evalout(m)
+          work3de(i,j,ilev,m,2) = evalout(m)
         end do
       else
         call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm)
@@ -443,82 +467,82 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       end if
       do n=1,nv3d
       ! update control
-        anal3dc(ij,ilev,n) = gues3dc(ij,ilev,n)
+        anal3dc(i,j,ilev,n) = gues3dc(i,j,ilev,n)
         if(var_update(n)==1) then
           if(.not.mean) then
             do m=1,member
-              anal3dc(ij,ilev,n) = anal3dc(ij,ilev,n) + gues3d(ij,ilev,m,n)*w(m,ij,ilev)
+              anal3dc(i,j,ilev,n) = anal3dc(i,j,ilev,n) + gues3d(i,j,ilev,m,n)*w(m,ij,ilev)
             end do
           end if
         end if
       ! update ensemble
         do m=1,member
-          anal3d(ij,ilev,m,n) = anal3dc(ij,ilev,n)
+          anal3d(i,j,ilev,m,n) = anal3dc(i,j,ilev,n)
           if(var_update(n)==1) then
             do k=1,member
-              anal3d(ij,ilev,m,n) = anal3d(ij,ilev,m,n) &
-                & + gues3d(ij,ilev,k,n) * trans(k,m) / pscale
+              anal3d(i,j,ilev,m,n) = anal3d(i,j,ilev,m,n) &
+                & + gues3d(i,j,ilev,k,n) * trans(k,m) / pscale
             end do
           else
-            anal3d(ij,ilev,m,n) = anal3d(ij,ilev,m,n) + gues3d(ij,ilev,m,n) / pscale
+            anal3d(i,j,ilev,m,n) = anal3d(i,j,ilev,m,n) + gues3d(i,j,ilev,m,n) / pscale
           end if
         end do
         if(save_info) then
           ! save ensemble weights
           do m=1,member
-            work3de(ij,ilev,m,n) = w(m,ij,ilev)
+            work3de(i,j,ilev,m,n) = w(m,ij,ilev)
           end do
         end if
         ! copy cost functions and adaptive inflation parameters
         if( n>1 )then
-          work3d(ij,ilev,n) = work3d(ij,ilev,1)
+          work3d(i,j,ilev,n) = work3d(i,j,ilev,1)
         end if
       end do
-      if(logpfm(ij,ilev) .lt. q_update_top) then !no analysis for upper-level Q and CW
-        anal3dc(ij,ilev,iv3d_q) = gues3dc(ij,ilev,iv3d_q)
-        anal3dc(ij,ilev,iv3d_cw) = gues3dc(ij,ilev,iv3d_cw)
+      if(exp(logpfm(ij,ilev)) .lt. q_update_top) then !no analysis for upper-level Q and CW
+        anal3dc(i,j,ilev,iv3d_q) = gues3dc(i,j,ilev,iv3d_q)
+        anal3dc(i,j,ilev,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw)
         do m=1,member
           if(save_info) then
-            work3de(ij,ilev,m,iv3d_q) = 0.0d0
-            work3de(ij,ilev,m,iv3d_cw) = 0.0d0
+            work3de(i,j,ilev,m,iv3d_q) = 0.0d0
+            work3de(i,j,ilev,m,iv3d_cw) = 0.0d0
           end if
-          anal3d(ij,ilev,m,iv3d_q) = gues3dc(ij,ilev,iv3d_q) &
-                                 & + gues3d(ij,ilev,m,iv3d_q) / pscale
-          anal3d(ij,ilev,m,iv3d_cw) = gues3dc(ij,ilev,iv3d_cw) &
-                                 & + gues3d(ij,ilev,m,iv3d_cw) / pscale
+          anal3d(i,j,ilev,m,iv3d_q) = gues3dc(i,j,ilev,iv3d_q) &
+                                 & + gues3d(i,j,ilev,m,iv3d_q) / pscale
+          anal3d(i,j,ilev,m,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw) &
+                                 & + gues3d(i,j,ilev,m,iv3d_cw) / pscale
         end do
       end if
       if(ilev == 1) then !update 2d variable at ilev=1
         do n=1,nv2d
           ! update control
-          anal2dc(ij,n) = gues2dc(ij,n)
+          anal2dc(i,j,n) = gues2dc(i,j,n)
           if(var_update(nv3d+n)==1) then
             if(.not.mean) then
               do m=1,member
-                anal2dc(ij,n) = anal2dc(ij,n) + gues2d(ij,m,n)*w(m,ij,ilev)
+                anal2dc(i,j,n) = anal2dc(i,j,n) + gues2d(i,j,m,n)*w(m,ij,ilev)
               end do
             end if
           end if
           ! update ensemble
           do m=1,member
-            anal2d(ij,m,n) = anal2dc(ij,n)
+            anal2d(i,j,m,n) = anal2dc(i,j,n)
             if(var_update(nv3d+n)==1) then
               do k=1,member
-                anal2d(ij,m,n) = anal2d(ij,m,n) &
-                & + gues2d(ij,k,n) * trans(k,m) / pscale
+                anal2d(i,j,m,n) = anal2d(i,j,m,n) &
+                & + gues2d(i,j,k,n) * trans(k,m) / pscale
               end do
             else
-              anal2d(ij,m,n) = anal2d(ij,m,n) + gues2d(ij,m,n) / pscale
+              anal2d(i,j,m,n) = anal2d(i,j,m,n) + gues2d(i,j,m,n) / pscale
             end if
           end do
           if(save_info) then
             ! save ensemble weights
             do m=1,member
-              work2de(ij,m,n) = w(m,ij,ilev)
+              work2de(i,j,m,n) = w(m,ij,ilev)
             end do
           end if
           ! copy cost functions and adaptive inflation parameters
-          work2d(ij,n) = work3d(ij,ilev,1)
+          work2d(i,j,n) = work3d(i,j,ilev,1)
         end do
       end if
     end do
@@ -559,16 +583,20 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     do n=1,nv3d
       do m=1,member
         do k=1,nlev
-          do i=1,nij1
-            gues3d(i,k,m,n) = gues3d(i,k,m,n) - gues3dc(i,k,n)
+          do j=1,nj1
+            do i=1,ni1
+              gues3d(i,j,k,m,n) = gues3d(i,j,k,m,n) - gues3dc(i,j,k,n)
+            end do
           end do
         end do
       end do
     end do
     do n=1,nv2d
       do m=1,member
-        do i=1,nij1
-          gues2d(i,m,n) = gues2d(i,m,n) - gues2dc(i,n)
+        do j=1,nj1
+          do i=1,ni1
+            gues2d(i,j,m,n) = gues2d(i,j,m,n) - gues2dc(i,j,n)
+          end do
         end do
       end do
     end do
@@ -585,17 +613,21 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     do n=1,nv3d
       do m=1,member
         do ilev=1,nlev
-          do ij=1,nij1
-            anal3d(ij,ilev,m,n) = anal3d(ij,ilev,m,n) &
-              & + gues3d(ij,ilev,m,n) * sp_infl_add
+          do j=1,nj1
+            do i=1,ni1
+              anal3d(i,j,ilev,m,n) = anal3d(i,j,ilev,m,n) &
+                & + gues3d(i,j,ilev,m,n) * sp_infl_add
+            end do
           end do
         end do
       end do
     end do
     do n=1,nv2d
       do m=1,member
-        do ij=1,nij1
-          anal2d(ij,m,n) = anal2d(ij,m,n) + gues2d(ij,m,n) * sp_infl_add
+        do j=1,nj1
+          do i=1,ni1
+            anal2d(i,j,m,n) = anal2d(i,j,m,n) + gues2d(i,j,m,n) * sp_infl_add
+          end do
         end do
       end do
     end do
@@ -614,7 +646,7 @@ subroutine obs_local(ij,ilev,nvar,zxb,dep,rloc,nobsl,nobs_use,logpfm,hfirst)
   use obs_module
   implicit none
   integer,intent(in) :: ij,ilev,nvar
-  real(kind=dp),intent(in) :: logpfm(nij1max,nlev)[*]
+  real(kind=dp),intent(in) :: logpfm(1:nij1max,nlev)[*]
   real(kind=dp),intent(out) :: zxb(nobstotal,member)
   real(kind=dp),intent(out) :: dep(nobstotal)
   real(kind=dp),intent(out) :: rloc(nobstotal)
@@ -625,6 +657,7 @@ subroutine obs_local(ij,ilev,nvar,zxb,dep,rloc,nobsl,nobs_use,logpfm,hfirst)
   real(kind=dp) :: tmplon,tmplat,tmplev,tmperr,tmpwgt(nlev)
   integer :: tmpqc
 !TVS  integer,allocatable:: ntvs_use_prof(:),ntvs_use_inst(:),ntvs_use_slot(:)
+  integer :: i,j
   integer :: imin,imax,jmin,jmax,im,ichan
   integer :: n,nn,tvnn,iobs
 !
@@ -638,6 +671,8 @@ subroutine obs_local(ij,ilev,nvar,zxb,dep,rloc,nobsl,nobs_use,logpfm,hfirst)
 !TVS    allocate(ntvs_use_inst(ntvs))
 !TVS    allocate(ntvs_use_slot(ntvs))
 !TVS  end if
+  i=mod(ij-1,ni1) + 1
+  j=(ij-1)/ni1 + 1
 if(hfirst) then
   obsdepk = obsdasort%hxf
   do im=1,member
@@ -646,14 +681,15 @@ if(hfirst) then
 !
 ! data search
 !
-  minlon = myrlon(ij) - dlon_zero(ij)
-  maxlon = myrlon(ij) + dlon_zero(ij)
-  minlat = myrlat(ij) - dlat_zero
-  maxlat = myrlat(ij) + dlat_zero
+  minlon = myrlon(i) - dlon_zero(j)
+  maxlon = myrlon(i) + dlon_zero(j)
+  minlat = myrlat(j) - dlat_zero
+  maxlat = myrlat(j) + dlat_zero
   if(maxlon - minlon >= 360.0d0) then
     minlon = 0.0d0
     maxlon = 360.0d0
   end if
+  if(debug) write(6,*) 'minlon maxlon minlat maxlat ',minlon,maxlon,minlat,maxlat
 
   do jmin=1,nlat-2
     if(minlat < rlat(jmin+1)) EXIT
@@ -827,7 +863,7 @@ if(hfirst) then
       !
       tmplon=obsdasort%lon(nobs_use(n))
       tmplat=obsdasort%lat(nobs_use(n))
-      call distll_1( tmplon, tmplat,myrlon(ij), myrlat(ij), dist)
+      call distll_1( tmplon, tmplat,myrlon(i), myrlat(j), dist)
       if(dist > dist_zero ) CYCLE
 !      !
 !      ! variable localization
@@ -884,7 +920,7 @@ else
     !
     tmplon=obsdasort%lon(nobs_use(n))
     tmplat=obsdasort%lat(nobs_use(n))
-    call distll_1( tmplon, tmplat, myrlon(ij), myrlat(ij), dist)
+    call distll_1( tmplon, tmplat, myrlon(i), myrlat(j), dist)
     !
     zxb(n,:)  = obshdxk(nobs_use(n),:)
     dep(n)    = obsdepk(nobs_use(n))
@@ -1003,16 +1039,17 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
 !    use common_obs_speedy_tl, only: Trans_XtoY_tl
     implicit none
 !    integer,intent(in) :: member ! ensemble size
-    real(kind=dp),intent(in) :: gues3dc(nij1max,nlev,nv3d)[*]    !control or mean
-    real(kind=dp),intent(in) :: gues2dc(nij1max,nv2d)[*]         !control or mean
-    real(kind=dp),intent(in) :: gues3d(nij1max,nlev,member,nv3d)[*] !ensemble perturbation
-    real(kind=dp),intent(in) :: gues2d(nij1max,member,nv2d)[*]      !ensemble perturbation
+    real(kind=dp),intent(in) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*]    !control or mean
+    real(kind=dp),intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*]         !control or mean
+    real(kind=dp),intent(in) :: gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] !ensemble perturbation
+    real(kind=dp),intent(in) :: gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nv2d)[*]      !ensemble perturbation
     real(kind=dp),intent(in) :: w(member,nij1max,nlev)[*]           !ensemble weights
     real(kind=dp),allocatable :: tmphxf(:,:)[:]
     real(kind=dp),allocatable :: v3d(:,:,:,:),v2d(:,:,:)
     real(kind=dp),allocatable :: v3dp(:,:,:,:),v2dp(:,:,:)
-    real(kind=dp),allocatable :: work3d(:,:,:)[:], work2d(:,:)[:]
-    integer       :: ij, ilev, m, n, k 
+    real(kind=dp),allocatable :: work3d(:,:,:,:), work2d(:,:,:)
+    real(kind=dp),allocatable :: work3de(:,:,:,:), work2de(:,:,:)
+    integer       :: i,j,ii,jj,ij,ijg,ilev, m, n, k 
 ! monitor
     integer :: monit_nobs(nobstype)
     real(kind=dp) :: monit_bias(nobstype)
@@ -1020,68 +1057,157 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     integer :: monit_nqc(nobstype,nqctype)
   
     allocate( tmphxf(obsdasort%nobs,0:member)[*] )
-    allocate( work3d(nij1max,nlev,nv3d)[*], work2d(nij1max,nv2d)[*] )
+    allocate( work3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
+    allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
+    allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
+    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! update control
+    work3d = gues3dc
+    work2d = gues2dc
     do n=1,nv3d
+      if(var_update(n)/=1) cycle
+      print *, varnames(n)
       do ilev=1,nlev
         do ij=1,nij1
-          work3d(ij,ilev,n) = gues3dc(ij,ilev,n)
+          i=mod(ij-1,ni1) + 1
+          j=(ij-1)/ni1 + 1
           do m=1,member
-            work3d(ij,ilev,n) = work3d(ij,ilev,n) + gues3d(ij,ilev,m,n)*w(m,ij,ilev)
+            work3d(i,j,ilev,n) = work3d(i,j,ilev,n) + gues3d(i,j,ilev,m,n)*w(m,ij,ilev)
           end do
         end do
+        ! ghost point
+        if(nisep.gt.1.and.ighost.gt.0) then
+          do j=1,nj1
+            if(nidom(myimage).gt.1) then
+              do ii=1,ighost
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))+1
+                do m=1,member
+                  work3d(1-ii,j,ilev,n) = work3d(1-ii,j,ilev,n) &
+                          + gues3d(1-ii,j,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage)-1,njdom(myimage))]
+                end do
+              end do
+            end if
+            if(nidom(myimage).lt.nisep) then
+              do ii=1,ighost
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))+1
+                do m=1,member
+                  work3d(ni1+ii,j,ilev,n) = work3d(ni1+ii,j,ilev,n) &
+                          + gues3d(ni1+ii,j,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage)+1,njdom(myimage))]
+                end do
+              end do
+            end if
+          end do
+        end if
+        if(njsep.gt.1.and.jghost.gt.0) then
+          do i=1,ni1
+            if(njdom(myimage).gt.1) then
+              do jj=1,jghost
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+1
+                do m=1,member
+                  work3d(i,1-jj,ilev,n) = work3d(i,1-jj,ilev,n) &
+                        + gues3d(i,1-jj,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage),njdom(myimage)-1)]
+                end do
+              end do
+            end if
+            if(njdom(myimage).lt.njsep) then
+              do jj=1,jghost
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+1
+                do m=1,member
+                  work3d(i,nj1+jj,ilev,n) = work3d(i,nj1+jj,ilev,n) &
+                        + gues3d(i,nj1+jj,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage),njdom(myimage)+1)]
+                end do
+              end do
+            end if
+          end do
+        end if
+        ! ghost point
       end do
     end do
     do n=1,nv2d
+      if(var_update(nv3d+n)/=1) cycle
+      print *, varnames(nv3d+n)
       do ij=1,nij1
-        work2d(ij,n) = gues2dc(ij,n)
+        i=mod(ij-1,ni1) + 1
+        j=(ij-1)/ni1 + 1
         do m=1,member
-          work2d(ij,n) = work2d(ij,n) + gues2d(ij,m,n)*w(m,ij,1)
+          work2d(i,j,n) = work2d(i,j,n) + gues2d(i,j,m,n)*w(m,ij,1)
         end do
       end do
+      ! ghost point
+      if(nisep.gt.1.and.ighost.gt.0) then
+        do j=1,nj1
+          if(nidom(myimage).gt.1) then
+            do ii=1,ighost
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))+1
+              do m=1,member
+                work2d(1-ii,j,n) = work2d(1-ii,j,n) &
+                        + gues2d(1-ii,j,m,n)*w(m,ijg,1)[imgdom(nidom(myimage)-1,njdom(myimage))]
+              end do
+            end do
+          end if
+          if(nidom(myimage).lt.nisep) then
+            do ii=1,ighost
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))+1
+              do m=1,member
+                work2d(ni1+ii,j,n) = work2d(ni1+ii,j,n) &
+                        + gues2d(ni1+ii,j,m,n)*w(m,ijg,1)[imgdom(nidom(myimage)+1,njdom(myimage))]
+              end do
+            end do
+          end if
+        end do
+      end if
+      if(njsep.gt.1.and.jghost.gt.0) then
+        do i=1,ni1
+          if(njdom(myimage).gt.1) then
+            do jj=1,jghost
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+1
+              do m=1,member
+                work2d(i,1-jj,n) = work2d(i,1-jj,n) &
+                      + gues2d(i,1-jj,m,n)*w(m,ijg,1)[imgdom(nidom(myimage),njdom(myimage)-1)]
+              end do
+            end do
+          end if
+          if(njdom(myimage).lt.njsep) then
+            do jj=1,jghost
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+1
+              do m=1,member
+                work2d(i,nj1+jj,n) = work2d(i,nj1+jj,n) &
+                      + gues2d(i,nj1+jj,m,n)*w(m,ijg,1)[imgdom(nidom(myimage),njdom(myimage)+1)]
+              end do
+            end do
+          end if
+        end do
+      end if
+      ! ghost point
     end do
-    sync all
-    call gather_grd(1,work3d,work2d,v3d,v2d)
-    if(myimage == 1) then
-      if(debug) then
-        write(6,*) 'v3d =',maxval(v3d(:,:,:,iv3d_t)),minval(v3d(:,:,:,iv3d_t))
-        write(6,*) 'v2d =',maxval(v2d(:,:,iv2d_ps)),minval(v2d(:,:,iv2d_ps))
-      end if
-      if(.not.mean) then
-        call obsope_update(obsdasort,0,v3d,v2d)
-        tmphxf(:,0) = obsdasort%hxf(:)
-      end if
+    if(.not.mean) then
+      call obsope_update(obsdasort,0,work3d,work2d)
+      tmphxf(:,0) = obsdasort%hxf(:)
     end if
+    sync all
     ! ensemble
     do m=1,member
-      work3d(:,:,:) = gues3d(:,:,m,:)
-      work2d(:,:) = gues2d(:,m,:)
-      sync all
-      call gather_grd(1,work3d,work2d,v3dp,v2dp)
-      if(myimage==1) then
-        v3dp = v3dp + v3d
-        v2dp = v2dp + v2d
-        if(debug) then
-          write(6,*) 'member ',m,' v3d=',maxval(v3dp(:,:,:,iv3d_t)),minval(v3dp(:,:,:,iv3d_t))
-          write(6,*) 'member ',m,' v2d=',maxval(v2dp(:,:,iv2d_ps)),minval(v2dp(:,:,iv2d_ps))
-        end if
-        call obsope_update(obsdasort,m,v3dp,v2dp)
-        tmphxf(:,m) = obsdasort%hxe(m,:)
-      end if
+      work3de = gues3d(:,:,:,m,:) + work3d
+      work2de = gues2d(:,:,m,:) + work2d
+      call obsope_update(obsdasort,m,work3de,work2de)
+      tmphxf(:,m) = obsdasort%hxe(m,:)
     end do
     sync all
   
     ! broadcast
+    if(mean) then
+      tmphxf(:,0) = tmphxf(:,1)
+      do m=2,member
+        tmphxf(:,0) = tmphxf(:,0) + tmphxf(:,m)
+      end do
+      tmphxf(:,0) = tmphxf(:,0) / real(member,kind=dp)
+    end if
     if(myimage == 1) then
-      if(mean) then
-        tmphxf(:,0) = tmphxf(:,1)
-        do m=2,member
-          tmphxf(:,0) = tmphxf(:,0) + tmphxf(:,m)
-        end do
-        tmphxf(:,0) = tmphxf(:,0) / real(member,kind=dp)
-      end if
+      do k=1,nimages
+        tmphxf(:,:)[myimage] = tmphxf(:,:)[myimage] + tmphxf(:,:)[k]
+      end do
       do k=1,nimages
         tmphxf(:,:)[k] = tmphxf(:,:)[myimage]
       end do
@@ -1128,7 +1254,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
        & monit_nobs,monit_bias,monit_rmse,monit_nqc)
       call monit_print(monit_nobs,monit_bias,monit_rmse,monit_nqc)
     end if
-    deallocate( tmphxf,work3d,work2d,v3d,v2d,v3dp,v2dp )
+    deallocate( tmphxf,work3d,work2d,work3de,work2de )
     return 
   end subroutine obs_update
 !-----------------------------------------------------------------------
