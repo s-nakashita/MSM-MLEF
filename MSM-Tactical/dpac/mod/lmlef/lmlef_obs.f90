@@ -312,10 +312,10 @@ subroutine set_lmlef_obs
   end do
 !$OMP END DO
   if(debug_obs) then
-    write(6,'(3A4)') 'j','nj','njs'
-    write(6,'(3I4)') 0,nj(0),0
+    write(6,'(3A6)') 'j','nj','njs'
+    write(6,'(3I6)') 0,nj(0),0
     do j=1,nlat
-      write(6,'(3I4)') j,nj(j),njs(j)
+      write(6,'(3I6)') j,nj(j),njs(j)
     end do
   end if
   obsdasort%nobs=0

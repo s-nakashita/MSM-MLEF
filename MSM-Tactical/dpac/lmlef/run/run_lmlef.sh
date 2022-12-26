@@ -2,18 +2,18 @@
 set -e
 obsdir=/zdata/grmsm/work/dpac/obs
 datadir=/zdata/grmsm/work/msm2msm3_bv
-#outdir=/zdata/grmsm/work/dpac/msm3test
-outdir=/zdata/grmsm/work/dpac/single
+outdir=/zdata/grmsm/work/dpac/msm3test
+#outdir=/zdata/grmsm/work/dpac/single
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 NODE=5
 member=10
 adate=2022061812
 fhour=0
-single=T
+single=F
 selobs=all
 prep=_preprh
-maxiter=1
+maxiter=5
 hloc=300
 saveens=0 #0:save all ensemble, 1:save only ctrl, mean and spread
 yyyy=`echo ${adate} | cut -c1-4`
@@ -65,7 +65,7 @@ cd $wdir
 cat <<EOF >lmlef.nml
 &namlst_commlef
  debug=,
- jout=,
+ jout=T,
  ls=-1,
  opt=,
  ngauss=,
@@ -98,7 +98,7 @@ cat <<EOF >lmlef.nml
  mean=,
  tl=,
  scl_mem=,
- debug_obs=T,
+ debug_obs=,
  sigma_obs=${sigh},
  sigma_obsv=,
  gross_error=,
@@ -123,8 +123,8 @@ m=`expr $m + 1`
 done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
-mpiexec -n $NODE ./lmlef | tee lmlef.log || exit 11
-mv NOUT-001 ${logf}_n${NODE}.new.txt
+mpiexec -n $NODE ./lmlef || exit 11
+mv NOUT-001 ${logf}_n${NODE}.new2.txt
 #rm NOUT-00*
 
 if [ $saveens -eq 1 ];then

@@ -116,14 +116,15 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   real(kind=dp),allocatable :: fval(:,:)[:] !(local)horizontal grids * levels
   real(kind=dp),allocatable :: gnorm(:,:)[:] !(local)horizontal grids * levels
   integer      ,allocatable :: flag(:,:)[:] !(local)horizontal grids * levels
-  integer                   :: ne
-  real(kind=dp),allocatable :: gw(:,:,:) !ensemble size * (global)horizontal grids * levels
-  real(kind=dp),allocatable :: ggrad(:,:,:) !ensemble size * (global)horizontal grids * levels
-  real(kind=dp),allocatable :: ggold(:,:,:) !ensemble size * (global)horizontal grids * levels
-  real(kind=dp),allocatable :: gdesc(:,:,:) !ensemble size * (global)horizontal grids * levels
-  real(kind=dp),allocatable :: gdold(:,:,:) !ensemble size * (global)horizontal grids * levels
-  real(kind=dp),allocatable :: gwork(:,:,:) !ensemble size * (global)horizontal grids * levels
+  integer                   :: ne, ngrd
+!  real(kind=dp),allocatable :: gw(:,:,:) !ensemble size * (global)horizontal grids * levels
+!  real(kind=dp),allocatable :: ggrad(:,:,:) !ensemble size * (global)horizontal grids * levels
+!  real(kind=dp),allocatable :: ggold(:,:,:) !ensemble size * (global)horizontal grids * levels
+!  real(kind=dp),allocatable :: gdesc(:,:,:) !ensemble size * (global)horizontal grids * levels
+!  real(kind=dp),allocatable :: gdold(:,:,:) !ensemble size * (global)horizontal grids * levels
+!  real(kind=dp),allocatable :: gwork(:,:,:) !ensemble size * (global)horizontal grids * levels
   integer      ,save        :: gflag[*]
+  real(kind=dp),save        :: fglb[*]
   real(kind=dp),allocatable :: work3d(:,:,:,:)[:]
   real(kind=dp),allocatable :: work2d(:,:,:)[:]
   real(kind=dp),allocatable :: work3de(:,:,:,:,:)[:]
@@ -134,7 +135,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   real(kind=dp),allocatable :: work2dg(:,:,:)
   real(kind=dp),allocatable :: logpfm(:,:)[:]
   real(kind=dp) :: alpha
-  real(kind=dp) :: fall, fsum, dginit, dgout, gnormall
+  real(kind=dp) :: fsum, dginit, dgout, gnormall
   real(kind=dp) :: parm, parm_upd
   real(kind=dp) :: jb1,jo1
   real(kind=dp) :: dfs,dfn
@@ -179,33 +180,36 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! FCST PERTURBATIONS
   !
   if(mean) then
-    allocate(mean3d(ni1,nj1,nlev,nv3d))
-    allocate(mean2d(ni1,nj1,nv2d))
-    call ensmean_grd(member,ni1,nj1,gues3d(1:ni1,1:nj1,:,:,:),gues2d(1:ni1,1:nj1,:,:),mean3d,mean2d)
-    do n=1,nv3d
-      do k=1,nlev
-        do j=1,nj1
-          do i=1,ni1
-            gues3dc(i,j,k,n) = mean3d(i,j,k,n)
-          end do
-        end do
-      end do
-    end do
-    do n=1,nv2d
-      do j=1,nj1
-        do i=1,ni1
-          gues2dc(i,j,n) = mean2d(i,j,n)
-        end do
-      end do
-    end do
-    deallocate(mean3d,mean2d)
+!    allocate(mean3d(ni1,nj1,nlev,nv3d))
+!    allocate(mean2d(ni1,nj1,nv2d))
+    call ensmean_grd(member,ni1+2*ighost,nj1+2*jghost,&
+            gues3d(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:,:,:),&
+            gues2d(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:,:),&
+            gues3dc,gues2dc)
+!    do n=1,nv3d
+!      do k=1,nlev
+!        do j=1,nj1
+!          do i=1,ni1
+!            gues3dc(i,j,k,n) = mean3d(i,j,k,n)
+!          end do
+!        end do
+!      end do
+!    end do
+!    do n=1,nv2d
+!      do j=1,nj1
+!        do i=1,ni1
+!          gues2dc(i,j,n) = mean2d(i,j,n)
+!        end do
+!      end do
+!    end do
+!    deallocate(mean3d,mean2d)
   end if
   ! (optional) scaling by ensemble size
   do n=1,nv3d
     do m=1,member
       do k=1,nlev
-        do j=1,nj1
-          do i=1,ni1
+        do j=1-jghost,nj1+jghost
+          do i=1-ighost,ni1+ighost
             gues3d(i,j,k,m,n) = (gues3d(i,j,k,m,n) - gues3dc(i,j,k,n))*pscale
           end do
         end do
@@ -214,8 +218,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   end do
   do n=1,nv2d
     do m=1,member
-      do j=1,nj1
-        do i=1,ni1
+      do j=1-jghost,nj1+jghost
+        do i=1-ighost,ni1+ighost
           gues2d(i,j,m,n) = (gues2d(i,j,m,n) - gues2dc(i,j,n))*pscale
         end do
       end do
@@ -281,11 +285,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   allocate( desc(1:member,1:nij1max,1:nlev)[*], dold(1:member,1:nij1max+1,1:nlev)[*] )
   allocate( fval(1:nij1max,1:nlev)[*], gnorm(1:nij1max,1:nlev)[*], flag(1:nij1max,1:nlev)[*] )
   allocate( nfun(1:nij1,1:nlev) )
-  !! global arrays
-  allocate( gw(1:member,1:lngrd,1:nlev) )
-  allocate( ggrad(1:member,1:lngrd,1:nlev), ggold(1:member,1:lngrd,1:nlev) )
-  allocate( gdesc(1:member,1:lngrd,1:nlev), gdold(1:member,1:lngrd,1:nlev) )
-  allocate( gwork(1:member,1:lngrd,1:nlev) )
+!  !! global arrays
+!  allocate( gw(1:member,1:lngrd,1:nlev) )
+!  allocate( ggrad(1:member,1:lngrd,1:nlev), ggold(1:member,1:lngrd,1:nlev) )
+!  allocate( gdesc(1:member,1:lngrd,1:nlev), gdold(1:member,1:lngrd,1:nlev) )
+!  allocate( gwork(1:member,1:lngrd,1:nlev) )
   !! ensemble transformation matrix
   allocate( trans(member,member) )
 !  allocate( trans(member,member,nij1,nlev) )
@@ -354,8 +358,14 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end if
       end do
     end do
+    ngrd=nj1*nj1*nlev
+    ne=member*ngrd
+    call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(work3d(1:ni1,1:nj1,:,1),(/ngrd/)),fglb)
     sync all
     if(myimage==1) then
+      do k=2,nimages
+        fglb[myimage] = fglb[myimage] + fglb[k]
+      end do
       flagall=0
       do k=1,nimages
         do ilev=1,nlev
@@ -366,35 +376,34 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           end do
         end do
       end do
-      fall=0.0D0
       gnormall=0.0d0
       fsum=0.0D0
       ne=0
-      n=0
+!      n=0
       do k=1,nimages
         do ilev=1,nlev
           do ij=1,nij1node(k)
             ne=ne+member
             fsum = fsum + fval(ij,ilev)[k]
             gnormall = gnormall + gnorm(ij,ilev)[k]**2
-            gw   (:,n+ij,ilev) = w   (:,ij,ilev)[k]
-            ggrad(:,n+ij,ilev) = grad(:,ij,ilev)[k]
-            ggold(:,n+ij,ilev) = gold(:,ij,ilev)[k]
-            gdesc(:,n+ij,ilev) = desc(:,ij,ilev)[k]
-            gdold(:,n+ij,ilev) = dold(:,ij,ilev)[k]
+!            gw   (:,n+ij,ilev) = w   (:,ij,ilev)[k]
+!            ggrad(:,n+ij,ilev) = grad(:,ij,ilev)[k]
+!            ggold(:,n+ij,ilev) = gold(:,ij,ilev)[k]
+!            gdesc(:,n+ij,ilev) = desc(:,ij,ilev)[k]
+!            gdold(:,n+ij,ilev) = dold(:,ij,ilev)[k]
           end do
         end do
-        n=n+nij1node(k)
+!        n=n+nij1node(k)
       end do
-      if(debug) then
-        write(6,'(A,2F13.5)') 'inflation = ', minval(work3dg(:,:,:,1)), maxval(work3dg(:,:,:,1))
-      end if
-      call global_cost(ne,nlon*nlat*nlev,gw,work3dg(:,:,:,1),fall)
-!      fall=fsum
+!      if(debug) then
+!        write(6,'(A,2F13.5)') 'inflation = ', minval(work3dg(:,:,:,1)), maxval(work3dg(:,:,:,1))
+!      end if
+!      call global_cost(ne,nlon*nlat*nlev,gw,work3dg(:,:,:,1),fglb)
+!      fglb=fsum
       if(flagall==0.or.niter==maxiter) then !all grids converged
         gflag=0
       else
-!        call line_search(ne,nfun,gw,fall,ggrad,ggold,&
+!        call line_search(ne,nfun,gw,fglb,ggrad,ggold,&
 !        & gdesc,gdold,gwork,alpha,dginit,dgout,gflag)
         gflag=1
       end if
@@ -403,7 +412,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         write(6,'(A,I12)')    'ne=',ne
         write(6,'(2(A,I7))') 'flagall=',flagall,' / ',lngrd*nlev
         write(6,'(A,ES12.5)') 'J(sum)=',fsum
-        write(6,'(A,ES12.5)') 'J(global)=',fall
+        write(6,'(A,ES12.5)') 'J(global)=',fglb
         write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
       !end if
       end if
@@ -431,7 +440,6 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       call obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       hfirst=.FALSE.
     end if
-    sync all
   end do
   if (niter>=maxiter) write(6,'(A,I4)') 'iteration number exceeds ',maxiter
   ! update analysis
@@ -551,7 +559,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! end optimization
   deallocate( zxb,dep,trans,nobsl,nobs_use,rloc )
   deallocate( w,grad,gold,desc,dold,fval,flag )
-  deallocate( gw,ggrad,ggold,gdesc,gdold )
+!  deallocate( gw,ggrad,ggold,gdesc,gdold )
   if(save_info) then
     ! write out cost functions
     call gather_grd(1,jwork3d,jwork2d,work3dg,work2dg)
@@ -1049,6 +1057,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     real(kind=dp),allocatable :: v3dp(:,:,:,:),v2dp(:,:,:)
     real(kind=dp),allocatable :: work3d(:,:,:,:), work2d(:,:,:)
     real(kind=dp),allocatable :: work3de(:,:,:,:), work2de(:,:,:)
+    real(kind=dp),allocatable :: p_full(:,:,:)
     integer       :: i,j,ii,jj,ij,ijg,ilev, m, n, k 
 ! monitor
     integer :: monit_nobs(nobstype)
@@ -1061,8 +1070,11 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
     allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
     allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
+    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
+    ! full pressure levels (identical to all members)
+    p_full(:,:,:) = gues3dc(:,:,:,iv3d_pp)
     ! update control
     work3d = gues3dc
     work2d = gues2dc
@@ -1082,7 +1094,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
           do j=1,nj1
             if(nidom(myimage).gt.1) then
               do ii=1,ighost
-                ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))+1
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))&
+                        +ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))-ii+1
                 do m=1,member
                   work3d(1-ii,j,ilev,n) = work3d(1-ii,j,ilev,n) &
                           + gues3d(1-ii,j,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage)-1,njdom(myimage))]
@@ -1091,7 +1104,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
             end if
             if(nidom(myimage).lt.nisep) then
               do ii=1,ighost
-                ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))+1
+                ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))&
+                        +ii
                 do m=1,member
                   work3d(ni1+ii,j,ilev,n) = work3d(ni1+ii,j,ilev,n) &
                           + gues3d(ni1+ii,j,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage)+1,njdom(myimage))]
@@ -1104,7 +1118,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
           do i=1,ni1
             if(njdom(myimage).gt.1) then
               do jj=1,jghost
-                ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+1
+                ijg=(nj1node(imgdom(nidom(myimage),njdom(myimage)-1))-jj)&
+                        *ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+i
                 do m=1,member
                   work3d(i,1-jj,ilev,n) = work3d(i,1-jj,ilev,n) &
                         + gues3d(i,1-jj,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage),njdom(myimage)-1)]
@@ -1113,7 +1128,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
             end if
             if(njdom(myimage).lt.njsep) then
               do jj=1,jghost
-                ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+1
+                ijg=(jj-1)&
+                        *ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+i
                 do m=1,member
                   work3d(i,nj1+jj,ilev,n) = work3d(i,nj1+jj,ilev,n) &
                         + gues3d(i,nj1+jj,ilev,m,n)*w(m,ijg,ilev)[imgdom(nidom(myimage),njdom(myimage)+1)]
@@ -1140,7 +1156,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
         do j=1,nj1
           if(nidom(myimage).gt.1) then
             do ii=1,ighost
-              ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))+1
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))&
+                      +ni1node(imgdom(nidom(myimage)-1,njdom(myimage)))-ii+1
               do m=1,member
                 work2d(1-ii,j,n) = work2d(1-ii,j,n) &
                         + gues2d(1-ii,j,m,n)*w(m,ijg,1)[imgdom(nidom(myimage)-1,njdom(myimage))]
@@ -1149,7 +1166,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
           end if
           if(nidom(myimage).lt.nisep) then
             do ii=1,ighost
-              ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))+1
+              ijg=(j-1)*ni1node(imgdom(nidom(myimage)+1,njdom(myimage)))+ii
               do m=1,member
                 work2d(ni1+ii,j,n) = work2d(ni1+ii,j,n) &
                         + gues2d(ni1+ii,j,m,n)*w(m,ijg,1)[imgdom(nidom(myimage)+1,njdom(myimage))]
@@ -1162,7 +1179,8 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
         do i=1,ni1
           if(njdom(myimage).gt.1) then
             do jj=1,jghost
-              ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+1
+              ijg=(nj1node(imgdom(nidom(myimage),njdom(myimage)-1))-jj)&
+                      *ni1node(imgdom(nidom(myimage),njdom(myimage)-1))+i
               do m=1,member
                 work2d(i,1-jj,n) = work2d(i,1-jj,n) &
                       + gues2d(i,1-jj,m,n)*w(m,ijg,1)[imgdom(nidom(myimage),njdom(myimage)-1)]
@@ -1171,7 +1189,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
           end if
           if(njdom(myimage).lt.njsep) then
             do jj=1,jghost
-              ijg=(j-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+1
+              ijg=(jj-1)*ni1node(imgdom(nidom(myimage),njdom(myimage)+1))+i
               do m=1,member
                 work2d(i,nj1+jj,n) = work2d(i,nj1+jj,n) &
                       + gues2d(i,nj1+jj,m,n)*w(m,ijg,1)[imgdom(nidom(myimage),njdom(myimage)+1)]
@@ -1183,15 +1201,14 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       ! ghost point
     end do
     if(.not.mean) then
-      call obsope_update(obsdasort,0,work3d,work2d)
+      call obsope_update(obsdasort,0,work3d,work2d,p_full)
       tmphxf(:,0) = obsdasort%hxf(:)
     end if
-    sync all
     ! ensemble
     do m=1,member
       work3de = gues3d(:,:,:,m,:) + work3d
       work2de = gues2d(:,:,m,:) + work2d
-      call obsope_update(obsdasort,m,work3de,work2de)
+      call obsope_update(obsdasort,m,work3de,work2de,p_full)
       tmphxf(:,m) = obsdasort%hxe(m,:)
     end do
     sync all
@@ -1205,10 +1222,10 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       tmphxf(:,0) = tmphxf(:,0) / real(member,kind=dp)
     end if
     if(myimage == 1) then
-      do k=1,nimages
+      do k=2,nimages
         tmphxf(:,:)[myimage] = tmphxf(:,:)[myimage] + tmphxf(:,:)[k]
       end do
-      do k=1,nimages
+      do k=2,nimages
         tmphxf(:,:)[k] = tmphxf(:,:)[myimage]
       end do
     end if
@@ -1248,47 +1265,48 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
         obsdasort%hxe(m,n) = obshdxk(n,m)
       end do
     end do
-    sync all
     if(oma_monit) then
       call monit_dep(obsdasort%nobs,obsdasort%elem,obsdasort%hxf,obsdasort%qc,&
        & monit_nobs,monit_bias,monit_rmse,monit_nqc)
       call monit_print(monit_nobs,monit_bias,monit_rmse,monit_nqc)
     end if
-    deallocate( tmphxf,work3d,work2d,work3de,work2de )
+    deallocate( tmphxf,work3d,work2d,work3de,work2de,p_full )
     return 
   end subroutine obs_update
 !-----------------------------------------------------------------------
 ! Calculate global cost
 !-----------------------------------------------------------------------
-  subroutine global_cost(ne,ngrd,gw,gparm_infl,fall)
+  subroutine global_cost(ne,ngrd,w,parm_infl,fglb)
     implicit none
     integer,intent(in) :: ne,ngrd
-    real(kind=dp),intent(in) :: gw(ne)
-    real(kind=dp),intent(in) :: gparm_infl(ngrd)
-    real(kind=dp),intent(out):: fall
+    real(kind=dp),intent(in) :: w(ne)
+    real(kind=dp),intent(in) :: parm_infl(ngrd)
+    real(kind=dp),intent(out):: fglb
     real(kind=dp) :: jb, jo, rho, rinv
     integer :: i,j,k
 
-    fall=0.0d0
+    fglb=0.0d0
     jb=0.0d0
     k=ne/ngrd
     if(debug) print *, 'member:',k
     do j=1,ngrd
-      rho = 1.0d0 / (1.0d0 + gparm_infl(j) )
+      rho = 1.0d0 / (1.0d0 + parm_infl(j) )
       do i=1,k
-        jb=jb+gw(i+(j-1)*k)*gw(i+(j-1)*k)*rho
+        jb=jb+w(i+(j-1)*k)*w(i+(j-1)*k)*rho
       end do
     end do
     jb=jb*0.5d0
-    if(jout) write(6,'(A,ES12.5)') 'Jb(global)=',jb
+    if(jout) write(6,'(A,I4,A,ES12.5)') 'MYIMAGE ',myimage,' Jb(global)=',jb
     jo=0.0d0
     do i=1,nobstotal
+      if(obsdasort%img(i)/=myimage) cycle
       rinv=1.0d0/obsdasort%err(i)/obsdasort%err(i)
-      jo=jo+obsdepk(i)*obsdepk(i)*rinv
+      jo=jo+obsdasort%hxf(i)*obsdasort%hxf(i)*rinv
     end do
     jo=jo*0.5d0
-    if(jout) write(6,'(A,ES12.5)') 'Jo(global)=',jo
-    fall=jb+jo
+    if(jout) write(6,'(A,I4,A,ES12.5)') 'MYIMAGE ',myimage,' Jo(global)=',jo
+    fglb=jb+jo
+    if(jout) write(6,'(A,I4,A,ES12.5)') 'MYIMAGE ',myimage,' J(global)=',fglb
     return
   end subroutine global_cost
 !TVSsubroutine tvs_local_sub(imin,imax,jmin,jmax,nn,ntvs_prof,ntvs_inst,ntvs_slot)

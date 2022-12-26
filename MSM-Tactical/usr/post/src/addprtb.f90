@@ -7,6 +7,7 @@ program addprtb
   use read_module
   use write_module, only: write_sig, write_sfc
   use norm_module, only: calc_te
+  use func_module, only: calc_rh, calc_q2 !=> calc_q
   implicit none
   ! for energy calculation
   integer, parameter :: kmax=21
@@ -23,13 +24,15 @@ program addprtb
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 !calculation region
   integer       :: ilonw,ilone,jlats,jlatn !calculation region
   integer       :: nlon,nlat
-  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn
+  logical       :: adjust_q=.false. !whether super saturation and super dry are removed or not
+  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn,adjust_q
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: fact(:,:,:),theta(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
   real(kind=dp) :: alpha !rescaled factor
   real(kind=dp) :: tecmp(4)
   real(kind=dp) :: area,te,coef
+  real(kind=dp) :: t1,p1,q1,rh1,qref !for q adjustment
   integer :: ips,it,iu,iv,iq
   ! input files' units (base, prtb)
   integer, parameter :: nisigb=11, nisigp1=12, nisigp2=13
@@ -248,9 +251,9 @@ program addprtb
     pscl=p0*sl(k)
     tscl=thetascl*sl(k)**(1.0d0/ptheta)
     tbase=tr
-    call calc_q(tbase,rhscl,pscl,qbase)
+    call calc_q2(tbase,rhscl,pscl,qbase)
     tbase=tr+tscl
-    call calc_q(tbase,rhscl,pscl,qscl)
+    call calc_q2(tbase,rhscl,pscl,qscl)
     qscl=qscl-qbase
     print '(5(a,es11.4))', 'uscl ',uscl,' vscl ',vscl,' tscl ',tscl,' qscl ',qscl,' psscl ',psscl 
     do j=1,nlat
@@ -297,10 +300,58 @@ program addprtb
   print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
   !! add perturbations
   dfld = dfldb + dfldp * alpha
+  if(adjust_q) then
+  ! super saturation(dry) adjustment
+  do k=1,levs
+    do j=1,jgrd1
+      do i=1,igrd1
+        t1 = dfld(i,j,it+k-1)
+        q1 = dfld(i,j,iq+k-1)
+        p1 = dfld(i,j,ips)*sl(k)
+        call calc_rh(t1,q1,p1,rh1)
+        if(rh1.gt.1.0_dp) then !super saturation
+          print *, 'super saturation adjustment: p=',p1,' rh=',rh1,'>1.0'
+          print *, 'Q before =',q1
+          rh1=1.0_dp
+          call calc_q2(t1,rh1,p1,q1)
+          print *, 'Q after =',q1
+          dfld(i,j,iq+k-1)=q1
+        else if(q1.lt.0.0_dp) then !super dry
+          print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
+          dfld(i,j,iq+k-1)=0.0_dp
+        end if
+      end do
+    end do
+  end do
+  end if
   call write_sig(nosigp,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
   !! subtract perturbations
   dfld = dfldb - dfldp * alpha
+  if(adjust_q) then
+  ! super saturation(dry) adjustment
+  do k=1,levs
+    do j=1,jgrd1
+      do i=1,igrd1
+        t1 = dfld(i,j,it+k-1)
+        q1 = dfld(i,j,iq+k-1)
+        p1 = dfld(i,j,ips)*sl(k)
+        call calc_rh(t1,q1,p1,rh1)
+        if(rh1.gt.1.0_dp) then !super saturation
+          print *, 'super saturation adjustment: p=',p1,' rh=',rh1,'>1.0'
+          print *, 'Q before =',q1
+          rh1=1.0_dp
+          call calc_q2(t1,rh1,p1,q1)
+          print *, 'Q after =',q1
+          dfld(i,j,iq+k-1)=q1
+        else if(q1.lt.0.0_dp) then !super dry
+          print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
+          dfld(i,j,iq+k-1)=0.0_dp
+        end if
+      end do
+    end do
+  end do
+  end if
   call write_sig(nosigm,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
 !!  ! intermediate field
@@ -340,31 +391,31 @@ program addprtb
   call read_sfc(nisfc,igrd1,jgrd1,dfld)
   call write_sfc(nosfc,igrd1,jgrd1,dfld,label,idate,fhour)
   deallocate( dfld )
-contains
-  subroutine calc_q(t,rh,p,q)
-    implicit none
-    real(kind=dp),parameter :: t0=273.15d0
-    real(kind=dp),parameter :: e0c=6.11d0
-    real(kind=dp),parameter :: al=17.3d0
-    real(kind=dp),parameter :: bl=237.3d0
-    real(kind=dp),parameter :: e0i=6.1121d0
-    real(kind=dp),parameter :: ai=22.587d0
-    real(kind=dp),parameter :: bi=273.86d0
-    real(kind=dp),intent(in) :: t,rh,p
-    real(kind=dp),intent(out) :: q
-    real(kind=dp) :: e, es, tc
-
-    tc=t-t0
-    if(tc>=0.0d0) then
-      es=e0c*exp(al*tc/(bl+tc))
-    else if(tc<=-15.0d0) then
-      es=e0i*exp(ai*tc/(bi+tc))
-    else
-      es=e0c*exp(al*tc/(bl+tc))*(15.0d0+tc)/15.0d0 &
-        +e0i*exp(ai*tc/(bi+tc))*(-tc)/15.0d0
-    endif
-    e=rh*es
-    q=0.622d0*e/(p*0.01d0-e*0.378d0)
-    return
-  end subroutine calc_q
+!contains
+!  subroutine calc_q(t,rh,p,q)
+!    implicit none
+!    real(kind=dp),parameter :: t0=273.15d0
+!    real(kind=dp),parameter :: e0c=6.11d0
+!    real(kind=dp),parameter :: al=17.3d0
+!    real(kind=dp),parameter :: bl=237.3d0
+!    real(kind=dp),parameter :: e0i=6.1121d0
+!    real(kind=dp),parameter :: ai=22.587d0
+!    real(kind=dp),parameter :: bi=273.86d0
+!    real(kind=dp),intent(in) :: t,rh,p
+!    real(kind=dp),intent(out) :: q
+!    real(kind=dp) :: e, es, tc
+!
+!    tc=t-t0
+!    if(tc>=0.0d0) then
+!      es=e0c*exp(al*tc/(bl+tc))
+!    else if(tc<=-15.0d0) then
+!      es=e0i*exp(ai*tc/(bi+tc))
+!    else
+!      es=e0c*exp(al*tc/(bl+tc))*(15.0d0+tc)/15.0d0 &
+!        +e0i*exp(ai*tc/(bi+tc))*(-tc)/15.0d0
+!    endif
+!    e=rh*es
+!    q=0.622d0*e/(p*0.01d0-e*0.378d0)
+!    return
+!  end subroutine calc_q
 end program

@@ -148,14 +148,14 @@ contains
 !
 ! (parallel) observation operator applied to updated model variables in DA
 !
-  subroutine obsope_update(obs,mem,v3d,v2d)
+  subroutine obsope_update(obs,mem,v3d,v2d,p_full)
     implicit none
     type(obstype2), intent(inout):: obs
     integer,       intent(in) :: mem
     real(kind=dp), intent(in) :: v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
     real(kind=dp), intent(in) :: v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
+    real(kind=dp), intent(in) :: p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
     integer :: nobsin,nobsout
-    real(kind=dp),allocatable :: p_full(:,:,:)
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn
 !!! debug
@@ -172,9 +172,6 @@ contains
    
     nobsout=0
     nn=0
-    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
-!    call calc_pfull(nlon,nlat,nlev,sig,v2d(:,:,iv2d_ps),p_full)
-    p_full = v3d(:,:,:,iv3d_pp)
     write(6,*) 'p_full ',minval(p_full(1:ni1,1:nj1,:)),maxval(p_full(1:ni1,1:nj1,:))
     if(mem.eq.0) then
       obs%hxf(:) = 0.0d0
@@ -232,6 +229,7 @@ contains
     logical :: local_
     integer :: igrdtmp,jgrdtmp
     integer :: i,j,k
+    integer :: is,ie,js,je
 
     local_=.false.
     if(present(local)) local_=local
@@ -239,23 +237,43 @@ contains
     qc=iqc_good
     
     if(local_) then
-      allocate( lnps(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost) )
+      allocate( lnps(1:ni1max+2*ighost,1:nj1max+2*jghost) )
       ! rlon1 -> ri
-      do i=1-ighost,ni1+ighost
+      if(ighost.gt.0.and.nidom(myimage)==1) then
+        is=1
+        ie=ni1+ighost
+      else if(ighost.gt.0.and.nidom(myimage)==nisep) then
+        is=1-ighost
+        ie=ni1
+      else
+        is=1-ighost
+        ie=ni1+ighost
+      end if
+      do i=is,ie
         if(rlon1.lt.myrlon(i)) exit
       end do
-      ai=(rlon1-myrlon(i-1))/(rlon(i)-rlon(i-1))
+      ai=(rlon1-myrlon(i-1))/(myrlon(i)-myrlon(i-1))
       ri=real(i-1,kind=dp)+ai
       ! rlat1 -> rj
-      do j=1-jghost,nj1+jghost
+      if(jghost.gt.0.and.njdom(myimage)==1) then
+        js=1
+        je=nj1+jghost
+      else if(jghost.gt.0.and.njdom(myimage)==njsep) then
+        js=1-jghost
+        je=nj1
+      else
+        js=1-jghost
+        je=nj1+jghost
+      end if
+      do j=js,je
         if(rlat1.lt.myrlat(j)) exit
       end do
-      aj=(rlat1-myrlat(j-1))/(rlat(j)-rlat(j-1))
+      aj=(rlat1-myrlat(j-1))/(myrlat(j)-myrlat(j-1))
       rj=real(j-1,kind=dp)+aj
-      write(6,'(6(a,f8.2))') & !debug
-        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',myrlon(i),' rlat=',myrlat(j)
-      ri=ri+ighost
-      rj=rj+jghost
+!!DEBUG      write(6,'(6(a,f8.2))') &
+!!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',myrlon(i),' rlat=',myrlat(j)
+      ri=ri+real(ighost,kind=dp)
+      rj=rj+real(jghost,kind=dp)
     else
       allocate( lnps(nlon,nlat) )
       ! rlon1 -> ri
@@ -294,6 +312,8 @@ contains
         qc=iqc_out_h
         return
       end if
+!!DEBUG      write(6,'(6(a,f8.2))') &
+!!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
     ! rlev1 -> rk
     if(elm.gt.9999) then !surface observation
@@ -301,16 +321,18 @@ contains
     else
       ! horizontal interpolation
       do k=1,nlev
-!        print *, i,j,p_full(i-1,j-1,k),p_full(i,j-1,k),p_full(i-1,j,k),p_full(i,j,k)
+        i=ceiling(ri)
+        j=ceiling(rj)
+!!DEBUG        print *, i,j,p_full(i-1,j-1,k),p_full(i,j-1,k),p_full(i-1,j,k),p_full(i,j,k)
         lnps=0.0_dp
         lnps(i-1:i,j-1:j)=log(p_full(i-1:i,j-1:j,k))
-!        print *, i,j,lnps(i-1,j-1),lnps(i,j-1),lnps(i-1,j),lnps(i,j)
+!!DEBUG        print *, i,j,lnps(i-1,j-1),lnps(i,j-1),lnps(i-1,j),lnps(i,j)
         call itpl_2d(lnps,ri,rj,plev(k))
 !        print *, exp(plev(k))
       end do
       ! find rk
       rk=log(rlev1)
-      if(local_) write(6,'(a,2f8.5,a,f8.5)') 'plev ',plev(1),plev(nlev),' rk ',rk !debug
+!!DEBUG      if(local_) write(6,'(a,2f8.5,a,f8.5)') 'plev ',plev(1),plev(nlev),' rk ',rk 
       if(rk.gt.plev(1)) then
 !        call itpl_2d(p_full(:,:,1),ri,rj,ptmp)
         ptmp=exp(plev(1))
@@ -334,9 +356,7 @@ contains
       rk=real(k-1,kind=dp)+ak
     end if
     
-!! debug
-    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
-!! debug
+!!DEBUG    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
     deallocate( lnps )
     return
   end subroutine phys2ijk

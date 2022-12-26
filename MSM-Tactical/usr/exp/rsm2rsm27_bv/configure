@@ -17,31 +17,38 @@ else
    export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
 fi
 GLOBAL=${GLOBAL:-GEFS}
-if [ "$MEM" = "000" ];then
-export RUNDIR=$TEMP/$SDATE #CONTROL
-export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000
-if [ $GLOBAL = GFS ];then #deterministic
-export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
-export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
-fi
-elif [ $CYCLE -eq 0 -o do$BV != doyes ];then
-export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER
-export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
-else
-export RUNDIR=$TEMP/$SDATE/bv${TETYPE}${MEM}${BP}_c${CYCLE} #BGM
-#export RUNDIR=$TEMP/$SDATE/bv${SIGN}${MEM}${BP}_c${CYCLE} #BGM
-if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ]; then
-export RUNDIR=$TEMP/$SDATE/bv${TETYPE}${BV_H}h${MEM}${BP}_c${CYCLE} #BGM
-fi
-if [ do$BP != do ];then
-export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
-else
-export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
-if [ $GLOBAL = GFS ];then #deterministic
-export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
-export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
-fi
-fi
+if [ "$MEM" = "000" ];then #control
+  export RUNDIR=$TEMP/$SDATE
+  export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000
+  if [ $GLOBAL = GFS ];then #deterministic
+    export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+    export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
+  fi #deterministic
+elif [ $CYCLE -eq 0 -o do$BV != doyes ];then #downscaling
+  export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER
+  export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
+else #BGM
+  # rundir
+  head=bv${TETYPE}
+  #head=bv${TETYPE}${SIGN} #plus-minus
+  if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then #scaling interval
+    head=${head}${BV_H}h
+  fi #scaling interval
+  head=${head}${MEM}${BP}
+  if [ do$QADJ = doyes ];then #q adjustment
+    head=${head}_qadj
+  fi #q adjustment
+  export RUNDIR=$TEMP/$SDATE/${head}_c${CYCLE}
+  # basedir
+  if [ do$BP != do ];then #base perturbation by global ensemble
+    export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
+  else #no base perturbation
+    export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
+    if [ $GLOBAL = GFS ];then #deterministic
+      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
+    fi #deterministic
+  fi
 fi
 export IRES=27
 

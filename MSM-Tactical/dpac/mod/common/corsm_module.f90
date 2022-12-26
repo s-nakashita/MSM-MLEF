@@ -28,6 +28,7 @@ contains
     real(kind=dp), allocatable :: v2dg(:,:,:)
     real(kind=dp), allocatable :: buf(:,:,:)
     integer :: i,ii
+    integer :: is,ie,js,je
 
     write(6,'(a)') 'Hello from set_corsm'
     call read_nml_corsm
@@ -66,10 +67,30 @@ contains
 !      ii=ii+1
 !    end do
 
-    write(6,'(a,i4.4,a,10f8.3)') &
-    & 'MYIMAGE ',myimage,' lon = ',myrlon(1:10)
-    write(6,'(a,i4.4,a,10f8.3)') &
-    & 'MYIMAGE ',myimage,' lat = ',myrlat(1:10)
+    if(ighost.gt.0.and.nidom(myimage)==1) then
+      is=1
+      ie=ni1+ighost
+    else if(ighost.gt.0.and.nidom(myimage)==nisep) then
+      is=1-ighost
+      ie=ni1
+    else
+      is=1-ighost
+      ie=ni1+ighost
+    end if
+    if(jghost.gt.0.and.njdom(myimage)==1) then
+      js=1
+      je=nj1+jghost
+    else if(jghost.gt.0.and.njdom(myimage)==njsep) then
+      js=1-jghost
+      je=nj1
+    else
+      js=1-jghost
+      je=nj1+jghost
+    end if
+    write(6,'(a,i4.4,f8.3,a,f8.3)') &
+    & 'MYIMAGE ',myimage,myrlon(is),'<=lon<=',myrlon(ie)
+    write(6,'(a,i4.4,f8.3,a,f8.3)') &
+    & 'MYIMAGE ',myimage,myrlat(js),'<=lat<=',myrlat(je)
 
     sync all
     return

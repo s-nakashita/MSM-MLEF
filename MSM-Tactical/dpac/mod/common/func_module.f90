@@ -10,7 +10,7 @@ module func_module
   implicit none
   private
 !
-  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, &
+  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, calc_q2,&
    &        calc_wd, calc_uv, distll_1
   contains
 !
@@ -140,7 +140,7 @@ module func_module
     return
   end subroutine calc_td
 !
-! specific humidity
+! specific humidity from dewpoint temperature
 !
   subroutine calc_q(td,p,q)
     implicit none
@@ -165,6 +165,33 @@ module func_module
 
     return
   end subroutine calc_q
+!
+! specific humidity from relative humidity
+!
+  subroutine calc_q2(t,rh,p,q)
+    implicit none
+    real(kind=dp),parameter :: e0=6.112_dp
+    real(kind=dp),parameter :: a=17.67_dp
+    real(kind=dp),parameter :: b=243.5_dp
+!    real(kind=dp),parameter :: al=6.116441_dp
+!    real(kind=dp),parameter :: ml=7.591386_dp
+!    real(kind=dp),parameter :: tnl=240.7263_dp
+!    real(kind=dp),parameter :: ai=6.114742_dp
+!    real(kind=dp),parameter :: mi=9.778707_dp
+!    real(kind=dp),parameter :: tni=273.1466_dp
+
+    real(kind=dp),intent(in) :: t,rh,p
+    real(kind=dp),intent(out):: q
+    real(kind=dp) :: e,es,eps,tc
+
+    tc = t - t0
+    es = e0*exp(a*tc/(tc+b)) !Bolton(1980)
+    e = es * rh
+    eps = rd / rv
+    q = eps*e / (p*0.01_dp - (1.0_dp - eps)*e)
+
+    return
+  end subroutine calc_q2
 !
 ! wind direction
 !
