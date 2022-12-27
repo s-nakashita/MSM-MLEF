@@ -14,6 +14,7 @@ IRES=27
 CYCLE=${CYCLE:-3}
 BV_H=${BV_H:-6}
 TETYPE=${TETYPE}
+SCL=${SCL}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
 CYCLE=${1:-$CYCLE}
@@ -62,9 +63,9 @@ if [ $CYCLE -gt 1 ]; then
   echo "forecast hour=${fh}"
   IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 fi
-WDIR=bv${TETYPE}${PMEM}${BP}
+WDIR=bv${TETYPE}${SCL}${PMEM}${BP}
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-  WDIR=bv${TETYPE}${BV_H}h${PMEM}${BP}
+  WDIR=bv${TETYPE}${SCL}${BV_H}h${PMEM}${BP}
 fi
 if [ do$QADJ = doyes ];then
   WDIR=${WDIR}_qadj
@@ -156,11 +157,16 @@ if [ do$QADJ = doyes ];then
   adjust_q=T
 fi
 SPINUP=`expr 24 / $BV_H + 1`
+if [ do$SCL != do ];then
+  teref=${SCL}.0d0
+else
+  teref=3.0d0
+fi
 if [ $CYCLE -lt $SPINUP ];then
 cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
- teref=3.0d0,
+ teref=${teref},
  epsq=${epsq},
  lonw=110.0,
  lone=153.0,
@@ -174,7 +180,7 @@ else
 cat <<EOF >namelist
 &namlst_prtb
  setnorm=T,
- teref=3.0d0,
+ teref=${teref},
  epsq=${epsq},
  lonw=110.0,
  lone=153.0,

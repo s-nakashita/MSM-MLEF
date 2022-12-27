@@ -74,7 +74,8 @@ module nml_module
   character(filelenmax) :: info_out_basename = 'dainfo'
   character(filelenmax) :: ewgt_basename = 'ewgt.@@@@'
 !
-  real(kind=dp),save :: q_update_top = 0.0d0 ! watar vapor and hydrometeors are updated only below this pressure level (Pa)
+  real(kind=dp),save    :: q_update_top = 0.0d0 ! watar vapor and hydrometeors are updated only below this pressure level (Pa)
+  logical,save          :: q_adjust = .true. ! super saturation (dry) adjustment
 ! monitor
   logical, save :: oma_monit=.true.
   logical, save :: obsgues_output=.false.
@@ -183,6 +184,7 @@ contains
       info_out_basename, &
       ewgt_basename, &
       q_update_top, &
+      q_adjust, &
       oma_monit, &
       obsgues_output, &
       obsanal_output

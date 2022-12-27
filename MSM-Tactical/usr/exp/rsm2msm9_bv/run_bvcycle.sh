@@ -3,6 +3,7 @@ export IDATE=2022082900
 export GLOBAL=GFS
 export BV_H=6
 export TETYPE=dry
+export QADJ=yes
 #export IDATE=2022061400
 #export GLOBAL=GFS
 #export BV_H=12
@@ -14,7 +15,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $RUNDIR
 echo $POSTDIR
 
-export CYCLE=9
+export CYCLE=5
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`

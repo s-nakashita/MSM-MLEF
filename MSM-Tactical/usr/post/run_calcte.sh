@@ -12,6 +12,7 @@ IRES=${IRES:-27}
 CYCLE=${CYCLE:-1}
 BV_H=${BV_H:-6}
 TETYPE=${TETYPE}
+SCL=${SCL}
 MEM=${MEM:-003}
 BV=${BV:-yes}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
@@ -69,9 +70,9 @@ if [ $IRES -eq 27 ]; then
 fi
 if [ $BV = yes ];then
   if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-    WDIR=bv${TETYPE}${BV_H}h${MEM}${BP}
+    WDIR=bv${TETYPE}${SCL}${BV_H}h${MEM}${BP}
   else
-    WDIR=bv${TETYPE}${MEM}${BP}
+    WDIR=bv${TETYPE}${SCL}${MEM}${BP}
   fi
   if [ do$QADJ = doyes ];then
     WDIR=${WDIR}_qadj

@@ -2,18 +2,18 @@
 set -e
 obsdir=/zdata/grmsm/work/dpac/obs
 datadir=/zdata/grmsm/work/msm2msm3_bv
-outdir=/zdata/grmsm/work/dpac/msm3test
-#outdir=/zdata/grmsm/work/dpac/single
+#outdir=/zdata/grmsm/work/dpac/msm3test
+outdir=/zdata/grmsm/work/dpac/single
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 NODE=5
 member=10
 adate=2022061812
 fhour=0
-single=F
+single=T
 selobs=all
 prep=_preprh
-maxiter=5
+maxiter=1
 hloc=300
 saveens=0 #0:save all ensemble, 1:save only ctrl, mean and spread
 yyyy=`echo ${adate} | cut -c1-4`
@@ -65,7 +65,7 @@ cd $wdir
 cat <<EOF >lmlef.nml
 &namlst_commlef
  debug=,
- jout=T,
+ jout=,
  ls=-1,
  opt=,
  ngauss=,

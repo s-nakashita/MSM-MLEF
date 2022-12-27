@@ -32,7 +32,7 @@ program addprtb
   real(kind=dp) :: alpha !rescaled factor
   real(kind=dp) :: tecmp(4)
   real(kind=dp) :: area,te,coef
-  real(kind=dp) :: t1,p1,q1,rh1,qref !for q adjustment
+  real(kind=dp) :: t1,p1,q1,rh1,cw1,qlim !for q adjustment
   integer :: ips,it,iu,iv,iq
   ! input files' units (base, prtb)
   integer, parameter :: nisigb=11, nisigp1=12, nisigp2=13
@@ -307,18 +307,23 @@ program addprtb
       do i=1,igrd1
         t1 = dfld(i,j,it+k-1)
         q1 = dfld(i,j,iq+k-1)
+        cw1 = dfld(i,j,icw+k-1)
         p1 = dfld(i,j,ips)*sl(k)
-        call calc_rh(t1,q1,p1,rh1)
-        if(rh1.gt.1.0_dp) then !super saturation
-          print *, 'super saturation adjustment: p=',p1,' rh=',rh1,'>1.0'
-          print *, 'Q before =',q1
-          rh1=1.0_dp
-          call calc_q2(t1,rh1,p1,q1)
-          print *, 'Q after =',q1
-          dfld(i,j,iq+k-1)=q1
-        else if(q1.lt.0.0_dp) then !super dry
+        if(q1.lt.0.0_dp) then !super dry
           print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
           dfld(i,j,iq+k-1)=0.0_dp
+        else 
+          rh1=1.0_dp
+          call calc_q2(t1,rh1,p1,qlim)
+          if(q1.gt.qlim) then !super saturation
+          print *, 'super saturation adjustment: p=',p1,' q=',q1,'>',qlim
+          print *, 'Q before =',dfld(i,j,iq+k-1)
+          dfld(i,j,iq+k-1)=qlim
+          print *, 'Q after =',dfld(i,j,iq+k-1)
+        end if
+        if(cw1.lt.0.0d0) then !negative cloud water
+          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+          dfld(i,j,icw+k-1)=0.0_dp
         end if
       end do
     end do
@@ -335,18 +340,23 @@ program addprtb
       do i=1,igrd1
         t1 = dfld(i,j,it+k-1)
         q1 = dfld(i,j,iq+k-1)
+        cw1 = dfld(i,j,icw+k-1)
         p1 = dfld(i,j,ips)*sl(k)
-        call calc_rh(t1,q1,p1,rh1)
-        if(rh1.gt.1.0_dp) then !super saturation
-          print *, 'super saturation adjustment: p=',p1,' rh=',rh1,'>1.0'
-          print *, 'Q before =',q1
-          rh1=1.0_dp
-          call calc_q2(t1,rh1,p1,q1)
-          print *, 'Q after =',q1
-          dfld(i,j,iq+k-1)=q1
-        else if(q1.lt.0.0_dp) then !super dry
+        if(q1.lt.0.0_dp) then !super dry
           print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
           dfld(i,j,iq+k-1)=0.0_dp
+        else 
+          rh1=1.0_dp
+          call calc_q2(t1,rh1,p1,qlim)
+          if(q1.gt.qlim) then !super saturation
+          print *, 'super saturation adjustment: p=',p1,' q=',q1,'>',qlim
+          print *, 'Q before =',dfld(i,j,iq+k-1)
+          dfld(i,j,iq+k-1)=qlim
+          print *, 'Q after =',dfld(i,j,iq+k-1)
+        end if
+        if(cw1.lt.0.0d0) then !negative cloud water
+          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+          dfld(i,j,icw+k-1)=0.0_dp
         end if
       end do
     end do

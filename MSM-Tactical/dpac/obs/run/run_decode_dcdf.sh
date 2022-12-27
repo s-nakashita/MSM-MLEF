@@ -7,7 +7,7 @@ adate=2022061812
 lmin=-60
 rmin=60
 lprep=T
-iq=2
+iq=1
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`
@@ -38,7 +38,7 @@ ln -fs ${bindir}/decode_dcdf .
 tarf=dcd${yy}${mm}${dd}.tar.gz
 cp ${dcddir}/${yyyy}/$tarf .
 tar zxvf $tarf
-./decode_dcdf < decode.nml
+./decode_dcdf < decode.nml | tee decode_dcdf.log
 
 cd ..
 mv tmp/*.dat .

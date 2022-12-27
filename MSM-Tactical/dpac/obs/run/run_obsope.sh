@@ -1,6 +1,7 @@
 #!/bin/sh
 set -e
 datadir=/zdata/grmsm/work/msm2msm3_bv
+#datadir=/zdata/grmsm/work/rsm2msm9_bv
 obsdir=/zdata/grmsm/work/dpac/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=10
@@ -8,9 +9,9 @@ adate=2022061812
 fhour=0
 lmin=-60
 rmin=60
-prep=_preprh
+prep=_prep
 single=T
-useobs='all'
+useobs='q'
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
 mm=`echo ${adate} | cut -c5-6`

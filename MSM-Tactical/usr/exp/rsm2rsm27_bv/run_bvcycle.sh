@@ -3,6 +3,7 @@ export GLOBAL=GFS
 export IDATE=2022082900
 export BV_H=6
 export TETYPE=dry
+export SCL=5
 export QADJ=yes
 #export GLOBAL=GFS
 #export IDATE=2022061400
@@ -14,7 +15,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-for CYCLE in $(seq 1 5);do
+for CYCLE in $(seq 5 5);do
 export CYCLE
 ### control
 cd $EXPDIR

@@ -52,9 +52,12 @@ contains
       nn=0
       call file_member_replace(im,fguess_basename,guesf)
       call read_restart(guesf,v3dg,v2dg)
-!      call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
       if(im.eq.0) then !all members assumed to have the same pressure levels
-        p_full = v3dg(:,:,:,iv3d_pp)
+        if(nonhyd.eq.1) then !non-hydrostatic
+          p_full = v3dg(:,:,:,iv3d_pp)
+        else
+          call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
+        end if
       end if
       lonb=undef
       latb=undef

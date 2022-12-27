@@ -15,6 +15,7 @@ module lmlef_tools
   use co_module
   use rsmcom_module
   use corsm_module
+  use func_module, only : calc_pfull, calc_rh, calc_q2
   use mlef_module, only : debug, jout, mlef_init, &
 !  & mlefy_core, line_search, &
   & mlef_core, calc_trans, est_infl
@@ -148,6 +149,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   logical :: hfirst ! for obs_local
   integer :: ij,ilev,n,m,i,j,k,ierr
   integer :: niter, flagall
+! for q adjustment
+  real(kind=dp) :: rh, qlim
 
   write(6,'(A)') 'Hello from das_lmlef'
   nobstotal = obsdasort%nobs !+ ntvs
@@ -261,15 +264,19 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! p_full for background control
   !
   allocate(logpfm(1:nij1max,nlev)[*])
-!  call calc_pfull(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,1,gues2dc(1:nij1,iv2d_ps),logpfm)
-  do ij=1,nij1
-    i=mod(ij-1,ni1)+1
-    j=(ij-1)/ni1 + 1
-    logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
-  end do
+  if(nonhyd.eq.1) then !non-hydrostatic
+    do ij=1,nij1
+      i=mod(ij-1,ni1)+1
+      j=(ij-1)/ni1 + 1
+      logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
+    end do
+  else
+    call calc_pfull(nij1,1,1,sig,&
+            reshape(gues2dc(1:ni1,1:nj1,iv2d_ps),(/nij1,1/)),logpfm(1:nij1,:))
+  end if
   logpfm = log(logpfm)
   if(debug) then
-    write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm), maxval(logpfm)
+    write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm(1:nij1,:)), maxval(logpfm(1:nij1,:))
   end if
   !
   ! MAIN ASSIMILATION LOOP
@@ -506,20 +513,6 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           work3d(i,j,ilev,n) = work3d(i,j,ilev,1)
         end if
       end do
-      if(exp(logpfm(ij,ilev)) .lt. q_update_top) then !no analysis for upper-level Q and CW
-        anal3dc(i,j,ilev,iv3d_q) = gues3dc(i,j,ilev,iv3d_q)
-        anal3dc(i,j,ilev,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw)
-        do m=1,member
-          if(save_info) then
-            work3de(i,j,ilev,m,iv3d_q) = 0.0d0
-            work3de(i,j,ilev,m,iv3d_cw) = 0.0d0
-          end if
-          anal3d(i,j,ilev,m,iv3d_q) = gues3dc(i,j,ilev,iv3d_q) &
-                                 & + gues3d(i,j,ilev,m,iv3d_q) / pscale
-          anal3d(i,j,ilev,m,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw) &
-                                 & + gues3d(i,j,ilev,m,iv3d_cw) / pscale
-        end do
-      end if
       if(ilev == 1) then !update 2d variable at ilev=1
         do n=1,nv2d
           ! update control
@@ -553,6 +546,62 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           work2d(i,j,n) = work3d(i,j,ilev,1)
         end do
       end if
+      if(exp(logpfm(ij,ilev)) .lt. q_update_top) then !no analysis for upper-level Q and CW
+        anal3dc(i,j,ilev,iv3d_q) = gues3dc(i,j,ilev,iv3d_q)
+        anal3dc(i,j,ilev,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw)
+        do m=1,member
+          if(save_info) then
+            work3de(i,j,ilev,m,iv3d_q) = 0.0d0
+            work3de(i,j,ilev,m,iv3d_cw) = 0.0d0
+          end if
+          anal3d(i,j,ilev,m,iv3d_q) = gues3dc(i,j,ilev,iv3d_q) &
+                                 & + gues3d(i,j,ilev,m,iv3d_q) / pscale
+          anal3d(i,j,ilev,m,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw) &
+                                 & + gues3d(i,j,ilev,m,iv3d_cw) / pscale
+        end do
+      else if( q_adjust ) then ! super saturation (dry) adjustment
+        if(.not.mean) then !control
+          ! specific humidity
+          if(anal3dc(i,j,ilev,iv3d_q).lt.0.0d0) then
+            anal3dc(i,j,ilev,iv3d_q)=0.0d0
+          else
+            rh=1.0d0
+            if(nonhyd.eq.1) then
+              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pp),qlim)
+            else                       
+              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal2dc(i,j,iv2d_ps)*sig(ilev),qlim)
+            end if
+            if(anal3dc(i,j,ilev,iv3d_q).gt.qlim) then
+              anal3dc(i,j,ilev,iv3d_q)=qlim
+            end if
+          end if
+          ! cloud water
+          if(anal3dc(i,j,ilev,iv3d_cw).lt.0.0d0) then
+            anal3dc(i,j,ilev,iv3d_cw)=0.0d0
+          end if
+        end if
+        !member
+        do m=1,member
+          ! specific humidity
+          if(anal3d(i,j,ilev,m,iv3d_q).lt.0.0d0) then
+            anal3d(i,j,ilev,m,iv3d_q)=0.0d0
+          else
+            rh=1.0d0
+            if(nonhyd.eq.1) then
+              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pp),qlim)
+            else                       
+              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal2d(i,j,m,iv2d_ps)*sig(ilev),qlim)
+            end if
+            if(anal3d(i,j,ilev,m,iv3d_q).gt.qlim) then
+              anal3d(i,j,ilev,m,iv3d_q)=qlim
+            end if
+          end if
+          ! cloud water
+          if(anal3d(i,j,ilev,m,iv3d_cw).lt.0.0d0) then
+            anal3d(i,j,ilev,m,iv3d_cw)=0.0d0
+          end if
+        end do
+      end if ! q limit and/or super saturation (dry) adjustment
     end do
   end do
   sync all

@@ -29,7 +29,7 @@ elif [ $CYCLE -eq 0 -o do$BV != doyes ];then #downscaling
   export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} 
 else #BGM
   # rundir
-  head=bv${TETYPE}
+  head=bv${TETYPE}${SCL}
   #head=bv${TETYPE}${SIGN} #plus-minus
   if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then #scaling interval
     head=${head}${BV_H}h
