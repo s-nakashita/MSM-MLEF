@@ -13,11 +13,13 @@ program lmlef
   use nml_module
   use rsmcom_module
   use corsm_module
-  use obs_module, only: write_obsout
+  use obs_module, only: get_nobs, read_obs, write_obsout, monit_obsin, &
+          obsin_allocate
+  use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy
   use lmlef_obs, only: nbslot, nslots, &
-  & set_lmlef_obs, obsdasort
+  & set_lmlef_obs, obs, obsda, obsdasort, nobs_ext
 !  &, monit_cntl, monit_mean
 
   implicit none
@@ -30,7 +32,7 @@ program lmlef
   real(kind=dp),allocatable :: anal3d(:,:,:,:,:)[:] !ensemble
   real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
   real(kind=dp) :: rtimer00,rtimer
-  integer :: im,ierr
+  integer :: im,iof,ierr
   character(8) :: stdoutf='NOUT-000'
   character(filelenmax) :: guesf,analf,obsf
   integer :: ltype=1 ! 0=CW, 1=Y
@@ -110,12 +112,48 @@ program lmlef
 ! Observations
 !-----------------------------------------------------------------------
   !
-  ! CONVENTIONAL OBS
+  ! read observation
+  !
+  allocate( obs(obsin_num) )
+  do iof=1,obsin_num
+    call get_nobs(obsin_name(iof),6,obs(iof)%nobs)
+    call obsin_allocate(obs(iof))
+    call read_obs(obsin_name(iof),obs(iof))
+    call monit_obsin(obs(iof)%nobs,obs(iof)%elem,obs(iof)%dat)
+  end do
+  call cpu_time(rtimer)
+  write(6,'(A,2F10.2)') '### TIMER(READ_OBS):',rtimer,rtimer-rtimer00
+  rtimer00=rtimer
+  !
+  ! observation operator
+  !
+  if(obsda_in) then
+    ! get the number of externally processed observations
+    im = myimage
+    ![ToDo] apply to nimages > member
+    call file_member_replace(im,obsda_in_basename,obsf)
+    write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',obsf
+    call get_nobs(obsf,9,nobs_ext)
+  else
+    nobs_ext=0
+  end if
+  ! apply observation operator with additional space for externally processed observations
+  obsda%nobs = nobs_ext
+  if(single_obs) then !single observation option is valid only for serial operator
+    call obsope_serial(obs,obsda)
+  else
+    call obsope_parallel(obs,obsda)
+  end if
+  call cpu_time(rtimer)
+  write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
+  rtimer00=rtimer
+  !
+  ! process observation data
   !
   call set_lmlef_obs
 !
   call cpu_time(rtimer)
-  write(6,'(A,2F10.2)') '### TIMER(READ_OBS):',rtimer,rtimer-rtimer00
+  write(6,'(A,2F10.2)') '### TIMER(SET_OBS):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 !-----------------------------------------------------------------------
 ! First guess ensemble

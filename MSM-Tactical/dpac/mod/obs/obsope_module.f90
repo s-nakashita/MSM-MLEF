@@ -23,7 +23,7 @@ contains
   subroutine obsope_parallel(obsin,obsout)
     implicit none
     type(obstype), intent(in) :: obsin(obsin_num)
-    type(obstype2), intent(out):: obsout
+    type(obstype2), intent(inout):: obsout
     integer :: nobsin,nobsout
     integer :: iof
     character(len=filelenmax) :: guesf, outf
@@ -44,12 +44,12 @@ contains
     do iof=1,obsin_num
       nobsin=nobsin+obsin(iof)%nobs
     end do
+    obsout%nobs = nobsin + obsout%nobs ! obsout%nobs:externally processed obs number
+    call obsout_allocate(obsout,member)
     if(nobsin.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
-    obsout%nobs = nobsin
-    call obsout_allocate(obsout,member)
    
     allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] )
     allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*] )
@@ -83,8 +83,9 @@ contains
       if(nonhyd.eq.1) then !non-hydrostatic
         p_full = v3dc(:,:,:,iv3d_pp)
       else
-        call calc_pfull(ni1max*2+ighost,nj1max+2*jghost,nlev,sig,v2dc(:,:,iv2d_ps),p_full)
+        call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2dc(:,:,iv2d_ps),p_full)
       end if
+      write(6,'(a,i4,a,2f10.2)') 'member ',im,' p_full=',maxval(p_full),minval(p_full)
       lonb=undef
       latb=undef
       do iof=1,obsin_num
@@ -139,7 +140,6 @@ contains
         end do ! n=1,obsin(iof)%nobs
       end do ! iof=1,obsin_num
 
-      obsout%nobs = nobsout
       im=im+1
       end do !do while (im<=member)
       ! broadcast hxf, qc
@@ -176,13 +176,13 @@ contains
         end if
         im=im+myimage-1
         do while(im<=member)
-          do n=1,obsout%nobs
+          do n=1,nobsout
             obsout%qc(n) = iwk2d(im,n)
           end do
           if(debug_obs) then
           print '(10a10)','number','elem','lon','lat','lev','dat','err','dmin','hxf','qc'
           nn=0
-          do n=1,obsout%nobs
+          do n=1,nobsout
             if(obsout%qc(n)/=iqc_good) cycle
             nn=nn+1
             if(nn.gt.nobsmax) exit
@@ -203,7 +203,7 @@ contains
           im=im+nimages
         end do
       end if
-      do n=1,obsout%nobs
+      do n=1,nobsout
         obsout%qc(n) = maxval(iwk2d(:,n))
       end do
       ! broadcast image
@@ -229,7 +229,7 @@ contains
   subroutine obsope_serial(obsin,obsout)
     implicit none
     type(obstype), intent(in) :: obsin(obsin_num)
-    type(obstype2), intent(out):: obsout
+    type(obstype2), intent(inout):: obsout
     integer :: nobsin,nobsout
     integer :: iof
     character(len=filelenmax) :: guesf, outf
@@ -246,12 +246,12 @@ contains
     do iof=1,obsin_num
       nobsin=nobsin+obsin(iof)%nobs
     end do
+    obsout%nobs = nobsin + obsout%nobs !obsout%nobs : externally processes obs number
+    call obsout_allocate(obsout,member)
     if(nobsin.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
-    obsout%nobs = nobsin
-    call obsout_allocate(obsout,member)
    
     do im=0,member
       nobsout=0
@@ -264,6 +264,7 @@ contains
         else
           call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
         end if
+      write(6,'(a,i4,a,2f10.2)') 'member ',im,' p_full=',maxval(p_full),minval(p_full)
 !      end if
       lonb=undef
       latb=undef
@@ -273,7 +274,10 @@ contains
           !!! single point observation
           if(single_obs) then
             if(lonb.ne.undef.and.latb.ne.undef) then
-              if(lonb.ne.obsin(iof)%lon(n).or.latb.ne.obsin(iof)%lat(n)) exit
+              if(lonb.ne.obsin(iof)%lon(n).or.latb.ne.obsin(iof)%lat(n)) then
+                write(6,'(a,f10.2,a,f10.2)') 'observation point : lon=',lonb,' lat=',latb
+                exit
+              end if
             end if
           end if
           nobsout=nobsout+1
@@ -548,7 +552,7 @@ contains
       rk=real(k-1,kind=dp)+ak
     end if
     
-!!DEBUG    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
+    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
     deallocate( lnps )
     return
   end subroutine phys2ijk

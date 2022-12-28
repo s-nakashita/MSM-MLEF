@@ -23,8 +23,8 @@ export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
-MEM=2
-while [ $MEM -le 2 ]; do
+MEM=1
+while [ $MEM -le 10 ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR
 PDATE=`cat pdate2.txt | awk '{if(NR == '$MEM') {print $1}}'`

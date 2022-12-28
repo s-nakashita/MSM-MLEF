@@ -43,7 +43,7 @@ module nml_module
   integer, save :: ighost = 0  ! number of ghost point in longitude
 
   !! lmlef
-  logical, save :: obsda_in = .true.
+  logical, save :: obsda_in = .false.
   character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
   character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
@@ -75,7 +75,7 @@ module nml_module
   character(filelenmax) :: ewgt_basename = 'ewgt.@@@@'
 !
   real(kind=dp),save    :: q_update_top = 0.0d0 ! watar vapor and hydrometeors are updated only below this pressure level (Pa)
-  logical,save          :: q_adjust = .true. ! super saturation (dry) adjustment
+  logical,save          :: q_adjust = .false. ! super saturation (dry) adjustment
 ! monitor
   logical, save :: oma_monit=.true.
   logical, save :: obsgues_output=.false.
@@ -160,6 +160,7 @@ contains
     integer :: ierr
 
     namelist /param_lmlef/ &
+      obsda_in, &
       obsda_in_basename, &
       obsda_out_basename, &
       gues_in_basename, &

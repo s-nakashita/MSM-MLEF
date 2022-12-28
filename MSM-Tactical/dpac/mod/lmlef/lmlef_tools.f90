@@ -135,6 +135,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   real(kind=dp),allocatable :: work3dg(:,:,:,:)
   real(kind=dp),allocatable :: work2dg(:,:,:)
   real(kind=dp),allocatable :: logpfm(:,:)[:]
+  real(kind=dp),allocatable :: tmpps(:)
   real(kind=dp) :: alpha
   real(kind=dp) :: fsum, dginit, dgout, gnormall
   real(kind=dp) :: parm, parm_upd
@@ -271,13 +272,19 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
     end do
   else
-    call calc_pfull(nij1,1,1,sig,&
-            reshape(gues2dc(1:ni1,1:nj1,iv2d_ps),(/nij1,1/)),logpfm(1:nij1,:))
+    allocate( tmpps(1:nij1) )
+    do ij=1,nij1
+      i=mod(ij-1,ni1)+1
+      j=(ij-1)/ni1 + 1
+      tmpps(ij)=gues2dc(i,j,iv2d_ps)
+    end do
+    call calc_pfull(nij1,1,nlev,sig,tmpps,logpfm(1:nij1,:))
+    deallocate( tmpps )
   end if
   logpfm = log(logpfm)
-  if(debug) then
-    write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm(1:nij1,:)), maxval(logpfm(1:nij1,:))
-  end if
+  !if(debug) then
+  write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm(1:nij1,:)), maxval(logpfm(1:nij1,:))
+  !end if
   !
   ! MAIN ASSIMILATION LOOP
   !
@@ -562,16 +569,17 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       else if( q_adjust ) then ! super saturation (dry) adjustment
         if(.not.mean) then !control
           ! specific humidity
-          if(anal3dc(i,j,ilev,iv3d_q).lt.0.0d0) then
+          if(anal3dc(i,j,ilev,iv3d_q).lt.0.0d0) then !super dry
             anal3dc(i,j,ilev,iv3d_q)=0.0d0
-          else
+          else if(anal3dc(i,j,ilev,iv3d_t).gt.(t0-30.0d0).and.&
+                  anal3dc(i,j,ilev,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
               call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pp),qlim)
             else                       
               call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal2dc(i,j,iv2d_ps)*sig(ilev),qlim)
             end if
-            if(anal3dc(i,j,ilev,iv3d_q).gt.qlim) then
+            if(anal3dc(i,j,ilev,iv3d_q).gt.qlim) then !super saturation
               anal3dc(i,j,ilev,iv3d_q)=qlim
             end if
           end if
@@ -583,16 +591,17 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         !member
         do m=1,member
           ! specific humidity
-          if(anal3d(i,j,ilev,m,iv3d_q).lt.0.0d0) then
+          if(anal3d(i,j,ilev,m,iv3d_q).lt.0.0d0) then !super dry
             anal3d(i,j,ilev,m,iv3d_q)=0.0d0
-          else
+          else if(anal3d(i,j,ilev,m,iv3d_t).gt.(t0-30.0d0).and.&
+                  anal3d(i,j,ilev,m,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
               call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pp),qlim)
             else                       
               call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal2d(i,j,m,iv2d_ps)*sig(ilev),qlim)
             end if
-            if(anal3d(i,j,ilev,m,iv3d_q).gt.qlim) then
+            if(anal3d(i,j,ilev,m,iv3d_q).gt.qlim) then !super saturation
               anal3d(i,j,ilev,m,iv3d_q)=qlim
             end if
           end if
@@ -1123,7 +1132,11 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! full pressure levels (identical to all members)
-    p_full(:,:,:) = gues3dc(:,:,:,iv3d_pp)
+    if(nonhyd.eq.1) then !non-hydrostatic
+      p_full(:,:,:) = gues3dc(:,:,:,iv3d_pp)
+    else
+      call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,gues2dc(:,:,iv2d_ps),p_full)
+    end if
     ! update control
     work3d = gues3dc
     work2d = gues2dc

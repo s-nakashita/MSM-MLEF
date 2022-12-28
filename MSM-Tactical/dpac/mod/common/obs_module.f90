@@ -319,6 +319,9 @@ contains
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
       tmplon = real(data1(3),kind=dp)*0.01d0
+      if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
+        tmplon=tmplon+360.0
+      end if
       if(nn==0) then
         latb=data1(2);lonb=data1(3)
       end if
