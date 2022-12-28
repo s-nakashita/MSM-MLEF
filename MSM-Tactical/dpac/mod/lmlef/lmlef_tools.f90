@@ -575,10 +575,10 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
               anal3dc(i,j,ilev,iv3d_q)=qlim
             end if
           end if
-          ! cloud water
-          if(anal3dc(i,j,ilev,iv3d_cw).lt.0.0d0) then
-            anal3dc(i,j,ilev,iv3d_cw)=0.0d0
-          end if
+!          ! cloud water
+!          if(anal3dc(i,j,ilev,iv3d_cw).lt.0.0d0) then
+!            anal3dc(i,j,ilev,iv3d_cw)=0.0d0
+!          end if
         end if
         !member
         do m=1,member
@@ -596,10 +596,10 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
               anal3d(i,j,ilev,m,iv3d_q)=qlim
             end if
           end if
-          ! cloud water
-          if(anal3d(i,j,ilev,m,iv3d_cw).lt.0.0d0) then
-            anal3d(i,j,ilev,m,iv3d_cw)=0.0d0
-          end if
+!          ! cloud water
+!          if(anal3d(i,j,ilev,m,iv3d_cw).lt.0.0d0) then
+!            anal3d(i,j,ilev,m,iv3d_cw)=0.0d0
+!          end if
         end do
       end if ! q limit and/or super saturation (dry) adjustment
     end do

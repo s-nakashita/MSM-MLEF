@@ -33,7 +33,7 @@ program addprtb
   real(kind=dp) :: tecmp(4)
   real(kind=dp) :: area,te,coef
   real(kind=dp) :: t1,p1,q1,rh1,cw1,qlim !for q adjustment
-  integer :: ips,it,iu,iv,iq
+  integer :: ips,it,iu,iv,iq!,icw
   ! input files' units (base, prtb)
   integer, parameter :: nisigb=11, nisigp1=12, nisigp2=13
   integer, parameter :: nisigib=15 !intermediate file
@@ -87,6 +87,7 @@ program addprtb
   iu=it+levs
   iv=iu+levs
   iq=iv+levs
+!  icw=iq+2*levs
   ! base field
   call read_sig(nisigb,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfldb,mapf,clat,clon)
   !! set boundaries
@@ -307,24 +308,24 @@ program addprtb
       do i=1,igrd1
         t1 = dfld(i,j,it+k-1)
         q1 = dfld(i,j,iq+k-1)
-        cw1 = dfld(i,j,icw+k-1)
+!        cw1 = dfld(i,j,icw+k-1)
         p1 = dfld(i,j,ips)*sl(k)
         if(q1.lt.0.0_dp) then !super dry
           print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
           dfld(i,j,iq+k-1)=0.0_dp
-        else 
-          rh1=1.0_dp
+        else if(t1.gt.t0-30.0_dp.and.t1.lt.t0+35.0_dp) then
+          !saturation water vapor accuracy is acceptable for -30 celsius < T < 35 celsius
+          rh1=1.2_dp
           call calc_q2(t1,rh1,p1,qlim)
           if(q1.gt.qlim) then !super saturation
           print *, 'super saturation adjustment: p=',p1,' q=',q1,'>',qlim
-          print *, 'Q before =',dfld(i,j,iq+k-1)
           dfld(i,j,iq+k-1)=qlim
-          print *, 'Q after =',dfld(i,j,iq+k-1)
+          end if
         end if
-        if(cw1.lt.0.0d0) then !negative cloud water
-          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
-          dfld(i,j,icw+k-1)=0.0_dp
-        end if
+!        if(cw1.lt.0.0d0) then !negative cloud water
+!          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+!          dfld(i,j,icw+k-1)=0.0_dp
+!        end if
       end do
     end do
   end do
@@ -340,24 +341,24 @@ program addprtb
       do i=1,igrd1
         t1 = dfld(i,j,it+k-1)
         q1 = dfld(i,j,iq+k-1)
-        cw1 = dfld(i,j,icw+k-1)
+!        cw1 = dfld(i,j,icw+k-1)
         p1 = dfld(i,j,ips)*sl(k)
         if(q1.lt.0.0_dp) then !super dry
           print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
           dfld(i,j,iq+k-1)=0.0_dp
-        else 
-          rh1=1.0_dp
+        else if(t1.gt.t0-30.0_dp.and.t1.lt.t0+35.0_dp) then
+          !saturation water vapor accuracy is acceptable for -30 celsius < T < 35 celsius
+          rh1=1.2_dp
           call calc_q2(t1,rh1,p1,qlim)
           if(q1.gt.qlim) then !super saturation
           print *, 'super saturation adjustment: p=',p1,' q=',q1,'>',qlim
-          print *, 'Q before =',dfld(i,j,iq+k-1)
           dfld(i,j,iq+k-1)=qlim
-          print *, 'Q after =',dfld(i,j,iq+k-1)
+          end if
         end if
-        if(cw1.lt.0.0d0) then !negative cloud water
-          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
-          dfld(i,j,icw+k-1)=0.0_dp
-        end if
+!        if(cw1.lt.0.0d0) then !negative cloud water
+!          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+!          dfld(i,j,icw+k-1)=0.0_dp
+!        end if
       end do
     end do
   end do

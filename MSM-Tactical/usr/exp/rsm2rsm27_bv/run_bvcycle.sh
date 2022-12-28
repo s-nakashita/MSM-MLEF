@@ -2,8 +2,8 @@
 export GLOBAL=GFS
 export IDATE=2022082900
 export BV_H=6
-export TETYPE=dry
-export SCL=5
+export TETYPE=weak
+export SCL=
 export QADJ=yes
 #export GLOBAL=GFS
 #export IDATE=2022061400
@@ -15,7 +15,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-for CYCLE in $(seq 5 5);do
+for CYCLE in $(seq 1 5);do
 export CYCLE
 ### control
 cd $EXPDIR
@@ -23,8 +23,8 @@ export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
-MEM=1
-while [ $MEM -le 10 ]; do
+MEM=2
+while [ $MEM -le 2 ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR
 PDATE=`cat pdate2.txt | awk '{if(NR == '$MEM') {print $1}}'`
@@ -73,11 +73,11 @@ if [ $CYCLE -gt 1 ]; then
    export SDATE
 fi
 . ./configure
-if [ ! -d $RUNDIR ]; then
+#if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $EXPDIR
-fi
+#fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR

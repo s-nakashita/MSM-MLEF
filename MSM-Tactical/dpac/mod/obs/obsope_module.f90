@@ -15,8 +15,214 @@ module obsope_module
   implicit none
   private
 
-  public :: obsope_serial, obsope_update, monit_dep, monit_print
+  public :: obsope_serial, obsope_parallel, obsope_update, monit_dep, monit_print
 contains
+!
+! (parallel) main routine for observation operator
+!
+  subroutine obsope_parallel(obsin,obsout)
+    implicit none
+    type(obstype), intent(in) :: obsin(obsin_num)
+    type(obstype2), intent(out):: obsout
+    integer :: nobsin,nobsout
+    integer :: iof
+    character(len=filelenmax) :: guesf, outf
+    real(kind=dp), allocatable :: v3dc(:,:,:,:)[:]
+    real(kind=dp), allocatable :: v2dc(:,:,  :)[:]
+    real(kind=dp), allocatable :: v3d(:,:,:,:,:)[:]
+    real(kind=dp), allocatable :: v2d(:,:,  :,:)[:]
+    real(kind=dp), allocatable :: p_full(:,:,:)
+    real(kind=dp) :: ri,rj,rk
+    integer :: im, n, nn, img
+    real(kind=dp), allocatable :: wk2d(:,:)[:]
+    integer, allocatable :: iwk2d(:,:)[:]
+    integer :: is,ie,js,je
+    real(kind=dp) :: lonb,latb
+    real(kind=dp) :: hxf,dep
+
+    nobsin=0
+    do iof=1,obsin_num
+      nobsin=nobsin+obsin(iof)%nobs
+    end do
+    if(nobsin.le.0) then
+      write(6,'(a)') 'no observation to be assimilated'
+      return
+    end if
+    obsout%nobs = nobsin
+    call obsout_allocate(obsout,member)
+   
+    allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] )
+    allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*] )
+    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
+    if(.not.mean) then
+      im=0
+      allocate( v3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
+      allocate( v2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*] )
+      call file_member_replace(im,fguess_basename,guesf)
+      call read_cntl(guesf,v3dc,v2dc)
+    else
+      im=1
+    end if
+    call read_ens(fguess_basename,v3d,v2d)
+    allocate( iwk2d(im:member,nobsin)[*] )
+    allocate( wk2d(im:member,nobsin)[*] )
+    iwk2d=0
+    wk2d=0.0d0
+    is=1
+    ie=ni1+ighost
+    if(nidom(myimage)==nisep) ie=ni1
+    js=1
+    je=nj1+jghost
+    if(njdom(myimage)==njsep) je=nj1
+    do while(im<=member)
+      nobsout=0
+      if(im.gt.0) then
+        v3dc=v3d(:,:,:,im,:)
+        v2dc=v2d(:,:,  im,:)
+      end if
+      if(nonhyd.eq.1) then !non-hydrostatic
+        p_full = v3dc(:,:,:,iv3d_pp)
+      else
+        call calc_pfull(ni1max*2+ighost,nj1max+2*jghost,nlev,sig,v2dc(:,:,iv2d_ps),p_full)
+      end if
+      lonb=undef
+      latb=undef
+      do iof=1,obsin_num
+        do n=1,obsin(iof)%nobs
+          nobsout=nobsout+1
+          obsout%elem(nobsout) = obsin(iof)%elem(n)
+          obsout%lon(nobsout)  = obsin(iof)%lon(n)
+          obsout%lat(nobsout)  = obsin(iof)%lat(n)
+          obsout%lev(nobsout)  = obsin(iof)%lev(n)
+          obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%dmin(nobsout) = obsin(iof)%dmin(n)
+          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
+          ! horizontal domain check
+          if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
+             .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
+            if(myimage.eq.1) &
+            write(0,'(a,2(a,f8.2))') &
+            & 'warning: observation is outside of the horizontal domain ', &
+            & 'lon=',obsin(iof)%lon(n),' lat=',obsin(iof)%lat(n)
+            obsout%qc(nobsout)=iqc_out_h
+            iwk2d(im,nobsout)=iqc_out_h
+            cycle
+          end if
+          ! search which image contains observation
+          if(    obsin(iof)%lon(n).lt.myrlon(is)&
+             .or.obsin(iof)%lon(n).ge.myrlon(ie)&
+             .or.obsin(iof)%lat(n).lt.myrlat(js)&
+             .or.obsin(iof)%lat(n).ge.myrlat(je)) then
+          else !obsout%img == myimage
+          obsout%img(nobsout)=myimage
+          call phys2ijk(p_full,obsin(iof)%elem(n),&
+             &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
+             &  ri,rj,rk,obsout%qc(nobsout),.true.)
+          if(obsout%qc(nobsout).eq.iqc_good) then
+            if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
+              obsout%qc(nobsout)=iqc_otype
+            else
+              call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
+               &  v3dc,v2dc,p_full,wk2d(im,nobsout))
+!!debug
+!              if(debug_obs) then
+!                dep = obsin(iof)%dat(n) - wk2d(im,nobsout)
+!                print *, obsin(iof)%elem(n),obsin(iof)%lon(n),obsin(iof)%lat(n),&
+!                 &  obsin(iof)%lev(n)
+!                print *,obsin(iof)%dat(n),wk2d(im,nobsout), dep
+!              end if
+!!debug
+            end if !luseobs
+          end if !iqc_good
+          iwk2d(im,nobsout)=obsout%qc(nobsout)
+          end if !obsout%img==myimage
+        end do ! n=1,obsin(iof)%nobs
+      end do ! iof=1,obsin_num
+
+      obsout%nobs = nobsout
+      im=im+1
+      end do !do while (im<=member)
+      ! broadcast hxf, qc
+      if(myimage.eq.1) then
+        do img=2,nimages
+          wk2d(:,1:nobsout)[myimage]=wk2d(:,1:nobsout)[myimage]+wk2d(:,1:nobsout)[img]
+          do n=1,nobsout
+            if(.not.mean) then
+              im=0
+            else
+              im=1
+            end if
+            do while(im<=member) 
+              iwk2d(im,n)[myimage]=max(iwk2d(im,n)[myimage],iwk2d(im,n)[img])
+              im=im+1
+            end do
+          end do
+        end do
+        do img=2,nimages
+          wk2d(:,1:nobsout)[img] = wk2d(:,1:nobsout)[myimage]
+          iwk2d(:,1:nobsout)[img] = iwk2d(:,1:nobsout)[myimage]
+        end do
+      end if
+      sync all
+      if(.not.mean) then
+        obsout%hxf(1:nobsout)=wk2d(0,1:nobsout)
+      end if
+      obsout%hxe(:,1:nobsout)=wk2d(1:member,1:nobsout)
+      if(obs_out) then
+        if(.not.mean) then
+          im=0
+        else
+          im=1
+        end if
+        im=im+myimage-1
+        do while(im<=member)
+          do n=1,obsout%nobs
+            obsout%qc(n) = iwk2d(im,n)
+          end do
+          if(debug_obs) then
+          print '(10a10)','number','elem','lon','lat','lev','dat','err','dmin','hxf','qc'
+          nn=0
+          do n=1,obsout%nobs
+            if(obsout%qc(n)/=iqc_good) cycle
+            nn=nn+1
+            if(nn.gt.nobsmax) exit
+            if(im.eq.0) then
+              hxf=obsout%hxf(n)
+            else
+              hxf=obsout%hxe(im,n)
+            end if
+            print '(i10,a10,2f10.2,f10.1,4es10.2,i10)', &
+           &  n,obelmlist(uid_obs(obsout%elem(n))),&
+           &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
+           &  obsout%err(n),obsout%dmin(n), &
+           &  hxf,obsout%qc(n)
+          end do
+          end if
+          call file_member_replace(im,obsout_basename,outf)
+          call write_obsout(outf,obsout,im)
+          im=im+nimages
+        end do
+      end if
+      do n=1,obsout%nobs
+        obsout%qc(n) = maxval(iwk2d(:,n))
+      end do
+      ! broadcast image
+      iwk2d=0
+      iwk2d(1,1:nobsout) = obsout%img(1:nobsout)
+      if(myimage.eq.1) then
+        do img=2,nimages
+          iwk2d(1,1:nobsout)[myimage]=iwk2d(1,1:nobsout)[myimage] + iwk2d(1,1:nobsout)[img]
+          end do
+        do img=2,nimages
+          iwk2d(1,1:nobsout)[img] = iwk2d(1,1:nobsout)[myimage]
+        end do
+      end if
+      sync all
+      obsout%img(1:nobsout) = iwk2d(1,1:nobsout)
+      if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
+      deallocate( wk2d,iwk2d )
+    return
+  end subroutine obsope_parallel
 !
 ! (serial) main routine for observation operator
 !
@@ -52,18 +258,18 @@ contains
       nn=0
       call file_member_replace(im,fguess_basename,guesf)
       call read_restart(guesf,v3dg,v2dg)
-      if(im.eq.0) then !all members assumed to have the same pressure levels
+!      if(im.eq.0) then !all members assumed to have the same pressure levels
         if(nonhyd.eq.1) then !non-hydrostatic
           p_full = v3dg(:,:,:,iv3d_pp)
         else
           call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
         end if
-      end if
+!      end if
       lonb=undef
       latb=undef
       do iof=1,obsin_num
         do n=1,obsin(iof)%nobs
-          if(nobsmax.gt.0.and.nn.ge.nobsmax) exit
+!          if(nobsmax.gt.0.and.nn.ge.nobsmax) exit
           !!! single point observation
           if(single_obs) then
             if(lonb.ne.undef.and.latb.ne.undef) then
@@ -71,6 +277,13 @@ contains
             end if
           end if
           nobsout=nobsout+1
+          obsout%elem(nobsout) = obsin(iof)%elem(n)
+          obsout%lon(nobsout)  = obsin(iof)%lon(n)
+          obsout%lat(nobsout)  = obsin(iof)%lat(n)
+          obsout%lev(nobsout)  = obsin(iof)%lev(n)
+          obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%dmin(nobsout) = obsin(iof)%dmin(n)
+          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
           call phys2ijk(p_full,obsin(iof)%elem(n),&
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout))
@@ -116,19 +329,17 @@ contains
             nobsout=nobsout-1
             cycle
           end if
-          obsout%elem(nobsout) = obsin(iof)%elem(n)
-          obsout%lon(nobsout)  = obsin(iof)%lon(n)
-          obsout%lat(nobsout)  = obsin(iof)%lat(n)
-          obsout%lev(nobsout)  = obsin(iof)%lev(n)
-          obsout%dat(nobsout)  = obsin(iof)%dat(n)
-          obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
         end do
       end do
       obsout%nobs = nobsout
-      if(single_obs) then
+!      if(single_obs) then
+      if(debug_obs) then
         print '(10a10)','number','elem','lon','lat','lev','dat','err','dmin','hxf','qc'
+        nn=0
         do n=1,obsout%nobs
+          if(obsout%qc(n)/=iqc_good) cycle
+          nn=nn+1
+          if(nobsmax.gt.0.and.nn.gt.nobsmax) exit
           if(im.eq.0) then
             hxf=obsout%hxf(n)
           else
@@ -242,32 +453,18 @@ contains
     if(local_) then
       allocate( lnps(1:ni1max+2*ighost,1:nj1max+2*jghost) )
       ! rlon1 -> ri
-      if(ighost.gt.0.and.nidom(myimage)==1) then
-        is=1
-        ie=ni1+ighost
-      else if(ighost.gt.0.and.nidom(myimage)==nisep) then
-        is=1-ighost
-        ie=ni1
-      else
-        is=1-ighost
-        ie=ni1+ighost
-      end if
+      is=1
+      ie=ni1+ighost
+      if(nidom(myimage)==nisep) ie=ni1
       do i=is,ie
         if(rlon1.lt.myrlon(i)) exit
       end do
       ai=(rlon1-myrlon(i-1))/(myrlon(i)-myrlon(i-1))
       ri=real(i-1,kind=dp)+ai
       ! rlat1 -> rj
-      if(jghost.gt.0.and.njdom(myimage)==1) then
-        js=1
-        je=nj1+jghost
-      else if(jghost.gt.0.and.njdom(myimage)==njsep) then
-        js=1-jghost
-        je=nj1
-      else
-        js=1-jghost
-        je=nj1+jghost
-      end if
+      js=1
+      je=nj1+jghost
+      if(njdom(myimage)==njsep) je=nj1
       do j=js,je
         if(rlat1.lt.myrlat(j)) exit
       end do
@@ -280,32 +477,24 @@ contains
     else
       allocate( lnps(nlon,nlat) )
       ! rlon1 -> ri
-      if(rlon1.lt.rlon(1)) then
-        ri=0.0
+      do i=1,nlon
+        if(rlon1.lt.rlon(i)) exit
+      end do
+      if(i.gt.nlon) then
+        ri=real(nlon+1,kind=dp)
       else
-        do i=1,nlon
-          if(rlon1.lt.rlon(i)) exit
-        end do
-        if(i.ge.nlon) then
-          ri=real(nlon+1,kind=dp)
-        else
-          ai=(rlon1-rlon(i-1))/(rlon(i)-rlon(i-1))
-          ri=real(i-1,kind=dp)+ai 
-        end if
+        ai=(rlon1-rlon(i-1))/(rlon(i)-rlon(i-1))
+        ri=real(i-1,kind=dp)+ai 
       end if
       ! rlat1 -> rj
-      if(rlat1.lt.rlat(1)) then
-        rj=0.0
+      do j=1,nlat
+        if(rlat1.lt.rlat(j)) exit
+      end do
+      if(j.gt.nlat) then
+        rj=real(nlat+1,kind=dp)
       else
-        do j=1,nlat
-          if(rlat1.lt.rlat(j)) exit
-        end do
-        if(j.ge.nlat) then
-          rj=real(nlat+1,kind=dp)
-        else
-          aj=(rlat1-rlat(j-1))/(rlat(j)-rlat(j-1))
-          rj=real(j-1,kind=dp)+aj
-        end if
+        aj=(rlat1-rlat(j-1))/(rlat(j)-rlat(j-1))
+        rj=real(j-1,kind=dp)+aj
       end if
       ! check whether observation is within horizontal domain or not
       if(ri.lt.1.0.or.ri.gt.nlon.or.rj.lt.1.0.or.rj.gt.nlat) then

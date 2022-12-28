@@ -67,25 +67,30 @@ contains
 !      ii=ii+1
 !    end do
 
-    if(ighost.gt.0.and.nidom(myimage)==1) then
-      is=1
-      ie=ni1+ighost
-    else if(ighost.gt.0.and.nidom(myimage)==nisep) then
-      is=1-ighost
-      ie=ni1
-    else
-      is=1-ighost
-      ie=ni1+ighost
+    is=1;ie=ni1;js=1;je=nj1
+    if(nisep.gt.1.and.ighost.gt.0) then
+      if(nidom(myimage)==1) then
+        is=1
+        ie=ni1+ighost
+      else if(nidom(myimage)==nisep) then
+        is=1-ighost
+        ie=ni1
+      else
+        is=1-ighost
+        ie=ni1+ighost
+      end if
     end if
-    if(jghost.gt.0.and.njdom(myimage)==1) then
-      js=1
-      je=nj1+jghost
-    else if(jghost.gt.0.and.njdom(myimage)==njsep) then
-      js=1-jghost
-      je=nj1
-    else
-      js=1-jghost
-      je=nj1+jghost
+    if(njsep.gt.1.and.jghost.gt.0) then
+      if(njdom(myimage)==1) then
+        js=1
+        je=nj1+jghost
+      else if(njdom(myimage)==njsep) then
+        js=1-jghost
+        je=nj1
+      else
+        js=1-jghost
+        je=nj1+jghost
+      end if
     end if
     write(6,'(a,i4.4,f8.3,a,f8.3)') &
     & 'MYIMAGE ',myimage,myrlon(is),'<=lon<=',myrlon(ie)
