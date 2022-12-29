@@ -85,7 +85,7 @@ contains
       else
         call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2dc(:,:,iv2d_ps),p_full)
       end if
-      write(6,'(a,i4,a,2f10.2)') 'member ',im,' p_full=',maxval(p_full),minval(p_full)
+      write(6,'(a,i4,a,2f10.2)') 'member ',im,' p_full=',maxval(p_full(1:ni1,1:nj1,:)),minval(p_full(1:ni1,1:nj1,:))
       lonb=undef
       latb=undef
       do iof=1,obsin_num
@@ -390,7 +390,7 @@ contains
    
     nobsout=0
     nn=0
-    write(6,*) 'p_full ',minval(p_full(1:ni1,1:nj1,:)),maxval(p_full(1:ni1,1:nj1,:))
+    write(6,'(a,2f10.2)') 'p_full ',minval(p_full(1:ni1,1:nj1,:)),maxval(p_full(1:ni1,1:nj1,:))
     if(mem.eq.0) then
       obs%hxf(:) = 0.0d0
     else
@@ -552,7 +552,7 @@ contains
       rk=real(k-1,kind=dp)+ak
     end if
     
-    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
+!!DEBUG    if(local_) write(6,'(3(a,f8.1))') 'ri=',ri,' rj=',rj,' rk=',rk
     deallocate( lnps )
     return
   end subroutine phys2ijk

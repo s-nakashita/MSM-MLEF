@@ -58,7 +58,12 @@ program lmlef
 !
 ! initial setting
 !
-  call file_member_replace(0,gues_in_basename,guesf)
+  if(.not.mean) then
+    im=0
+  else
+    im=1
+  end if
+  call file_member_replace(im,gues_in_basename,guesf)
   call set_rsmparm(guesf)
   call set_corsm
   call init_das_lmlef
@@ -129,8 +134,8 @@ program lmlef
   !
   if(obsda_in) then
     ! get the number of externally processed observations
-    im = myimage
-    ![ToDo] apply to nimages > member
+    ! assuming all member have the same number of observations
+    im = mod(myimage,member)
     call file_member_replace(im,obsda_in_basename,obsf)
     write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',obsf
     call get_nobs(obsf,9,nobs_ext)
@@ -144,6 +149,7 @@ program lmlef
   else
     call obsope_parallel(obs,obsda)
   end if
+  sync all
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer

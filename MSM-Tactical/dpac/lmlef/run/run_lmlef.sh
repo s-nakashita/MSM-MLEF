@@ -3,7 +3,11 @@ set -e
 ## experiment parameters
 ires=27
 single=F
-NODE=5
+nisep=5
+njsep=4
+ighost=1
+jghost=1
+NODE=`expr $nisep \* $njsep`
 member=10
 adate=2022061812
 fhour=0
@@ -132,10 +136,10 @@ cat <<EOF >lmlef.nml
  slot_tint=,
 &end
 &param_corsm
- njsep=${NODE},
- nisep=1,
- jghost=1,
- ighost=0,
+ njsep=${njsep},
+ nisep=${nisep},
+ jghost=${jghost},
+ ighost=${ighost},
 &end
 &param_lmlef
  obsda_in=${obsda_in},
@@ -183,7 +187,8 @@ done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
 ## start calculation
-mpiexec -n $NODE ./lmlef 2>${logf}.err | tee ${logf}.err || exit 11
+rm -f ${obsoutf}.*.dat ${anloutf}.*.grd
+mpiexec -n $NODE ./lmlef 2>&1 1>${logf}.err | tee ${logf}.err || exit 11
 if [ -f NOUT-001 ];then
 mv NOUT-001 ${logf}_n${NODE}.txt
 fi

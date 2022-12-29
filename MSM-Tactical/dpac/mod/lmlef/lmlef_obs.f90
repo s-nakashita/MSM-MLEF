@@ -53,10 +53,11 @@ subroutine set_lmlef_obs
   real(kind=dp),allocatable :: wk2d(:,:)
   integer,allocatable :: iwk2d(:,:)
   real(kind=dp),allocatable :: tmphdxf(:,:)[:]
-!  real(kind=dp),allocatable :: tmphxf(:,:)[:]
+  real(kind=dp),allocatable :: tmpdata(:,:)[:]
   integer,allocatable :: tmpqc0(:,:)[:]
   integer,allocatable :: nobslots(:)[:]
   integer,allocatable :: tmpimg(:)[:]
+  integer,allocatable :: tmpelm(:)[:]
   integer :: is,ie,js,je
   integer :: n,i,j,ierr,islot,nn,l,im
   integer, allocatable :: nj(:)
@@ -108,6 +109,11 @@ subroutine set_lmlef_obs
       allocate( tmphdxf(obsda_ext%nobs,0:member)[*] )
       allocate( tmpqc0(obsda_ext%nobs,0:member)[*] )
     end if
+    if(nimages>member) then
+      allocate( tmpelm(obsda_ext%nobs)[*] ) !elem
+      allocate( tmpdata(obsda_ext%nobs,6)[*] ) !lon,lat,lev,dat,dmin,err
+    end if
+    tmphdxf=0.0d0
     tmpqc0 = 0
     nn=0
     l=0
@@ -135,11 +141,30 @@ subroutine set_lmlef_obs
         obsda%dat(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%dat(:)
         obsda%dmin(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%dmin(:)
         obsda%err(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%err(:)
+        if(nimages>member) then
+          tmpelm(:)=obsda_ext%elem(:)
+          tmpdata(:,1)=obsda_ext%lon(:)
+          tmpdata(:,2)=obsda_ext%lat(:)
+          tmpdata(:,3)=obsda_ext%lev(:)
+          tmpdata(:,4)=obsda_ext%dat(:)
+          tmpdata(:,5)=obsda_ext%dmin(:)
+          tmpdata(:,6)=obsda_ext%err(:)
+        end if
       end if
       l = l+1
       nn=nn+1
     end do
     sync all
+    if(myimage>member) then !copy observation information
+      obsda%elem(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpelm(:)[mod(myimage,member)]
+      obsda%lon(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,1)[mod(myimage,member)]
+      obsda%lat(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,2)[mod(myimage,member)]
+      obsda%lev(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,3)[mod(myimage,member)]
+      obsda%dat(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,4)[mod(myimage,member)]
+      obsda%dmin(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,5)[mod(myimage,member)]
+      obsda%err(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,6)[mod(myimage,member)]
+    end if
+    if(nimages>member) deallocate( tmpelm,tmpdata )
   !
   ! broadcast
   !

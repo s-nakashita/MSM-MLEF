@@ -106,8 +106,10 @@ contains
   subroutine set_domain
     implicit none
     integer :: i,j,m,n
+    character(2) :: cn
 
     allocate( nidom(nimages),njdom(nimages),imgdom(nisep,njsep) )
+    write(cn,'(i2)') nisep
     m=1
     do j=1,njsep
       do i=1,nisep
@@ -116,9 +118,11 @@ contains
         njdom(m) = j
         m=m+1
       end do
+      write(6,'(a,i2,a,'//trim(cn)//'i2)') 'imgdom(:,',j,')=',imgdom(:,j)
     end do
-    write(6,*) 'nidom=',nidom
-    write(6,*) 'njdom=',njdom
+    write(cn,'(i2)') nimages
+    write(6,'(a,'//trim(cn)//'i2)') 'nidom=',nidom
+    write(6,'(a,'//trim(cn)//'i2)') 'njdom=',njdom
 
     allocate( ni1node(nimages) )
     i = mod(nlon,nisep)
@@ -252,6 +256,7 @@ contains
           v2d(:,:,  im,:) = work2d
         end if
       end do
+      sync all
     end do
     deallocate( v3dg,v2dg )
     deallocate( work3d,work2d )
@@ -283,6 +288,7 @@ contains
           call gather_grd(n,work3d,work2d,v3dg,v2dg)
         end if
       end do
+      sync all
 
       im = myimage + (l-1)*nimages
       if(im.le.member) then
@@ -480,7 +486,7 @@ contains
       do ii=2,njdom(m)
         nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
       end do
-!!DEBUG      print *, 'image ',m,' nslon ',nslon,' nslat ',nslat
+!!DEBUG      print '(3(a,i4))','grd_to_buf image ',m,' nslon ',nslon,' nslat ',nslat
       do j=1-jghost,nj1node(m)+jghost
         ilat=j+nslat
         if(ilat.lt.1) cycle
@@ -515,7 +521,7 @@ contains
       do ii=2,njdom(m)
         nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
       end do
-!!DEBUG      print *, 'image ',m,' nslon ',nslon,' nslat ',nslat
+!!DEBUG      print '(3(a,i4))', 'buf_to_grd image ',m,' nslon ',nslon,' nslat ',nslat
       do j=1,nj1node(m)
         ilat=j+nslat
 !        if(ilat.lt.1) cycle

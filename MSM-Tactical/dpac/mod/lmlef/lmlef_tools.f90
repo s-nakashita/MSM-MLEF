@@ -189,7 +189,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     call ensmean_grd(member,ni1+2*ighost,nj1+2*jghost,&
             gues3d(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:,:,:),&
             gues2d(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:,:),&
-            gues3dc,gues2dc)
+            gues3dc(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:,:),&
+            gues2dc(1-ighost:ni1+ighost,1-jghost:nj1+jghost,:))
 !    do n=1,nv3d
 !      do k=1,nlev
 !        do j=1,nj1
@@ -372,7 +373,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end if
       end do
     end do
-    ngrd=nj1*nj1*nlev
+    ngrd=ni1*nj1*nlev
     ne=member*ngrd
     call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(work3d(1:ni1,1:nj1,:,1),(/ngrd/)),fglb)
     sync all

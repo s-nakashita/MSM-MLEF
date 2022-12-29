@@ -2,7 +2,7 @@
 export GLOBAL=GFS
 export IDATE=2022082900
 export BV_H=6
-export TETYPE=weak
+export TETYPE=dry
 export SCL=
 export QADJ=yes
 #export GLOBAL=GFS
