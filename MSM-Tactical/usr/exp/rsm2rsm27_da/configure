@@ -1,0 +1,183 @@
+#!/bin/ksh
+# check all config term and comment in utl/rsm_default.option
+
+# --------------- directory ------------------
+export USERID=` whoami `
+export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+export WORKUSR=$DISK/usr/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+else
+#   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+   export TEMP=$WORKUSR/$EXPN          #output top directory
+fi
+export GLOBAL=${GLOBAL:-GFS}
+export RUNDIR0=$TEMP
+export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
+#export BASEDIR0=$WORKUSR/DATA/gefs
+if [ $GLOBAL = GFS ];then #deterministic
+  export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad
+  export BASEDIR1=$WORKUSR/gfsp2rsm27_rda
+#  export BASEDIR0=$WORKUSR/DATA/gfs
+#  export BASEDIR1=$WORKUSR/DATA/gfs/rda
+fi #deterministic
+export IRES=27
+
+# --------------- compile options ----------------
+# machine dependent
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
+# linux_pgi, linux_intel, linux_gfortran
+export MACHINE=freebsd_gfortran
+export IBMSP=no 
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# massively parallel procesing options
+export MARCH=mpi
+export LAMMPI=no
+export MPICH=yes
+export KINDMPI=4
+export NCOL=6
+export NROW=4
+export NODES=32   
+export MP=yes
+export THREAD=no 
+
+# model parameter
+
+# compile model option
+export NEST=C2R   # G2R C2R P2R N2R
+export NONHYD=no
+export RAS=no
+export SAS=yes
+export NCLDB=1
+export NCLD=1
+export GTOPO30=yes
+export CHGTLEV=no 
+export SLRFIX=yes 
+export BGF=1                    # CDELX ~= BGF * RDELX
+export MBC=yes 
+export LBC=no 
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=yes
+
+# --------------- run option --------------------
+export CYCLESTART=1
+export CYCLEMAX=10
+export DASTART=5
+export ENDHOUR=6 # cycle interval
+export PRTHOUR=1
+export INCBASE=3
+export INCHOUR=3
+export TIMESTEP=120
+export IMDLPHY=1
+export NEWMTN=.FALSE.
+export CLIM=0
+export RSFC_MERGE=yes
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNFCST=yes
+
+# Ensemble size
+export MEMBER=10
+# BGM option
+export TETYPE=dry
+export SCL=
+export QADJ=yes
+head=bv${TETYPE}${SCL}${BP}
+#if [ do$QADJ = doyes ];then #q adjustment
+#  head=${head}_qadj
+#fi #q adjustment
+export HEAD=$head
+# DA option
+export SINGLEOBS=F
+export NISEP=2
+export NJSEP=5
+export IGHOST=1
+export JGHOST=1
+export LOBSMIN=-60
+export ROBSMIN=60
+export SELOBS=all
+export PREP=_preprh
+export DA_MEAN=F
+export DA_TL=F
+export DA_SCL_MEM=T
+export MAXITER=5
+export HLOC=300 #km
+export VLOC=4   #*0.1ln p
+export MINFL=10 #%
+head2=da${PREP}
+if [ $SINGLEOBS = T ];then
+  head2=${head2}.single
+fi
+if [ ${SELOBS} != all ];then
+  head2=${head2}.${SELOBS}
+fi
+head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.mi${MINFL}.
+export HEAD2=$head2
+
+#### rsmlocation
+
+# d01 domain 70E-170W 22S-65N
+export  IGRD=324
+export  JGRD=288
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=120.0
+export  RDELX=27000.
+export  RDELY=27000.
+export  RCENLAT=23.5
+export  RCENLON=120.0
+export  RLFTGRD=133.
+export  RBTMGRD=121.
+# test dimension and shift
+#export  IGRD=128                             # release_test
+#export  JGRD=108                             # release_test
+#export  RLFTGRD=57.                          # release_test
+#export  RBTMGRD=63.                          # release_test
+
+## base field from running RSM 
+export  CIGRD=384 
+export  CJGRD=324
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=120.0
+export  CDELX=27000.
+export  CDELY=27000.
+export  CCENLAT=23.5
+export  CCENLON=120.0
+export  CLFTGRD=163.
+export  CBTMGRD=139.
+## ---- get data from NCEP operational NOMAD with selected domain ----
+#export  DTOOL=curl         # wget or curl
+#export  CPROJ=4.           # equal latitude longitude
+#export  CLAT1=-25 
+#export  CLAT2=70
+#export  CLON1=60 
+#export  CLON2=200
+#export  LEVS=47
+#export  LEVS=33            # modified
+#export  PGBRES=0.25        # 0.50 or 0.25
+#export  INCBASE=3        # 3 or 6 hours
+#export  INCHOUR=$INCBASE
+#export  CIGRD=$(echo "($CLON2-($CLON1))/$PGBRES" | bc)
+#export  CJGRD=$(echo "($CLAT2-($CLAT1))/$PGBRES" | bc)
+
+#
+# load default configure file
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+

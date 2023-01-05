@@ -11,10 +11,11 @@ program lmlef
   use kind_module
   use co_module
   use nml_module
+  use func_module, only: ndate
   use rsmcom_module
   use corsm_module
   use obs_module, only: get_nobs, read_obs, write_obsout, monit_obsin, &
-          obsin_allocate, ndate
+          obsin_allocate
   use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy
@@ -105,10 +106,10 @@ program lmlef
   allocate(gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
   allocate(anal3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*])
   allocate(anal2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
-  allocate(gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
-  allocate(gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
-  allocate(anal3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
-  allocate(anal2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
+  allocate(gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+  allocate(gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
+  allocate(anal3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+  allocate(anal2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
   sync all
 !
   call cpu_time(rtimer)

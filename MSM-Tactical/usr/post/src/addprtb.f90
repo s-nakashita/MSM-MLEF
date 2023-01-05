@@ -7,7 +7,7 @@ program addprtb
   use read_module
   use write_module, only: write_sig, write_sfc
   use norm_module, only: calc_te
-  use func_module, only: calc_rh, calc_q2 !=> calc_q
+  use func_module, only: ndate, calc_rh, calc_q2 !=> calc_q
   implicit none
   ! for energy calculation
   integer, parameter :: kmax=21
@@ -53,6 +53,9 @@ program addprtb
   real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
   integer :: igrd1, jgrd1, levs, nonhyd, icld
+  ! for ndate
+  integer :: date1(5),date2(5),dtmin
+  !
   integer :: n,i,j,k,l
 
   read(5,namlst_prtb)
@@ -295,11 +298,17 @@ program addprtb
   call read_header(nisigb,icld,label,idate,fhour,si,sl,ext,nfldsig)
   allocate( dfld(igrd1,jgrd1,nfldsig) )
   !! reset forecast hour
-  idate(1)=idate(1)+nint(fhour)
-  if(idate(1).ge.24) then
-    idate(1)=idate(1)-24
-    idate(3)=idate(3)+1
-  end if
+  dtmin=nint(fhour)*60
+  date1(1)=idate(4)
+  date1(2)=idate(2)
+  date1(3)=idate(3)
+  date1(4)=idate(1)
+  date1(5)=0
+  call ndate(date1,dtmin,date2)
+  idate(4)=date2(1)
+  idate(2)=date2(2)
+  idate(3)=date2(3)
+  idate(1)=date2(4)
   fhour=0.0
   print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
   !! add perturbations

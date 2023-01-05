@@ -1,8 +1,8 @@
 FC=gfortran10
 LD=$(FC)
 FFLAGS=-O2 -fconvert=big-endian
-LDFLAGS=
-LIBS=
+LDFLAGS=-L${PWD}/../../sys/lib
+LIBS=-lw3_4
 
 PARENT=${PWD}
 MODDIR=${PWD}/../../dpac/mod/common
@@ -65,6 +65,9 @@ rsmcom_module.o:	$(MODDIR)/rsmcom_module.f90
 	$(FC) $(FFLAGS) -c $^
 
 norm_module.o:	$(MODDIR)/norm_module.f90
+	$(FC) $(FFLAGS) -c $^
+
+obs_module.o:	$(MODDIR)/obs_module.f90
 	$(FC) $(FFLAGS) -c $^
 
 ensmspr.o:	$(PARENT)/src/ensmspr.f90

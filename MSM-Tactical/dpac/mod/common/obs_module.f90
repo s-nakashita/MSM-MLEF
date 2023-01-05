@@ -6,6 +6,7 @@ module obs_module
 ! 22-10-06 create
 !
   use kind_module
+  use func_module, only: ndate, nhour
   implicit none
   private
 !
@@ -114,7 +115,7 @@ module obs_module
    &  opendcdf, get_nobs_upper, read_upper, &
    &  obsin_allocate, obsin_deallocate, obsout_allocate, obsout_deallocate, &
    &  get_nobs, read_obs, write_obs, read_obsout, write_obsout, &
-   &  obs_preproc, monit_obsin, ndate, nhour
+   &  obs_preproc, monit_obsin
 contains
 !
 ! convert obsID to sequential number
@@ -907,7 +908,11 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
+      case(id_rh_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
+        wk(5)=wk(5)*100.0 !nondimensional -> %
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -943,9 +948,13 @@ contains
       wk(6)=real(obs%dmin(n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(5) = wk(5) * 0.01 !Pa->hPa
+        wk(4)=wk(4)*0.01 !Pa->hPa
+        wk(5)=wk(5)*0.01 !Pa->hPa
+      case(id_rh_obs)
+        wk(4)=wk(4)*0.01 !Pa->hPa
+        wk(5)=wk(5)*0.01 !%->nondimensional
       case default
-        wk(4) = wk(4) * 0.01 !Pa->hPa
+        wk(4)=wk(4)*0.01 !Pa->hPa
       end select
       if(debug) print *, wk
       write(iunit) wk
@@ -969,9 +978,15 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
         wk(6)=wk(6)*100.0 !hPa -> Pa
         wk(8)=wk(8)*100.0 !hPa -> Pa
+      case(id_rh_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
+        wk(5)=wk(5)*100.0 !nondimensional -> %
+        wk(6)=wk(6)*100.0 !nondimensional -> %
+        wk(8)=wk(8)*100.0 !nondimensional -> %
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -1022,9 +1037,15 @@ contains
       wk(9)=real(obs%qc  (n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4) = wk(4) * 0.01 !Pa->hPa
         wk(5) = wk(5) * 0.01 !Pa->hPa
         wk(6) = wk(6) * 0.01 !Pa->hPa
         wk(8) = wk(8) * 0.01 !Pa->hPa
+      case(id_rh_obs)
+        wk(4) = wk(4) * 0.01 !Pa->hPa
+        wk(5) = wk(5) * 0.01 !%->nondimensional
+        wk(6) = wk(6) * 0.01 !%->nondimensional
+        wk(8) = wk(8) * 0.01 !%->nondimensional
       case default
         wk(4) = wk(4) * 0.01 !Pa->hPa
       end select
@@ -1102,63 +1123,6 @@ contains
     write(6,'(a,'//trim(nstr)//'a)') '======',tmpstr(1:n)
     return
   end subroutine monit_obsin
-!
-! calculate date before or after several minutes
-! [note] use library w3_4 in sys/lib
-!
-  subroutine ndate(date0,dt,date1)
-    implicit none
-    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
-    integer, intent(in)  :: dt    !minutes
-    integer, intent(out) :: date1(5) !year,month,day,hour,minutes 
-    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
-    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
-
-!    print *, date0
-    idat = 0
-    idat(1:3) = date0(1:3)
-    idat(5:6) = date0(4:5)
-!    print *, idat
-    rinc = 0.0
-    rinc(3) = real(dt,kind=sp)
-!    print *, rinc
-
-    call w3movdat(rinc,idat,jdat)
-!    print *, jdat
-    date1(1:3)=jdat(1:3)
-    date1(4:5)=jdat(5:6)
-
-    return
-  end subroutine ndate
-!
-! calculate minutes between two dates
-! [note] use library w3_4 in sys/lib
-!
-  subroutine nhour(date0,date1,dt)
-    implicit none
-    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
-    integer, intent(in)  :: date1(5) !year,month,day,hour,minutes 
-    integer, intent(out) :: dt    !minutes (date1 - date0)
-    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
-    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
-
-!    print *, date0
-    idat = 0
-    idat(1:3) = date0(1:3)
-    idat(5:6) = date0(4:5)
-!    print *, idat
-!    print *, date1
-    jdat = 0
-    jdat(1:3) = date1(1:3)
-    jdat(5:6) = date1(4:5)
-!    print *, jdat
-
-    call w3difdat(jdat,idat,3,rinc)
-!    print *, rinc
-    dt = nint(rinc(3))
-
-    return
-  end subroutine nhour
 !!
 !! don't work
 !!

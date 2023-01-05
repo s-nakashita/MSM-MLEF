@@ -24,15 +24,15 @@ contains
     implicit none
     type(obstype), intent(in) :: obsin(obsin_num)
     type(obstype2), intent(inout):: obsout
-    real(kind=dp), intent(in) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*]
-    real(kind=dp), intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*]
-    real(kind=dp), intent(in) :: gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nlev,nv3d)[*]
-    real(kind=dp), intent(in) :: gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,     nv2d)[*]
+    real(kind=dp), intent(in) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
+    real(kind=dp), intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
+    real(kind=dp), intent(in) :: gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)
+    real(kind=dp), intent(in) :: gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)
     integer :: nobsin,nobsout
     integer :: iof
     character(len=filelenmax) :: guesf, outf
-    real(kind=dp), allocatable :: v3d(:,:,:,:)[:]
-    real(kind=dp), allocatable :: v2d(:,:,  :)[:]
+    real(kind=dp), allocatable :: v3d(:,:,:,:)
+    real(kind=dp), allocatable :: v2d(:,:,  :)
     real(kind=dp), allocatable :: p_full(:,:,:)
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn, img
@@ -53,8 +53,8 @@ contains
       return
     end if
    
-    allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
-    allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*] )
+    allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
+    allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
     allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
     if(.not.mean) then
       im=0
@@ -80,6 +80,10 @@ contains
         v3d=gues3dc
         v2d=gues2dc
       end if
+      write(6,'(a,i4,a,2f10.2)')&
+              'member ',im,' v3d(iv3d_t)= ',maxval(v3d(1:ni1,1:nj1,:,iv3d_t)),minval(v3d(1:ni1,1:nj1,:,iv3d_t))
+      write(6,'(a,i4,a,2f10.2)')&
+              'member ',im,' v2d(iv2d_ps)=',maxval(v2d(1:ni1,1:nj1,iv2d_ps)),minval(v2d(1:ni1,1:nj1,iv2d_ps))
       if(nonhyd.eq.1) then !non-hydrostatic
         p_full = v3d(:,:,:,iv3d_pp)
       else
