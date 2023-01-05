@@ -266,7 +266,7 @@ contains
     write(day, '(i2.2)') idy
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
-    if(fhour .gt. 0.0) then
+    if(icld==1.and.fhour > 0.0) then
     write(nctl,'(a)') 'vars 15'
     else
     write(nctl,'(a)') 'vars 12'

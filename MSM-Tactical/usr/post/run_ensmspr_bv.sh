@@ -11,11 +11,12 @@ fi
 SDATE=${1}
 IRES=${2}
 #export SDATE IRES
-EDATE=${3:-$SDATE}
 MEM=000
-BV_H=${4:-6}
-TETYPE=${5}
+BV_H=${3:-6}
+TETYPE=${4}
+QADJ=${5:-no}
 BP=${6}
+EDATE=${7:-$SDATE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 SDATE0=2022082900
@@ -65,6 +66,9 @@ if [ $BV_H -eq 6 ]; then
 header=bv${TETYPE}
 else
 header=bv${TETYPE}${BV_H}h
+fi
+if [ do$QADJ = doyes ]; then
+SUF=_qadj${SUF}
 fi
 rm -rf $DATADIR/${header}mean${BP}${SUF}
 mkdir -p $DATADIR/${header}mean${BP}${SUF}

@@ -2,8 +2,8 @@
 export IDATE=2022082900
 export GLOBAL=GFS
 export BV_H=6
-export TETYPE=dry
-export QADJ=yes
+export TETYPE=weak
+export QADJ=no
 #export IDATE=2022061400
 #export GLOBAL=GFS
 #export BV_H=12

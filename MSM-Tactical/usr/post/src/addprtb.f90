@@ -313,7 +313,7 @@ program addprtb
 !        cw1 = dfld(i,j,icw+k-1)
         p1 = dfld(i,j,ips)*sl(k)
         if(q1.lt.0.0_dp) then !super dry
-          print '(a,f10.2,a,es10.2,a)', &
+          write(0,'(a,f10.2,a,es10.2,a)') &
                   'super dry adjustment: p=',p1,' q=',q1,' < 0.0'
           dfld(i,j,iq+k-1)=0.0_dp
         else if(p1.gt.20000.0_dp.and.(t1.gt.tllim.and.t1.lt.tulim)) then
@@ -321,7 +321,7 @@ program addprtb
           rh1=1.2_dp
           call calc_q2(t1,rh1,p1,qlim)
           if(q1.gt.qlim) then !super saturation
-          print '(a,f10.2,x,f10.2,a,f10.2,a,f10.2,x,a,es10.2,a,es10.2)',&
+          write(0,'(a,f10.2,x,f10.2,a,f10.2,a,f10.2,x,a,es10.2,a,es10.2)') &
                   'super saturation adjustment: p=',p1,&
                   tllim,' < t=',t1,' < ',tulim,&
                   ' q=',q1,' > ',qlim
@@ -336,7 +336,7 @@ program addprtb
     end do
   end do
   end if
-  call write_sig(nosigp,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+  call write_sig(nosigp,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
 !  !! subtract perturbations
 !  dfld = dfldb - dfldp * alpha
@@ -369,7 +369,7 @@ program addprtb
 !    end do
 !  end do
 !  end if
-!  call write_sig(nosigm,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+!  call write_sig(nosigm,label,idate,fhour,si,sl,ext,&
 !&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
 !!  ! intermediate field
 !!  icld=0
@@ -400,7 +400,7 @@ program addprtb
 !!  end if
 !!  fhour=0.0
 !!  print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
-!!  call write_sig(nosigi,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+!!  call write_sig(nosigi,label,idate,fhour,si,sl,ext,&
 !!&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldb,mapf,clat,clon)
   deallocate( dfld,dfldb,dfldp,u,v,t,q,ps,fact ) 
   ! read surface and change forecast date and hour, then write out

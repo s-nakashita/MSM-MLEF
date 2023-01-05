@@ -14,7 +14,7 @@ program lmlef
   use rsmcom_module
   use corsm_module
   use obs_module, only: get_nobs, read_obs, write_obsout, monit_obsin, &
-          obsin_allocate
+          obsin_allocate, ndate
   use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy
@@ -32,6 +32,8 @@ program lmlef
   real(kind=dp),allocatable :: anal3d(:,:,:,:,:)[:] !ensemble
   real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
   real(kind=dp) :: rtimer00,rtimer
+  integer,dimension(5) :: fdate,adate !year,month,day,hour,minutes
+  integer :: dtmin !minutes
   integer :: im,iof,ierr
   character(8) :: stdoutf='NOUT-000'
   character(filelenmax) :: guesf,analf,obsf
@@ -99,20 +101,44 @@ program lmlef
   write(6,'(A,F15.2)') '   sigma_obst :',sigma_obst
   write(6,'(A)') '============================================='
 
-  allocate(gues3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
-  allocate(gues2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
-  allocate(anal3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
-  allocate(anal2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
-  allocate(gues3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
-  allocate(gues2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
-  allocate(anal3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
-  allocate(anal2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
+  allocate(gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*])
+  allocate(gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
+  allocate(anal3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*])
+  allocate(anal2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
+  allocate(gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+  allocate(gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
+  allocate(anal3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+  allocate(anal2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
   sync all
 !
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
   sync all
+!-----------------------------------------------------------------------
+! First guess ensemble
+!-----------------------------------------------------------------------
+  !
+  ! READ GUES
+  !
+  if(.not.mean) THEN
+    call file_member_replace(0,gues_in_basename,guesf)
+    call read_cntl(guesf,gues3dc,gues2dc)
+    sync all
+  else
+    gues3dc = 0.0d0
+    gues2dc = 0.0d0
+  end if
+  call read_ens(gues_in_basename,gues3d,gues2d)
+  !
+  ! write ENS MEAN and SPRD
+  !
+  call write_ensmspr(gues_in_basename,gues3d,gues2d)
+  sync all
+!
+  call cpu_time(rtimer)
+  write(6,'(A,2F10.2)') '### TIMER(READ_GUES):',rtimer,rtimer-rtimer00
+  rtimer00=rtimer
 !-----------------------------------------------------------------------
 ! Observations
 !-----------------------------------------------------------------------
@@ -147,7 +173,7 @@ program lmlef
   if(single_obs) then !single observation option is valid only for serial operator
     call obsope_serial(obs,obsda)
   else
-    call obsope_parallel(obs,obsda)
+    call obsope_parallel(obs,obsda,gues3dc,gues2dc,gues3d,gues2d)
   end if
   sync all
   call cpu_time(rtimer)
@@ -160,31 +186,6 @@ program lmlef
 !
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(SET_OBS):',rtimer,rtimer-rtimer00
-  rtimer00=rtimer
-!-----------------------------------------------------------------------
-! First guess ensemble
-!-----------------------------------------------------------------------
-  !
-  ! READ GUES
-  !
-  sync all
-  if(.not.mean) THEN
-    call file_member_replace(0,gues_in_basename,guesf)
-    call read_cntl(guesf,gues3dc,gues2dc)
-    sync all
-  else
-    gues3dc = 0.0d0
-    gues2dc = 0.0d0
-  end if
-  call read_ens(gues_in_basename,gues3d,gues2d)
-  !
-  ! write ENS MEAN and SPRD
-  !
-  call write_ensmspr(gues_in_basename,gues3d,gues2d)
-  sync all
-!
-  call cpu_time(rtimer)
-  write(6,'(A,2F10.2)') '### TIMER(READ_GUES):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 !-----------------------------------------------------------------------
 ! Data Assimilation
@@ -205,6 +206,21 @@ program lmlef
 !-----------------------------------------------------------------------
 ! Analysis ensemble
 !-----------------------------------------------------------------------
+  !
+  ! modify posting date
+  !
+  dtmin=int(fhour)*60
+  fdate(1)=idate(4)
+  fdate(2)=idate(2)
+  fdate(3)=idate(3)
+  fdate(4)=idate(1)
+  fdate(5)=0
+  call ndate(fdate,dtmin,adate)
+  idate(4)=adate(1)
+  idate(2)=adate(2)
+  idate(3)=adate(3)
+  idate(1)=adate(4)
+  fhour=0.0
   !
   ! write analysis
   !

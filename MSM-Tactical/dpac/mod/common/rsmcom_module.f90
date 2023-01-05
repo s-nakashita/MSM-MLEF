@@ -88,7 +88,7 @@ module rsmcom_module
     integer :: nsig
     integer :: nskip
     real(kind=sp) :: ext(nwext)
-    real(kind=dp) :: sisl(2*levmax+1)
+    real(kind=dp) :: si(levmax+1),sl(levmax)
     real(kind=sp),allocatable :: sfld(:)
     integer :: iwav, jwav
     integer :: i,j,k
@@ -99,7 +99,7 @@ module rsmcom_module
     call search_fileunit(nsig)
     write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
     open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
-    call read_header(nsig,icld,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
+    call read_header(nsig,icld,label,idate,fhour,si,sl,ext,nflds)
     iwav1  = int(ext(1))
     jwav1  = int(ext(2))
     igrd1  = int(ext(3))
@@ -128,10 +128,10 @@ module rsmcom_module
     allocate( sig(nlev), sigh(nlev+1) )
     allocate( mapf(lngrd,3) )
     do i=1,nlev
-      sig(i) = real(sisl(levmax+1+i),kind=dp)
-      sigh(i) = real(sisl(i),kind=dp)
+      sig(i) = sl(i)
+      sigh(i) = si(i)
     end do
-    sigh(nlev+1) = real(sisl(nlev+1),kind=dp)
+    sigh(nlev+1) = si(nlev+1)
     write(6,'(a,f7.5,x,f7.5)') 'sig=',minval(sig),maxval(sig)
     write(6,'(a,f7.5,x,f7.5)') 'sigh=',minval(sigh),maxval(sigh)
 
@@ -329,10 +329,15 @@ module rsmcom_module
 
     integer :: nsig
     real(kind=dp), allocatable :: dfld(:,:,:)
+    real(kind=dp) :: si(levmax+1),sl(levmax)
     real(kind=sp) :: ext(nwext)
     integer :: k,kk
 
     allocate( dfld(igrd1,jgrd1,nflds) )
+    si=0.0
+    sl=0.0
+    si(1:nlev+1) = sigh
+    sl(1:nlev) = sig
     ext(1) = real(iwav1,kind=sp)
     ext(2) = real(jwav1,kind=sp)
     ext(3) = real(igrd1,kind=sp)
@@ -398,7 +403,7 @@ module rsmcom_module
     call search_fileunit(nsig)
     write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
     open(nsig,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
-    call write_sig(nsig,label,idate,fhour,sig,sigh,ext,&
+    call write_sig(nsig,label,idate,fhour,si,sl,ext,&
      &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon)
     close(nsig)
 

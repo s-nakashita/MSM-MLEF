@@ -16,6 +16,10 @@ program obsope
   type(obstype), allocatable :: obs(:)
   type(obstype2) :: obsout
   character(len=filelenmax) :: guesf
+  real(kind=dp),allocatable :: gues3dc(:,:,:,:)[:]  !control
+  real(kind=dp),allocatable :: gues2dc(:,:,:)[:]    !control
+  real(kind=dp),allocatable :: gues3d(:,:,:,:,:)[:] !ensemble
+  real(kind=dp),allocatable :: gues2d(:,:,:,:)[:]   !ensemble
 ! monitor
   real(kind=dp), allocatable :: dep(:)
   integer :: nobs(nobstype)
@@ -49,6 +53,23 @@ program obsope
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 
+  allocate(gues3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
+  allocate(gues2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
+  allocate(gues3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
+  allocate(gues2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
+! read first guess
+  if(.not.mean) THEN
+    call file_member_replace(0,gues_in_basename,guesf)
+    call read_cntl(guesf,gues3dc,gues2dc)
+    sync all
+  else
+    gues3dc = 0.0d0
+    gues2dc = 0.0d0
+  end if
+  call read_ens(gues_in_basename,gues3d,gues2d)
+  call cpu_time(rtimer)
+  write(6,'(A,2F10.2)') '### TIMER(READ_GUES):',rtimer,rtimer-rtimer00
+  rtimer00=rtimer
 ! read observation
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
@@ -63,7 +84,7 @@ program obsope
   rtimer00=rtimer
 
 ! observation operator
-  call obsope_parallel(obs,obsout)
+  call obsope_parallel(obs,obsout,gues3dc,gues2dc,gues3d,gues2d)
 !  write(6,'(a,i8)') 'obsope #',obsout%nobs
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00

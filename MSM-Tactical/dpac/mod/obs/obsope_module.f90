@@ -20,17 +20,19 @@ contains
 !
 ! (parallel) main routine for observation operator
 !
-  subroutine obsope_parallel(obsin,obsout)
+  subroutine obsope_parallel(obsin,obsout,gues3dc,gues2dc,gues3d,gues2d)
     implicit none
     type(obstype), intent(in) :: obsin(obsin_num)
     type(obstype2), intent(inout):: obsout
+    real(kind=dp), intent(in) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*]
+    real(kind=dp), intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*]
+    real(kind=dp), intent(in) :: gues3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nlev,nv3d)[*]
+    real(kind=dp), intent(in) :: gues2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,     nv2d)[*]
     integer :: nobsin,nobsout
     integer :: iof
     character(len=filelenmax) :: guesf, outf
-    real(kind=dp), allocatable :: v3dc(:,:,:,:)[:]
-    real(kind=dp), allocatable :: v2dc(:,:,  :)[:]
-    real(kind=dp), allocatable :: v3d(:,:,:,:,:)[:]
-    real(kind=dp), allocatable :: v2d(:,:,  :,:)[:]
+    real(kind=dp), allocatable :: v3d(:,:,:,:)[:]
+    real(kind=dp), allocatable :: v2d(:,:,  :)[:]
     real(kind=dp), allocatable :: p_full(:,:,:)
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn, img
@@ -51,19 +53,14 @@ contains
       return
     end if
    
-    allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*] )
-    allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*] )
+    allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
+    allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*] )
     allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
     if(.not.mean) then
       im=0
-      allocate( v3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
-      allocate( v2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*] )
-      call file_member_replace(im,fguess_basename,guesf)
-      call read_cntl(guesf,v3dc,v2dc)
     else
       im=1
     end if
-    call read_ens(fguess_basename,v3d,v2d)
     allocate( iwk2d(im:member,nobsin)[*] )
     allocate( wk2d(im:member,nobsin)[*] )
     iwk2d=0
@@ -77,13 +74,16 @@ contains
     do while(im<=member)
       nobsout=0
       if(im.gt.0) then
-        v3dc=v3d(:,:,:,im,:)
-        v2dc=v2d(:,:,  im,:)
+        v3d=gues3d(:,:,:,im,:)
+        v2d=gues2d(:,:,  im,:)
+      else
+        v3d=gues3dc
+        v2d=gues2dc
       end if
       if(nonhyd.eq.1) then !non-hydrostatic
-        p_full = v3dc(:,:,:,iv3d_pp)
+        p_full = v3d(:,:,:,iv3d_pp)
       else
-        call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2dc(:,:,iv2d_ps),p_full)
+        call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2d(:,:,iv2d_ps),p_full)
       end if
       write(6,'(a,i4,a,2f10.2)') 'member ',im,' p_full=',maxval(p_full(1:ni1,1:nj1,:)),minval(p_full(1:ni1,1:nj1,:))
       lonb=undef
@@ -124,7 +124,7 @@ contains
               obsout%qc(nobsout)=iqc_otype
             else
               call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
-               &  v3dc,v2dc,p_full,wk2d(im,nobsout))
+               &  v3d,v2d,p_full,wk2d(im,nobsout))
 !!debug
 !              if(debug_obs) then
 !                dep = obsin(iof)%dat(n) - wk2d(im,nobsout)
@@ -220,6 +220,7 @@ contains
       sync all
       obsout%img(1:nobsout) = iwk2d(1,1:nobsout)
       if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
+      deallocate( v3d,v2d )
       deallocate( wk2d,iwk2d )
     return
   end subroutine obsope_parallel

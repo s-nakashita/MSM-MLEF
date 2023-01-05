@@ -118,11 +118,11 @@ contains
         njdom(m) = j
         m=m+1
       end do
-      write(6,'(a,i2,a,'//trim(cn)//'i2)') 'imgdom(:,',j,')=',imgdom(:,j)
+      write(6,'(a,i2,a,'//trim(cn)//'i3)') 'imgdom(:,',j,')=',imgdom(:,j)
     end do
     write(cn,'(i2)') nimages
-    write(6,'(a,'//trim(cn)//'i2)') 'nidom=',nidom
-    write(6,'(a,'//trim(cn)//'i2)') 'njdom=',njdom
+    write(6,'(a,'//trim(cn)//'i3)') 'nidom=',nidom
+    write(6,'(a,'//trim(cn)//'i3)') 'njdom=',njdom
 
     allocate( ni1node(nimages) )
     i = mod(nlon,nisep)
@@ -196,7 +196,7 @@ contains
 
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
     if(myimage.eq.1) then
-      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',filename
+      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',trim(filename)
       call read_restart(filename,v3dg,v2dg)
     end if
     sync all
@@ -218,7 +218,7 @@ contains
     sync all
 
     if(myimage.eq.1) then
-      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',filename
+      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
     return
@@ -244,7 +244,7 @@ contains
       im = myimage + (l-1)*nimages
       if(im.le.member) then
         call file_member_replace(im,basename,filename)
-        write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',filename
+        write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',trim(filename)
         call read_restart(filename,v3dg,v2dg)
       end if
 
@@ -293,7 +293,7 @@ contains
       im = myimage + (l-1)*nimages
       if(im.le.member) then
         call file_member_replace(im,basename,filename)
-        write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',filename
+        write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
         call write_restart(filename,v3dg,v2dg)
       end if
     end do
@@ -373,14 +373,14 @@ contains
     call gather_grd(1,v3dm,v2dm,v3dg,v2dg)
     if(myimage.eq.1) then
       call file_member_replace(member+1,basename,filename)
-      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',filename
+      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
     sync all
     call gather_grd(1,v3ds,v2ds,v3dg,v2dg)
     if(myimage.eq.1) then
       call file_member_replace(member+2,basename,filename)
-      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',filename
+      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
     return
