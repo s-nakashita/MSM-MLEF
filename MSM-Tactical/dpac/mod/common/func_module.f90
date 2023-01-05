@@ -10,8 +10,8 @@ module func_module
   implicit none
   private
 !
-  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, &
-   &        calc_wd, calc_uv, distll_1
+  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, calc_q2,&
+   &        calc_wd, calc_uv, distll_1, ndate, nhour
   contains
 !
 ! p_full
@@ -103,7 +103,7 @@ module func_module
 !
 ! dewpoint temperature
 !
-  subroutine calc_td(t,q,p,td)
+  subroutine calc_td(q,p,td)
     implicit none
     real(kind=dp),parameter :: a=19.48_dp
     real(kind=dp),parameter :: b=243.5_dp
@@ -115,9 +115,9 @@ module func_module
 !    real(kind=dp),parameter :: mi=9.778707_dp
 !    real(kind=dp),parameter :: tni=273.1466_dp
 
-    real(kind=dp),intent(in) :: t,q,p
+    real(kind=dp),intent(in) :: q,p
     real(kind=dp),intent(out):: td
-    real(kind=dp) :: es,fact,tc,lnes
+    real(kind=dp) :: es,lnes!,fact,tc
 
     if(q.lt.0.0_dp) then
       print *, 'humidity is less than 0, q=',q
@@ -140,7 +140,7 @@ module func_module
     return
   end subroutine calc_td
 !
-! specific humidity
+! specific humidity from dewpoint temperature
 !
   subroutine calc_q(td,p,q)
     implicit none
@@ -165,6 +165,33 @@ module func_module
 
     return
   end subroutine calc_q
+!
+! specific humidity from relative humidity
+!
+  subroutine calc_q2(t,rh,p,q)
+    implicit none
+    real(kind=dp),parameter :: e0=6.112_dp
+    real(kind=dp),parameter :: a=17.67_dp
+    real(kind=dp),parameter :: b=243.5_dp
+!    real(kind=dp),parameter :: al=6.116441_dp
+!    real(kind=dp),parameter :: ml=7.591386_dp
+!    real(kind=dp),parameter :: tnl=240.7263_dp
+!    real(kind=dp),parameter :: ai=6.114742_dp
+!    real(kind=dp),parameter :: mi=9.778707_dp
+!    real(kind=dp),parameter :: tni=273.1466_dp
+
+    real(kind=dp),intent(in) :: t,rh,p
+    real(kind=dp),intent(out):: q
+    real(kind=dp) :: e,es,eps,tc
+
+    tc = t - t0
+    es = e0*exp(a*tc/(tc+b)) !Bolton(1980)
+    e = es * rh
+    eps = rd / rv
+    q = eps*e / (p*0.01_dp - (1.0_dp - eps)*e)
+
+    return
+  end subroutine calc_q2
 !
 ! wind direction
 !
@@ -256,5 +283,62 @@ module func_module
 
     return
   end subroutine distll_1
+!
+! calculate date before or after several minutes
+! [note] use library w3_4 in sys/lib
+!
+  subroutine ndate(date0,dt,date1)
+    implicit none
+    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
+    integer, intent(in)  :: dt    !minutes
+    integer, intent(out) :: date1(5) !year,month,day,hour,minutes 
+    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
+    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
+
+!    print *, date0
+    idat = 0
+    idat(1:3) = date0(1:3)
+    idat(5:6) = date0(4:5)
+!    print *, idat
+    rinc = 0.0
+    rinc(3) = real(dt,kind=sp)
+!    print *, rinc
+
+    call w3movdat(rinc,idat,jdat)
+!    print *, jdat
+    date1(1:3)=jdat(1:3)
+    date1(4:5)=jdat(5:6)
+
+    return
+  end subroutine ndate
+!
+! calculate minutes between two dates
+! [note] use library w3_4 in sys/lib
+!
+  subroutine nhour(date0,date1,dt)
+    implicit none
+    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
+    integer, intent(in)  :: date1(5) !year,month,day,hour,minutes 
+    integer, intent(out) :: dt    !minutes (date1 - date0)
+    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
+    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
+
+!    print *, date0
+    idat = 0
+    idat(1:3) = date0(1:3)
+    idat(5:6) = date0(4:5)
+!    print *, idat
+!    print *, date1
+    jdat = 0
+    jdat(1:3) = date1(1:3)
+    jdat(5:6) = date1(4:5)
+!    print *, jdat
+
+    call w3difdat(jdat,idat,3,rinc)
+!    print *, rinc
+    dt = nint(rinc(3))
+
+    return
+  end subroutine nhour
 !
 end module func_module

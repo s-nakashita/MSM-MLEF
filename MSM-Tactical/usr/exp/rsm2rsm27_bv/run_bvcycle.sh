@@ -1,8 +1,10 @@
 #!/bin/sh
 export GLOBAL=GFS
 export IDATE=2022082900
-export BV_H=12
+export BV_H=6
 export TETYPE=dry
+export SCL=
+export QADJ=yes
 #export GLOBAL=GFS
 #export IDATE=2022061400
 #export BV_H=12
@@ -13,7 +15,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-for CYCLE in $(seq 1 3);do
+for CYCLE in $(seq 1 5);do
 export CYCLE
 ### control
 cd $EXPDIR
@@ -71,11 +73,11 @@ if [ $CYCLE -gt 1 ]; then
    export SDATE
 fi
 . ./configure
-if [ ! -d $RUNDIR ]; then
+#if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $EXPDIR
-fi
+#fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR

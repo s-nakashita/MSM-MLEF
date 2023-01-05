@@ -7,6 +7,7 @@ export BV=${BV:-no}
 export BP=${BP}
 export BV_H=${BV_H:-6}
 export TETYPE=${TETYPE}
+export QADJ=${QADJ}
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 echo "ENDHOUR=$ENDHOUR PRTHOUR=$PRTHOUR"

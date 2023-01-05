@@ -88,7 +88,7 @@ module rsmcom_module
     integer :: nsig
     integer :: nskip
     real(kind=sp) :: ext(nwext)
-    real(kind=dp) :: sisl(2*levmax+1)
+    real(kind=dp) :: si(levmax+1),sl(levmax)
     real(kind=sp),allocatable :: sfld(:)
     integer :: iwav, jwav
     integer :: i,j,k
@@ -99,7 +99,7 @@ module rsmcom_module
     call search_fileunit(nsig)
     write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
     open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
-    call read_header(nsig,icld,label,idate,fhour,sisl(1:levmax+1),sisl(levmax+2:),ext,nflds)
+    call read_header(nsig,icld,label,idate,fhour,si,sl,ext,nflds)
     iwav1  = int(ext(1))
     jwav1  = int(ext(2))
     igrd1  = int(ext(3))
@@ -128,10 +128,10 @@ module rsmcom_module
     allocate( sig(nlev), sigh(nlev+1) )
     allocate( mapf(lngrd,3) )
     do i=1,nlev
-      sig(i) = real(sisl(levmax+1+i),kind=dp)
-      sigh(i) = real(sisl(i),kind=dp)
+      sig(i) = sl(i)
+      sigh(i) = si(i)
     end do
-    sigh(nlev+1) = real(sisl(nlev+1),kind=dp)
+    sigh(nlev+1) = si(nlev+1)
     write(6,'(a,f7.5,x,f7.5)') 'sig=',minval(sig),maxval(sig)
     write(6,'(a,f7.5,x,f7.5)') 'sigh=',minval(sigh),maxval(sigh)
 
@@ -202,37 +202,41 @@ module rsmcom_module
 !
 ! ensemble mean
 !
-  subroutine ensmean_grd(mem,nij,v3d,v2d,v3dm,v2dm)
+  subroutine ensmean_grd(mem,ni,nj,v3d,v2d,v3dm,v2dm)
     implicit none
-    integer, intent(in) :: mem, nij
-    real(kind=dp),intent(in) :: v3d(nij,nlev,mem,nv3d)
-    real(kind=dp),intent(in) :: v2d(nij,     mem,nv2d)
-    real(kind=dp),intent(out):: v3dm(nij,nlev,nv3d)
-    real(kind=dp),intent(out):: v2dm(nij,     nv2d)
-    integer :: i,k,m,n
+    integer, intent(in) :: mem, ni,nj
+    real(kind=dp),intent(in) :: v3d(ni,nj,nlev,mem,nv3d)
+    real(kind=dp),intent(in) :: v2d(ni,nj,     mem,nv2d)
+    real(kind=dp),intent(out):: v3dm(ni,nj,nlev,nv3d)
+    real(kind=dp),intent(out):: v2dm(ni,nj,     nv2d)
+    integer :: i,j,k,m,n
 
     do n=1,nv3d
-!$OMP PARALLEL DO PRIVATE(i,k,m)
+!$OMP PARALLEL DO PRIVATE(i,j,k,m)
       do k=1,nlev
-        do i=1,nij
-          v3dm(i,k,n)=v3d(i,k,1,n)
-          do m=2,mem
-            v3dm(i,k,n)=v3dm(i,k,n)+v3d(i,k,m,n)
+        do j=1,nj
+          do i=1,ni
+            v3dm(i,j,k,n)=v3d(i,j,k,1,n)
+            do m=2,mem
+              v3dm(i,j,k,n)=v3dm(i,j,k,n)+v3d(i,j,k,m,n)
+            end do
+            v3dm(i,j,k,n)=v3dm(i,j,k,n)/real(mem,kind=dp)
           end do
-          v3dm(i,k,n)=v3dm(i,k,n)/real(mem,kind=dp)
         end do
       end do
 !$OMP END PARALLEL DO
     end do
 
     do n=1,nv2d
-!$OMP PARALLEL DO PRIVATE(i,m)
-      do i=1,nij
-        v2dm(i,n)=v2d(i,1,n)
-        do m=2,mem
-          v2dm(i,n)=v2dm(i,n)+v2d(i,m,n)
+!$OMP PARALLEL DO PRIVATE(i,j,m)
+      do i=1,ni
+        do j=1,nj
+          v2dm(i,j,n)=v2d(i,j,1,n)
+          do m=2,mem
+            v2dm(i,j,n)=v2dm(i,j,n)+v2d(i,j,m,n)
+          end do
+          v2dm(i,j,n)=v2dm(i,j,n)/real(mem,kind=dp)
         end do
-        v2dm(i,n)=v2dm(i,n)/real(mem,kind=dp)
       end do
 !$OMP END PARALLEL DO
     end do
@@ -325,10 +329,15 @@ module rsmcom_module
 
     integer :: nsig
     real(kind=dp), allocatable :: dfld(:,:,:)
+    real(kind=dp) :: si(levmax+1),sl(levmax)
     real(kind=sp) :: ext(nwext)
     integer :: k,kk
 
     allocate( dfld(igrd1,jgrd1,nflds) )
+    si=0.0
+    sl=0.0
+    si(1:nlev+1) = sigh
+    sl(1:nlev) = sig
     ext(1) = real(iwav1,kind=sp)
     ext(2) = real(jwav1,kind=sp)
     ext(3) = real(igrd1,kind=sp)
@@ -394,7 +403,7 @@ module rsmcom_module
     call search_fileunit(nsig)
     write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
     open(nsig,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
-    call write_sig(nsig,label,idate,fhour,sig,sigh,ext,&
+    call write_sig(nsig,label,idate,fhour,si,sl,ext,&
      &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon)
     close(nsig)
 

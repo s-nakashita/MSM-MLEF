@@ -35,8 +35,15 @@ module nml_module
   integer, save :: slot_base = 1
   real(kind=dp), save :: slot_tint = 60.0_dp !minutes
 
+  !! corsm
+  integer, save :: njsep = 1 ! number of separation in latitude
+  integer, save :: nisep = 1 ! number of separation in longitude
+  ! note: njsep * nisep = nimages
+  integer, save :: jghost = 0  ! number of ghost point in latitude
+  integer, save :: ighost = 0  ! number of ghost point in longitude
+
   !! lmlef
-  logical, save :: obsda_in = .true.
+  logical, save :: obsda_in = .false.
   character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
   character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
@@ -67,7 +74,8 @@ module nml_module
   character(filelenmax) :: info_out_basename = 'dainfo'
   character(filelenmax) :: ewgt_basename = 'ewgt.@@@@'
 !
-  real(kind=dp),save :: q_update_top = 0.0d0 ! watar vapor and hudrometeors are updated only below this pressure level (Pa)
+  real(kind=dp),save    :: q_update_top = 0.0d0 ! watar vapor and hydrometeors are updated only below this pressure level (Pa)
+  logical,save          :: q_adjust = .false. ! super saturation (dry) adjustment
 ! monitor
   logical, save :: oma_monit=.true.
   logical, save :: obsgues_output=.false.
@@ -124,11 +132,35 @@ contains
     return
   end subroutine read_nml_obsope
 
+  subroutine read_nml_corsm
+    implicit none
+    integer :: ierr
+
+    namelist /param_corsm/ &
+      njsep, &
+      nisep, &
+      jghost, &
+      ighost
+
+    rewind(5)
+    read (5,nml=param_corsm,iostat=ierr)
+    if (ierr<0) then
+      write(6,*) 'error: /param_corsm/ is not found in namelist'
+      stop
+    else if(ierr>0) then
+      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_corsm'
+      stop
+    end if
+    write(6,nml=param_corsm)
+    return
+  end subroutine read_nml_corsm
+
   subroutine read_nml_lmlef
     implicit none
     integer :: ierr
 
     namelist /param_lmlef/ &
+      obsda_in, &
       obsda_in_basename, &
       obsda_out_basename, &
       gues_in_basename, &
@@ -153,6 +185,7 @@ contains
       info_out_basename, &
       ewgt_basename, &
       q_update_top, &
+      q_adjust, &
       oma_monit, &
       obsgues_output, &
       obsanal_output

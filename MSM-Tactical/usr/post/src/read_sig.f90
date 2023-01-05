@@ -83,7 +83,8 @@ program readsig
   allocate( clat(jgrd1),clon(igrd1), factor(igrd1,jgrd1,levs) )
   allocate( buf4(igrd1,jgrd1) )
   print *, 'start reading and writing data'
-  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   igz=1
   ips=igz+1
   it=ips+1
@@ -266,7 +267,7 @@ contains
     write(day, '(i2.2)') idy
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
-    if(fhour .gt. 0.0) then
+    if(icld==1.and.fhour > 0.0) then
     write(nctl,'(a)') 'vars 15'
     else
     write(nctl,'(a)') 'vars 12'

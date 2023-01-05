@@ -6,6 +6,7 @@ module obs_module
 ! 22-10-06 create
 !
   use kind_module
+  use func_module, only: ndate, nhour
   implicit none
   private
 !
@@ -35,6 +36,7 @@ module obs_module
     real(kind=dp),allocatable :: hxf(:)   ! h(x) control
     real(kind=dp),allocatable :: hxe(:,:)   ! h(x) ensemble
     integer,allocatable       :: qc(:)    ! QC flag
+    integer,allocatable       :: img(:)   ! image number whose domain includes obs location
   end type obstype2
 !
 ! parameters and variables for decoding dcd
@@ -46,6 +48,7 @@ module obs_module
   integer,save      :: nrec_time=0, nrec_info=0, nrec_data=0
   integer,parameter :: nrec1 = 14
   integer           :: nrecall,nrec2,nrec3,nrec4,nrec5
+  integer,save      :: filetime(6) !year,month,day,hour,minutes,day in week
 !
 ! observation ID
 !
@@ -80,7 +83,7 @@ module obs_module
   & (/'  U','  V','  T','  Q',' RH',' Ps',&
   &   ' Td',' Wd',' Ws'/)
   real(kind=dp),parameter,public :: obserr(nobstype) = &
-  & (/1.0d0,1.0d0,1.0d0,1.0d-3,10.0d0,1.0d2,&
+  & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
   &   2.0d0,10.0d0,1.0d0/)
 
 !
@@ -112,7 +115,7 @@ module obs_module
    &  opendcdf, get_nobs_upper, read_upper, &
    &  obsin_allocate, obsin_deallocate, obsout_allocate, obsout_deallocate, &
    &  get_nobs, read_obs, write_obs, read_obsout, write_obsout, &
-   &  obs_preproc, monit_obsin, ndate, nhour
+   &  obs_preproc, monit_obsin
 contains
 !
 ! convert obsID to sequential number
@@ -160,7 +163,7 @@ contains
     integer :: idrec
     integer :: ntype
     integer :: data1(7)
-    integer :: otime(5)
+    integer :: otime(5),tmptime(5)
     integer :: imin
     integer,dimension(:),allocatable :: did,ndata,nobseach
     integer :: iyy, imm, idd, ihh, inn, iwk
@@ -181,18 +184,14 @@ contains
     end if
     nrec_time = nrecall
     irec=1+nrec1+nrec2
+    ! file time
     do i=1,nrec3
       read(iunit,rec=irec) iymdhnw(i)
+      filetime(i) = int(iymdhnw(i),kind=4)
       irec=irec+1
     end do
-    iyy = int(iymdhnw(1),kind=4)
-    imm = int(iymdhnw(2),kind=4)
-    idd = int(iymdhnw(3),kind=4)
-    ihh = int(iymdhnw(4),kind=4)
-    inn = int(iymdhnw(5),kind=4)
-    iwk = int(iymdhnw(6),kind=4)
-    print *, iyy,imm,idd,ihh,inn,iwk
-    otime(1)=iyy
+    print '(a,6i5)', 'filetime ',filetime
+    otime(1)=filetime(1)
     ! get info
     ioffset=nrec_time
     call read_part1(iunit,ioffset,idrec,data1)
@@ -240,12 +239,16 @@ contains
           read(iunit,rec=irec) ibuf2
           imm=int(ibuf2,kind=4)/100
           idd=int(ibuf2,kind=4)-imm*100
-          otime(2)=imm; otime(3)=idd
           irec=irec+1
           read(iunit,rec=irec) ibuf2
           ihh=int(ibuf2,kind=4)/100
           inn=int(ibuf2,kind=4)-ihh*100
+          otime(2)=imm; otime(3)=idd
           otime(4)=ihh;otime(5)=inn
+          if (filetime(4).eq.0 .and. ihh.gt.20 ) then !00UTC=>21~20UTC
+            tmptime=otime
+            call ndate(tmptime,-24*60,otime) !a day before
+          end if
           call nhour(atime,otime,imin)
           if((imin.ge.lmin).and.(imin.lt.rmin)) then
             if(debug) print *, 'obs time =',otime
@@ -285,7 +288,7 @@ contains
     integer :: dtype
     type(obstype) :: tmpobs,tmpobs2
     integer :: imin
-    integer :: otime(5)
+    integer :: otime(5),tmptime(5)
     integer :: tmpelm !, tmphour, tmpminu
     real(kind=dp) :: tmplon, tmplat
     real(kind=dp) :: tmplev, tmpdat, tmperr
@@ -317,6 +320,9 @@ contains
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
       tmplon = real(data1(3),kind=dp)*0.01d0
+      if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
+        tmplon=tmplon+360.0
+      end if
       if(nn==0) then
         latb=data1(2);lonb=data1(3)
       end if
@@ -360,6 +366,10 @@ contains
         read(iunit,rec=irec) ibuf2
         otime(4)=int(ibuf2,kind=4)/100
         otime(5)=int(ibuf2,kind=4)-otime(4)*100
+        if (filetime(4).eq.0 .and. otime(4).gt.20 ) then !00UTC=>21~20UTC
+          tmptime=otime
+          call ndate(tmptime,-24*60,otime) !a day before
+        end if
         call nhour(atime,otime,imin)
         if((imin.ge.lmin).and.(imin.lt.rmin)) then
           if(debug) print *, 'obs time =',otime
@@ -659,9 +669,10 @@ contains
     
     real(kind=dp) :: latb, lonb
     integer, parameter :: npointmax=10000
+!!debug    real(kind=dp) :: lats(npointmax),lons(npointmax)
     integer :: nobseach(nobstype_upper,npointmax)
     integer :: n_t, n_ws, n_wd
-    integer :: n,nn,npoint,i,j,itype,iter,itermax
+    integer :: n,nn,n2,npoint,i,j,itype,iter,itermax
 
     iwnd_=1
     if(present(iwnd)) iwnd_=iwnd
@@ -692,6 +703,8 @@ contains
         latb=obs%lat(n)
         lonb=obs%lon(n)
         npoint=npoint+1
+!!debug        lats(npoint)=latb
+!!debug        lons(npoint)=lonb
       end if
       if(npoint > npointmax ) exit
       select case(obs%elem(n))
@@ -709,7 +722,9 @@ contains
     npoint=npoint-1
     print *, 'nobs,npoint=',n,npoint
 
+    n2=0
     do i=1,npoint
+!!debug      print *, 'lat, lon=',lats(i),lons(i)
       do j=1,sum(nobseach(:,i))
         nn=nn+1
         if(iq_.ge.1.and.obs%elem(nn).eq.id_td_obs) then
@@ -720,18 +735,32 @@ contains
             obs%elem(nn)=id_q_obs
             obs%dat(nn) = q
           else if(iq_.eq.2) then !Td=>rh
-            n_t=nn-nobseach(1,i)
+            do n_t=n2+1,n2+sum(nobseach(:,i))
+              if(obs%elem(n_t)==id_t_obs.and.obs%lev(n_t)==p) exit
+            end do
+            if (n_t.gt.n2+sum(nobseach(:,i))) cycle
+            !n_t=nn-nobseach(1,i)
             !print *, obs%elem(nn), obs%elem(n_t)
             !print *, obs%lev(nn), obs%lev(n_t)
             t = obs%dat(n_t)
+            !!! debug
+            !print '(3(a,f10.2))', 'p', p, ' t', t, ' td',td
+            !!! debug
             call calc_q(td,p,q)
             call calc_rh(t,q,p,rh)
+            !!! debug
+            !print '(2(a,f10.2),a,es10.2)', 'p', p, ' t', t, ' rh',rh
+            !!! debug
             obs%elem(nn)=id_rh_obs
             obs%dat(nn) = rh
           end if
         end if
         if(iwnd_.eq.1.and.obs%elem(nn).eq.id_wd_obs) then
-          n_ws=nn+nobseach(3,i)
+          do n_ws=n2+1,n2+sum(nobseach(:,i))
+            if(obs%elem(n_ws)==id_ws_obs.and.obs%lev(n_ws)==obs%lev(nn)) exit
+          end do
+          if (n_ws.gt.n2+sum(nobseach(:,i))) cycle
+          !n_ws=nn+nobseach(3,i)
           !print *, obs%elem(nn), obs%elem(n_ws)
           !print *, obs%lev(nn), obs%lev(n_ws)
           call calc_uv(obs%dat(n_ws),obs%dat(nn),u,v)
@@ -741,6 +770,7 @@ contains
           obs%dat(n_ws) = v
         end if
       end do
+      n2=n2+sum(nobseach(:,i))
     end do
     end do
     return
@@ -797,6 +827,7 @@ contains
     allocate( obs%dmin(obs%nobs) )
     allocate( obs%hxf (obs%nobs) )
     allocate( obs%qc  (obs%nobs) )
+    allocate( obs%img (obs%nobs) )
 
     obs%elem = 0
     obs%lon  = 0.0_dp
@@ -807,6 +838,7 @@ contains
     obs%dmin = 0.0_dp
     obs%hxf  = 0.0_dp
     obs%qc   = 0
+    obs%img  = 0
 
     if(member.gt.0) then
       allocate( obs%hxe (member,obs%nobs) )
@@ -830,6 +862,7 @@ contains
     if(allocated(obs%hxf)) deallocate(obs%hxf)
     if(allocated(obs%hxe)) deallocate(obs%hxe)
     if(allocated(obs%qc)) deallocate(obs%qc)
+    if(allocated(obs%img)) deallocate(obs%img)
 
     return
   end subroutine obsout_deallocate
@@ -875,7 +908,11 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
+      case(id_rh_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
+        wk(5)=wk(5)*100.0 !nondimensional -> %
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -911,9 +948,13 @@ contains
       wk(6)=real(obs%dmin(n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(5) = wk(5) * 0.01 !Pa->hPa
+        wk(4)=wk(4)*0.01 !Pa->hPa
+        wk(5)=wk(5)*0.01 !Pa->hPa
+      case(id_rh_obs)
+        wk(4)=wk(4)*0.01 !Pa->hPa
+        wk(5)=wk(5)*0.01 !%->nondimensional
       case default
-        wk(4) = wk(4) * 0.01 !Pa->hPa
+        wk(4)=wk(4)*0.01 !Pa->hPa
       end select
       if(debug) print *, wk
       write(iunit) wk
@@ -937,9 +978,15 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
         wk(6)=wk(6)*100.0 !hPa -> Pa
         wk(8)=wk(8)*100.0 !hPa -> Pa
+      case(id_rh_obs)
+        wk(4)=wk(4)*100.0 !hPa -> Pa
+        wk(5)=wk(5)*100.0 !nondimensional -> %
+        wk(6)=wk(6)*100.0 !nondimensional -> %
+        wk(8)=wk(8)*100.0 !nondimensional -> %
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -990,9 +1037,15 @@ contains
       wk(9)=real(obs%qc  (n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
+        wk(4) = wk(4) * 0.01 !Pa->hPa
         wk(5) = wk(5) * 0.01 !Pa->hPa
         wk(6) = wk(6) * 0.01 !Pa->hPa
         wk(8) = wk(8) * 0.01 !Pa->hPa
+      case(id_rh_obs)
+        wk(4) = wk(4) * 0.01 !Pa->hPa
+        wk(5) = wk(5) * 0.01 !%->nondimensional
+        wk(6) = wk(6) * 0.01 !%->nondimensional
+        wk(8) = wk(8) * 0.01 !%->nondimensional
       case default
         wk(4) = wk(4) * 0.01 !Pa->hPa
       end select
@@ -1070,63 +1123,6 @@ contains
     write(6,'(a,'//trim(nstr)//'a)') '======',tmpstr(1:n)
     return
   end subroutine monit_obsin
-!
-! calculate date before or after several hours
-! [note] use library w3_4 in sys/lib
-!
-  subroutine ndate(date0,dt,date1)
-    implicit none
-    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
-    integer, intent(in)  :: dt    !minutes
-    integer, intent(out) :: date1(5) !year,month,day,hour,minutes 
-    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
-    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
-
-!    print *, date0
-    idat = 0
-    idat(1:3) = date0(1:3)
-    idat(5:6) = date0(4:5)
-!    print *, idat
-    rinc = 0.0
-    rinc(3) = real(dt,kind=sp)
-!    print *, rinc
-
-    call w3movdat(rinc,idat,jdat)
-!    print *, jdat
-    date1(1:3)=jdat(1:3)
-    date1(4:5)=jdat(5:6)
-
-    return
-  end subroutine ndate
-!
-! calculate hours between two dates
-! [note] use library w3_4 in sys/lib
-!
-  subroutine nhour(date0,date1,dt)
-    implicit none
-    integer, intent(in)  :: date0(5) !year,month,day,hour,minutes
-    integer, intent(in)  :: date1(5) !year,month,day,hour,minutes 
-    integer, intent(out) :: dt    !minutes (date1 - date0)
-    integer :: idat(8),jdat(8) !year,month,day,timezone,hour,minutes,seconds,milliseconds
-    real(kind=sp) :: rinc(5) !days,hours,minutes,seconds,milliseconds
-
-!    print *, date0
-    idat = 0
-    idat(1:3) = date0(1:3)
-    idat(5:6) = date0(4:5)
-!    print *, idat
-!    print *, date1
-    jdat = 0
-    jdat(1:3) = date1(1:3)
-    jdat(5:6) = date1(4:5)
-!    print *, jdat
-
-    call w3difdat(jdat,idat,3,rinc)
-!    print *, rinc
-    dt = nint(rinc(3))
-
-    return
-  end subroutine nhour
 !!
 !! don't work
 !!

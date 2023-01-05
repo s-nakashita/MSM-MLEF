@@ -7,6 +7,7 @@ program addprtb
   use read_module
   use write_module, only: write_sig, write_sfc
   use norm_module, only: calc_te
+  use func_module, only: ndate, calc_rh, calc_q2 !=> calc_q
   implicit none
   ! for energy calculation
   integer, parameter :: kmax=21
@@ -23,14 +24,16 @@ program addprtb
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 !calculation region
   integer       :: ilonw,ilone,jlats,jlatn !calculation region
   integer       :: nlon,nlat
-  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn
+  logical       :: adjust_q=.false. !whether super saturation and super dry are removed or not
+  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn,adjust_q
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: fact(:,:,:),theta(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
   real(kind=dp) :: alpha !rescaled factor
   real(kind=dp) :: tecmp(4)
   real(kind=dp) :: area,te,coef
-  integer :: ips,it,iu,iv,iq
+  real(kind=dp) :: t1,p1,q1,rh1,qlim,tulim,tllim !for q adjustment
+  integer :: ips,it,iu,iv,iq!,icw
   ! input files' units (base, prtb)
   integer, parameter :: nisigb=11, nisigp1=12, nisigp2=13
   integer, parameter :: nisigib=15 !intermediate file
@@ -50,6 +53,9 @@ program addprtb
   real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
   integer :: igrd1, jgrd1, levs, nonhyd, icld
+  ! for ndate
+  integer :: date1(5),date2(5),dtmin
+  !
   integer :: n,i,j,k,l
 
   read(5,namlst_prtb)
@@ -84,8 +90,10 @@ program addprtb
   iu=it+levs
   iv=iu+levs
   iq=iv+levs
+!  icw=iq+2*levs
   ! base field
-  call read_sig(nisigb,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfldb,mapf,clat,clon)
+  call read_sig(nisigb,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfldb,mapf,clat,clon)
   !! set boundaries
   if((lonw.gt.-999.9d0).and.(lone.gt.-999.9d0)) then
     do i=1,igrd1
@@ -141,7 +149,8 @@ program addprtb
   allocate( dfld(igrd1,jgrd1,nfldsig) )
   allocate( dfldp(igrd1,jgrd1,nfldsig) )
   dfldp=0.0
-  call read_sig(nisigp1,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(nisigp1,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   dfldp = dfld
 !  dfldp(:,:,ips) = dfld(:,:,ips)
   do j=1,nlat
@@ -191,7 +200,8 @@ program addprtb
   call read_header(nisigp2,icld,label,idate,fhour,si,sl,ext,nfldsig)
   deallocate( dfld )
   allocate( dfld(igrd1,jgrd1,nfldsig) )
-  call read_sig(nisigp2,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(nisigp2,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   dfldp = dfldp - dfld
   do j=1,nlat
     do i=1,nlon
@@ -248,9 +258,9 @@ program addprtb
     pscl=p0*sl(k)
     tscl=thetascl*sl(k)**(1.0d0/ptheta)
     tbase=tr
-    call calc_q(tbase,rhscl,pscl,qbase)
+    call calc_q2(tbase,rhscl,pscl,qbase)
     tbase=tr+tscl
-    call calc_q(tbase,rhscl,pscl,qscl)
+    call calc_q2(tbase,rhscl,pscl,qscl)
     qscl=qscl-qbase
     print '(5(a,es11.4))', 'uscl ',uscl,' vscl ',vscl,' tscl ',tscl,' qscl ',qscl,' psscl ',psscl 
     do j=1,nlat
@@ -288,21 +298,91 @@ program addprtb
   call read_header(nisigb,icld,label,idate,fhour,si,sl,ext,nfldsig)
   allocate( dfld(igrd1,jgrd1,nfldsig) )
   !! reset forecast hour
-  idate(1)=idate(1)+nint(fhour)
-  if(idate(1).ge.24) then
-    idate(1)=idate(1)-24
-    idate(3)=idate(3)+1
-  end if
+  dtmin=nint(fhour)*60
+  date1(1)=idate(4)
+  date1(2)=idate(2)
+  date1(3)=idate(3)
+  date1(4)=idate(1)
+  date1(5)=0
+  call ndate(date1,dtmin,date2)
+  idate(4)=date2(1)
+  idate(2)=date2(2)
+  idate(3)=date2(3)
+  idate(1)=date2(4)
   fhour=0.0
   print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
   !! add perturbations
   dfld = dfldb + dfldp * alpha
-  call write_sig(nosigp,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+  if(adjust_q) then
+  ! super saturation(dry) adjustment
+  tllim = t0 - 30.0_dp
+  tulim = t0 + 35.0_dp
+  do k=1,levs
+    do j=1,jgrd1
+      do i=1,igrd1
+        t1 = dfld(i,j,it+k-1)
+        q1 = dfld(i,j,iq+k-1)
+!        cw1 = dfld(i,j,icw+k-1)
+        p1 = dfld(i,j,ips)*sl(k)
+        if(q1.lt.0.0_dp) then !super dry
+          write(0,'(a,f10.2,a,es10.2,a)') &
+                  'super dry adjustment: p=',p1,' q=',q1,' < 0.0'
+          dfld(i,j,iq+k-1)=0.0_dp
+        else if(p1.gt.20000.0_dp.and.(t1.gt.tllim.and.t1.lt.tulim)) then
+          !saturation water vapor accuracy is acceptable for p > 200mb, -30 celsius < T < 35 celsius
+          rh1=1.2_dp
+          call calc_q2(t1,rh1,p1,qlim)
+          if(q1.gt.qlim) then !super saturation
+          write(0,'(a,f10.2,x,f10.2,a,f10.2,a,f10.2,x,a,es10.2,a,es10.2)') &
+                  'super saturation adjustment: p=',p1,&
+                  tllim,' < t=',t1,' < ',tulim,&
+                  ' q=',q1,' > ',qlim
+          dfld(i,j,iq+k-1)=qlim
+          end if
+        end if
+!        if(cw1.lt.0.0d0) then !negative cloud water
+!          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+!          dfld(i,j,icw+k-1)=0.0_dp
+!        end if
+      end do
+    end do
+  end do
+  end if
+  call write_sig(nosigp,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
-  !! subtract perturbations
-  dfld = dfldb - dfldp * alpha
-  call write_sig(nosigm,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
-&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
+!  !! subtract perturbations
+!  dfld = dfldb - dfldp * alpha
+!  if(adjust_q) then
+!  ! super saturation(dry) adjustment
+!  do k=1,levs
+!    do j=1,jgrd1
+!      do i=1,igrd1
+!        t1 = dfld(i,j,it+k-1)
+!        q1 = dfld(i,j,iq+k-1)
+!!        cw1 = dfld(i,j,icw+k-1)
+!        p1 = dfld(i,j,ips)*sl(k)
+!        if(q1.lt.0.0_dp) then !super dry
+!          print *, 'super dry adjustment: p=',p1,' q=',q1,'<0.0'
+!          dfld(i,j,iq+k-1)=0.0_dp
+!        else if(t1.gt.(t0-30.0_dp).and.t1.lt.(t0+35.0_dp)) then
+!          !saturation water vapor accuracy is acceptable for -30 celsius < T < 35 celsius
+!          rh1=1.2_dp
+!          call calc_q2(t1,rh1,p1,qlim)
+!          if(q1.gt.qlim) then !super saturation
+!          print *, 'super saturation adjustment: p=',p1,' q=',q1,'>',qlim
+!          dfld(i,j,iq+k-1)=qlim
+!          end if
+!        end if
+!!        if(cw1.lt.0.0d0) then !negative cloud water
+!!          print *, 'super dry adjustment: p=',p1,' cw=',cw1,'<0.0'
+!!          dfld(i,j,icw+k-1)=0.0_dp
+!!        end if
+!      end do
+!    end do
+!  end do
+!  end if
+!  call write_sig(nosigm,label,idate,fhour,si,sl,ext,&
+!&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,clat,clon)
 !!  ! intermediate field
 !!  icld=0
 !!  call read_header(nisigib,icld,label,idate,fhour,si,sl,ext,nfldsig)
@@ -332,7 +412,7 @@ program addprtb
 !!  end if
 !!  fhour=0.0
 !!  print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
-!!  call write_sig(nosigi,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+!!  call write_sig(nosigi,label,idate,fhour,si,sl,ext,&
 !!&                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldb,mapf,clat,clon)
   deallocate( dfld,dfldb,dfldp,u,v,t,q,ps,fact ) 
   ! read surface and change forecast date and hour, then write out
@@ -340,31 +420,31 @@ program addprtb
   call read_sfc(nisfc,igrd1,jgrd1,dfld)
   call write_sfc(nosfc,igrd1,jgrd1,dfld,label,idate,fhour)
   deallocate( dfld )
-contains
-  subroutine calc_q(t,rh,p,q)
-    implicit none
-    real(kind=dp),parameter :: t0=273.15d0
-    real(kind=dp),parameter :: e0c=6.11d0
-    real(kind=dp),parameter :: al=17.3d0
-    real(kind=dp),parameter :: bl=237.3d0
-    real(kind=dp),parameter :: e0i=6.1121d0
-    real(kind=dp),parameter :: ai=22.587d0
-    real(kind=dp),parameter :: bi=273.86d0
-    real(kind=dp),intent(in) :: t,rh,p
-    real(kind=dp),intent(out) :: q
-    real(kind=dp) :: e, es, tc
-
-    tc=t-t0
-    if(tc>=0.0d0) then
-      es=e0c*exp(al*tc/(bl+tc))
-    else if(tc<=-15.0d0) then
-      es=e0i*exp(ai*tc/(bi+tc))
-    else
-      es=e0c*exp(al*tc/(bl+tc))*(15.0d0+tc)/15.0d0 &
-        +e0i*exp(ai*tc/(bi+tc))*(-tc)/15.0d0
-    endif
-    e=rh*es
-    q=0.622d0*e/(p*0.01d0-e*0.378d0)
-    return
-  end subroutine calc_q
+!contains
+!  subroutine calc_q(t,rh,p,q)
+!    implicit none
+!    real(kind=dp),parameter :: t0=273.15d0
+!    real(kind=dp),parameter :: e0c=6.11d0
+!    real(kind=dp),parameter :: al=17.3d0
+!    real(kind=dp),parameter :: bl=237.3d0
+!    real(kind=dp),parameter :: e0i=6.1121d0
+!    real(kind=dp),parameter :: ai=22.587d0
+!    real(kind=dp),parameter :: bi=273.86d0
+!    real(kind=dp),intent(in) :: t,rh,p
+!    real(kind=dp),intent(out) :: q
+!    real(kind=dp) :: e, es, tc
+!
+!    tc=t-t0
+!    if(tc>=0.0d0) then
+!      es=e0c*exp(al*tc/(bl+tc))
+!    else if(tc<=-15.0d0) then
+!      es=e0i*exp(ai*tc/(bi+tc))
+!    else
+!      es=e0c*exp(al*tc/(bl+tc))*(15.0d0+tc)/15.0d0 &
+!        +e0i*exp(ai*tc/(bi+tc))*(-tc)/15.0d0
+!    endif
+!    e=rh*es
+!    q=0.622d0*e/(p*0.01d0-e*0.378d0)
+!    return
+!  end subroutine calc_q
 end program

@@ -7,73 +7,40 @@ set -ex
 #  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(9 or 3)"
 #  exit 1
 #fi
-IDATE=${IDATE:-2022083000} #base
+CYCLE=${1:-$CYCLE}
+PMEM=${2:-001} #prtb member
+IDATE=${SDATE:-2022083000} #base
 PDATE=${PDATE:-2022061112} #prtb base
-PMEM=${MEM:-001} #prtb member
 IRES=27
-CYCLE=${CYCLE:-3}
-BV_H=${BV_H:-6}
+BV_H=${ENDHOUR:-6}
 TETYPE=${TETYPE}
 SCL=${SCL}
-QADJ=${QADJ:-no} #super saturation and dry adjustment
+QADJ=${QADJ:-yes} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
-CYCLE=${1:-$CYCLE}
-#IDATE=${1}
-#IRES=${2}
+head=${HEAD:-bv$TETYPE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
-if [ $IRES -eq 27 ]; then
-  if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
-    BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
-    BASE=/zdata/grmsm/work/gfsp2rsm27_rda
-  else
-    BASE=/zdata/grmsm/work/gefs2rsm27_nomad
-  fi
-  DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
-  EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
-elif [ $IRES -eq 9 ]; then
-  BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
-  DATADIR=/zdata/grmsm/work/rsm2msm9_jpn
-  #DATADIR=/zdata/grmsm/work/rsm2msm9_tparc
-  EXPDIR=$MSMDIR/usr/exp/rsm2msm9
-elif [ $IRES -eq 3 ]; then
-  BASE=/zdata/grmsm/work/rsm2msm9_jpn
-  DATADIR=/zdata/grmsm/work/msm2msm3_jpn
-  EXPDIR=$MSMDIR/usr/exp/msm2msm3
-else
-  echo "Invalid resolution. Specify 9 or 3."
-  exit 2
-fi
+DATADIR=${RUNDIR0:-/zdata/grmsm/work/dpac/rsm27}
+BASE=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_rda}
 if [ ! -d $DATADIR ]; then
   echo "No such directory : $DATADIR"
   exit 3
 fi
-if [ ! -d $EXPDIR ]; then
-  echo "No such directory : $EXPDIR"
+if [ ! -d $BASE ]; then
+  echo "No such directory : $BASE"
   exit 3
 fi
 EXEC=addprtb
 cd $SRCDIR
 gmake ${EXEC}
-if [ $CYCLE -gt 1 ]; then
-  fh=`expr $BV_H \* \( $CYCLE - 1 \)`
-  if [ $fh -lt 10 ]; then
-    fh=0$fh
-  fi
-  echo "forecast hour=${fh}"
-  IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
-fi
-WDIR=bv${TETYPE}${SCL}${PMEM}${BP}
-if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-  WDIR=bv${TETYPE}${SCL}${BV_H}h${PMEM}${BP}
-fi
-if [ do$QADJ = doyes ];then
-  WDIR=${WDIR}_qadj
-fi
-OUTDIR=$DATADIR/$IDATE/${WDIR}_c${CYCLE}
-rm -rf $OUTDIR
+OUTDIR=$DATADIR/$IDATE/${head}${PMEM}
 mkdir -p $OUTDIR
-##copy orography
+##copy namelists
+cp $DATADIR/$IDATE/rsmparm $OUTDIR/
+cp $DATADIR/$IDATE/rsmlocation $OUTDIR/
+cp $DATADIR/$IDATE/rfcstparm $OUTDIR/
+cp $STTPRM $OUTDIR/station.parm
+##copy orography data
 cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
 cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
@@ -84,7 +51,7 @@ cd tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field
-echo $IDATE
+echo $SDATE
 ln -s $DATADIR/$IDATE/r_sig.f00 fort.11 #analysis
 ln -s $DATADIR/$IDATE/r_sfc.f00 fort.14 #analysis
 #ln -s $DATADIR/$IDATE/r_sig.f$fh fort.11 #guess
@@ -92,36 +59,63 @@ ln -s $DATADIR/$IDATE/r_sfc.f00 fort.14 #analysis
 # perturbation base
 if [ $CYCLE -eq 1 ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
-    cd ${EXPDIR}
-    . ./configure
-    export RUNFCST=no
-    export RUNRINP2=yes
-    export POSTTYPE=
-    cd -
-    echo $IGRD $JGRD
     mkdir -p $PDATE
     cd $PDATE
-    export SDATE=$PDATE
-    export BASEDIR=${BASE}/${SDATE}
-    export RUNDIR=`pwd`
-    echo $BASEDIR $RUNDIR
-    export ENDHOUR=12
-    export INCHOUR=12
-    $JSHDIR/rsm_fcst.sh > rint.log 2>&1 || exit 10
+    hhr=12
+    cp $DATADIR/$IDATE/rsmlocation .
+    ln -s $DATADIR/$IDATE/rmtn.parm .
+    ln -s $DATADIR/$IDATE/rmtnoss .
+    ln -s $DATADIR/$IDATE/rmtnslm .
+    ln -s $DATADIR/$IDATE/rmtnvar .
+    if [ do$G2R = doyes ] ; then
+      ln -fs $BASE/$PDATE/sigf$hhr rb_sigf$hhr
+      ln -fs $BASE/$PDATE/sfcf$hhr rb_sfcf$hhr
+    fi
+    if [ do$P2R = doyes ] ; then
+      if [ do$CWBGFS = doyes ] ; then
+        if [ $hhr -lt 100 ] ; then hhrr=0$hhr ; fi
+        ln -fs $BASE/$PDATE/otgb2_$hhrr rb_pgbf$hhr
+      else
+        ln -fs $BASE/$PDATE/pgbf$hhr rb_pgbf$hhr
+      fi
+    else
+      if [ do$C2R = doyes ] ; then
+        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+      fi
+    fi
+    $USHDIR/rinp.sh $NEST $hhr || exit 10
+    cp r_sigi ../fort.12
     cd ..
-    ln -s $RUNDIR/r_sig.f12 fort.12
     PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
     mkdir -p $PDATE
     cd $PDATE
-    export SDATE=$PDATE
-    export BASEDIR=${BASE}/${SDATE}
-    export RUNDIR=`pwd`
-    echo $BASEDIR $RUNDIR
-    export ENDHOUR=24
-    export INCHOUR=24
-    $JSHDIR/rsm_fcst.sh > rint.log 2>&1 || exit 10
+    hhr=24
+    cp $DATADIR/$IDATE/rsmlocation .
+    ln -s $DATADIR/$IDATE/rmtn.parm .
+    ln -s $DATADIR/$IDATE/rmtnoss .
+    ln -s $DATADIR/$IDATE/rmtnslm .
+    ln -s $DATADIR/$IDATE/rmtnvar .
+    if [ do$G2R = doyes ] ; then
+      ln -fs $BASE/$PDATE/sigf$hhr rb_sigf$hhr
+      ln -fs $BASE/$PDATE/sfcf$hhr rb_sfcf$hhr
+    fi
+    if [ do$P2R = doyes ] ; then
+      if [ do$CWBGFS = doyes ] ; then
+        if [ $hhr -lt 100 ] ; then hhrr=0$hhr ; fi
+        ln -fs $BASE/$PDATE/otgb2_$hhrr rb_pgbf$hhr
+      else
+        ln -fs $BASE/$PDATE/pgbf$hhr rb_pgbf$hhr
+      fi
+    else
+      if [ do$C2R = doyes ] ; then
+        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+      fi
+    fi
+    $USHDIR/rinp.sh $NEST $hhr || exit 10
+    cp r_sigi ../fort.13
     cd ..
-    ln -s $RUNDIR/r_sig.f24 fort.13
   else #ensemble
     ln -s $DATADIR/$IDATE/$PMEM/r_sig.f00 fort.12
     ln -s $DATADIR/$IDATE/r_sig.f00 fort.13
@@ -142,7 +136,7 @@ else
   #if [ $PCYCLE -eq 1 ]; then
   #ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
   #else
-  ln -s $DATADIR/$PDATE/${WDIR}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
+  ln -s $DATADIR/$PDATE/${head}${PMEM}/r_sig.f$fh2 fort.13 #c
   #fi
 fi
 ### set namelist
@@ -162,20 +156,6 @@ if [ do$SCL != do ];then
 else
   teref=3.0d0
 fi
-if [ $CYCLE -lt $SPINUP ];then
-cat <<EOF >namelist
-&namlst_prtb
- setnorm=T,
- teref=${teref},
- epsq=${epsq},
- lonw=110.0,
- lone=153.0,
- lats=15.0,
- latn=47.0,
- adjust_q=${adjust_q},
-&end
-EOF
-else
 #### set rescaling magnitude from ensemble spread statistics
 cat <<EOF >namelist
 &namlst_prtb
@@ -189,8 +169,9 @@ cat <<EOF >namelist
  adjust_q=${adjust_q},
 &end
 EOF
-fi
-./${EXEC} < namelist #1>>${EXEC}.log 2>&1
+#
+./${EXEC} < namelist 1>${EXEC}.log 2>${EXEC}.err
+mv ${EXEC}.log ${EXEC}.err $OUTDIR/
 fh=00 #a
 mv fort.51 $OUTDIR/r_sig.f$fh
 cp $OUTDIR/r_sig.f$fh $OUTDIR/r_sigi

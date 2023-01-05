@@ -111,7 +111,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   integer, intent(in) :: nonhyd
   integer, intent(in) :: icld !1=include 3D physics, 0=not include
   real(kind=sp), intent(in)  :: fhour
-  real(kind=dp), intent(in)  :: sl(levs)
+  real(kind=dp), intent(in)  :: sl(levmax)
   real(kind=dp), intent(out) :: dfld(igrd1,jgrd1,nflds)
   real(kind=dp), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
   real(kind=dp), intent(out) :: clat(jgrd1),clon(igrd1)
@@ -419,9 +419,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
 &            iffhh, ialvsf, ialvwf, ialnsf, ialnwf, ifacsf, ifacwf
   real(kind=sp), allocatable :: sfld(:), sfldl(:)
   real(kind=sp), allocatable :: tmps2(:,:), tmps4(:,:)
-  real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
-  real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
-  
+
   print *, 'read and extract header record'
   iret = 0
   rewind(iunit)

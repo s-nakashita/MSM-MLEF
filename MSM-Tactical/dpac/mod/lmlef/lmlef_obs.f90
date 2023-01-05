@@ -31,8 +31,11 @@ module lmlef_obs
   real(kind=dp),allocatable,save :: dlon_zero(:)
   real(kind=dp),save :: dlat_zero
 
+  type(obstype ),allocatable,save :: obs(:) !input
   type(obstype2),save :: obsda
   type(obstype2),save :: obsdasort
+
+  integer,save :: nobs_ext
 
   integer,allocatable,save :: nobsgrd(:,:)
 !  integer,allocatable,save :: obsij1(:)
@@ -45,13 +48,17 @@ contains
 subroutine set_lmlef_obs
   implicit none
   real(kind=dp) :: dlon1,dlon2,dlon,dlat
+  type(obstype2) :: obsda_ext ! externally processed obs
   type(obstype2) :: tmpobs ! intermediate sorting values
   real(kind=dp),allocatable :: wk2d(:,:)
   integer,allocatable :: iwk2d(:,:)
   real(kind=dp),allocatable :: tmphdxf(:,:)[:]
-!  real(kind=dp),allocatable :: tmphxf(:,:)[:]
+  real(kind=dp),allocatable :: tmpdata(:,:)[:]
   integer,allocatable :: tmpqc0(:,:)[:]
   integer,allocatable :: nobslots(:)[:]
+  integer,allocatable :: tmpimg(:)[:]
+  integer,allocatable :: tmpelm(:)[:]
+  integer :: is,ie,js,je
   integer :: n,i,j,ierr,islot,nn,l,im
   integer, allocatable :: nj(:)
   integer, allocatable :: njs(:)
@@ -70,55 +77,45 @@ subroutine set_lmlef_obs
   dist_zero = sigma_obs * sqrt(10.0d0/3.0d0) * 2.0d0
   dist_zerov = sigma_obsv * sqrt(10.0d0/3.0d0) * 2.0d0
   dlat_zero = dist_zero / re * rad2deg
-  allocate(dlon_zero(nij1max))
-  do i=1,nij1
-    dlon_zero(i) = dlat_zero / cos(myrlat(i)*deg2rad)
+  allocate(dlon_zero(nj1max))
+  do j=1,nj1
+    dlon_zero(j) = dlat_zero / cos(myrlat(j)*deg2rad)
   end do
 
-  allocate( nobslots(nslots)[*] )
-  if(myimage == 1) then !Assuming all members have the identical obs records
-    do islot=1,nslots
-      if(mean) then
-        im = myimage
-      else
-        im = myimage-1
-      end if
-      call file_member_replace(im,obsda_in_basename,obsdafile)
-      write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',obsdafile
-      call get_nobs(obsdafile,9,nobslots(islot))
-    end do
-    do i=2,nimages
-      nobslots(:)[i] = nobslots(:)[myimage]
-    end do
-  end if
-  sync all
-  nobs = SUM(nobslots)
-  write(6,'(I10,A)') nobs,' TOTAL OBSERVATIONS INPUT'
+  write(6,'(I10,A)') obsda%nobs-nobs_ext,' INTERNAL PROCESSED OBSERVATIONS INPUT'
+  write(6,'(I10,A)') nobs_ext,' EXTERNAL PROCESSED OBSERVATIONS INPUT'
+  write(6,'(I10,A)') obsda%nobs,' TOTAL OBSERVATIONS INPUT'
 
-  if(nobs == 0) then
+  if(obsda%nobs == 0) then
     write(6,'(A)') 'No observation assimilated'
     return
   end if
 !
 ! INITIALIZE GLOBAL VARIABLES
 !
-  obsda%nobs = nobs
-  call obsout_allocate( obsda,member )
+!  obsda%nobs = nobs
+!  call obsout_allocate( obsda,member )
 
-  if(mean) then
-    allocate( tmphdxf(obsda%nobs,member)[*] )
-    allocate( tmpqc0(obsda%nobs,member)[*] )
-  else
-    allocate( tmphdxf(obsda%nobs,0:member)[*] )
-    allocate( tmpqc0(obsda%nobs,0:member)[*] )
-  end if
-  tmpqc0 = 0
 !
-! reading observation data
+! reading externally processed observation data
 !
-  nn=0
-  timeslots: do islot=1,nslots
-    if(nobslots(islot) == 0) CYCLE
+  if(obsda_in.and.nobs_ext>0) then
+    obsda_ext%nobs = nobs_ext
+    call obsout_allocate( obsda_ext,member )
+    if(mean) then
+      allocate( tmphdxf(obsda_ext%nobs,member)[*] )
+      allocate( tmpqc0(obsda_ext%nobs,member)[*] )
+    else
+      allocate( tmphdxf(obsda_ext%nobs,0:member)[*] )
+      allocate( tmpqc0(obsda_ext%nobs,0:member)[*] )
+    end if
+    if(nimages>member) then
+      allocate( tmpelm(obsda_ext%nobs)[*] ) !elem
+      allocate( tmpdata(obsda_ext%nobs,6)[*] ) !lon,lat,lev,dat,dmin,err
+    end if
+    tmphdxf=0.0d0
+    tmpqc0 = 0
+    nn=0
     l=0
     do
       if(mean) then
@@ -129,72 +126,104 @@ subroutine set_lmlef_obs
       if(im > member) EXIT
       call file_member_replace(im,obsda_in_basename,obsdafile)
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',obsdafile
-      call read_obsout(obsdafile,obsda,im)
+      call read_obsout(obsdafile,obsda_ext,im)
       if(im.eq.0) then
-        tmphdxf(:,im) = obsda%hxf(:)
+        tmphdxf(:,im) = obsda_ext%hxf(:)
       else
-        tmphdxf(:,im) = obsda%hxe(im,:)
+        tmphdxf(:,im) = obsda_ext%hxe(im,:)
       end if
-      tmpqc0(:,im) = obsda%qc(:)
+      tmpqc0(:,im) = obsda_ext%qc(:)
+      if(nn.eq.0) then
+        obsda%elem(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%elem(:)
+        obsda%lon(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%lon(:)
+        obsda%lat(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%lat(:)
+        obsda%lev(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%lev(:)
+        obsda%dat(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%dat(:)
+        obsda%dmin(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%dmin(:)
+        obsda%err(obsda%nobs-nobs_ext+1:obsda%nobs) = obsda_ext%err(:)
+        if(nimages>member) then
+          tmpelm(:)=obsda_ext%elem(:)
+          tmpdata(:,1)=obsda_ext%lon(:)
+          tmpdata(:,2)=obsda_ext%lat(:)
+          tmpdata(:,3)=obsda_ext%lev(:)
+          tmpdata(:,4)=obsda_ext%dat(:)
+          tmpdata(:,5)=obsda_ext%dmin(:)
+          tmpdata(:,6)=obsda_ext%err(:)
+        end if
+      end if
       l = l+1
+      nn=nn+1
     end do
-    nn = nn + nobslots(islot)
-  end do timeslots
-
-  sync all
-!
-! broadcast
-!
-  if(debug_obs) then
-    do im=0,member
-      if(im.eq.0) then
-      write(6,*) im,'hxf',maxval(obsda%hxf(:)),minval(obsda%hxf(:))
-      else
-      write(6,*) im,'hxf',maxval(obsda%hxe(im,:)),minval(obsda%hxe(im,:))
-      end if
-      write(6,*) im,'qc  ',maxval(tmpqc0(:,im)),minval(tmpqc0(:,im))
+    sync all
+    if(myimage>member) then !copy observation information
+      obsda%elem(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpelm(:)[mod(myimage,member)]
+      obsda%lon(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,1)[mod(myimage,member)]
+      obsda%lat(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,2)[mod(myimage,member)]
+      obsda%lev(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,3)[mod(myimage,member)]
+      obsda%dat(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,4)[mod(myimage,member)]
+      obsda%dmin(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,5)[mod(myimage,member)]
+      obsda%err(obsda%nobs-nobs_ext+1:obsda%nobs) = tmpdata(:,6)[mod(myimage,member)]
+    end if
+    if(nimages>member) deallocate( tmpelm,tmpdata )
+  !
+  ! broadcast
+  !
+    if(debug_obs) then
+      do im=0,member
+        if(im.eq.0) then
+        write(6,*) im,'hxf',maxval(obsda_ext%hxf(:)),minval(obsda_ext%hxf(:))
+        else
+        write(6,*) im,'hxf',maxval(obsda_ext%hxe(im,:)),minval(obsda_ext%hxe(im,:))
+        end if
+        write(6,*) im,'qc  ',maxval(tmpqc0(:,im)),minval(tmpqc0(:,im))
+      end do
+    end if
+    if(mean) then
+      allocate(wk2d(obsda_ext%nobs,member))
+      allocate(iwk2d(obsda_ext%nobs,member))
+    else
+      allocate(wk2d(obsda_ext%nobs,member+1))
+      allocate(iwk2d(obsda_ext%nobs,member+1))
+    end if
+    if(myimage==1) then
+      wk2d = tmphdxf
+      iwk2d = tmpqc0
+      do i=2, nimages 
+        wk2d = wk2d + tmphdxf(:,:)[i]
+        iwk2d = iwk2d + tmpqc0(:,:)[i]
+      end do 
+      tmphdxf = wk2d
+      tmpqc0 = iwk2d
+      do i=2, nimages 
+        tmphdxf(:,:)[i] = wk2d
+        tmpqc0(:,:)[i] = iwk2d
+      end do 
+    end if
+    sync all
+    obsda%hxf(obsda%nobs-nobs_ext+1:obsda%nobs) = tmphdxf(:,0)
+    do im=1,member
+      do n=1,obsda_ext%nobs
+        obsda%hxe(im,obsda%nobs-nobs_ext+n)=tmphdxf(n,im)
+      end do
     end do
-  end if
-  if(mean) then
-    allocate(wk2d(obsda%nobs,member))
-    allocate(iwk2d(obsda%nobs,member))
-  else
-    allocate(wk2d(obsda%nobs,member+1))
-    allocate(iwk2d(obsda%nobs,member+1))
-  end if
-  if(myimage==1) then
-    wk2d = tmphdxf
-    iwk2d = tmpqc0
-    do i=2, nimages 
-      wk2d = wk2d + tmphdxf(:,:)[i]
-      iwk2d = iwk2d + tmpqc0(:,:)[i]
-    end do 
-    tmphdxf = wk2d
-    tmpqc0 = iwk2d
-    do i=2, nimages 
-      tmphdxf(:,:)[i] = wk2d
-      tmpqc0(:,:)[i] = iwk2d
-    end do 
-  end if
-  sync all
-  obsda%hxf(:) = tmphdxf(:,0)
-  do im=1,member
-    do n=1,obsda%nobs
-      obsda%hxe(im,n)=tmphdxf(n,im)
+    do n=1,obsda_ext%nobs
+      obsda%qc(obsda%nobs-nobs_ext+n) = maxval(tmpqc0(n,:))
     end do
-  end do
-  if(debug_obs) then
-    do im=0,member
-      if(im.eq.0) then
-      write(6,*) im,'hxf',maxval(obsda%hxf(:)),minval(obsda%hxf(:))
-      else
-      write(6,*) im,'hxf',maxval(obsda%hxe(im,:)),minval(obsda%hxe(im,:))
-      end if
-      write(6,*) im,'qc  ',maxval(tmpqc0(:,im)),minval(tmpqc0(:,im))
-    end do
-  end if
-  deallocate(wk2d)
-  deallocate(iwk2d)
+    if(debug_obs) then
+      do im=0,member
+        if(im.eq.0) then
+        write(6,*) im,'hxf',maxval(obsda%hxf(:)),minval(obsda%hxf(:))
+        else
+        write(6,*) im,'hxf',maxval(obsda%hxe(im,:)),minval(obsda%hxe(im,:))
+        end if
+        write(6,*) im,'qc  ',maxval(tmpqc0(:,im)),minval(tmpqc0(:,im))
+      end do
+    end if
+    deallocate(wk2d)
+    deallocate(iwk2d)
+    deallocate(tmphdxf)
+    deallocate(tmpqc0)
+  end if !obsda_in.and.nobs_ext>0
 !
 ! compute hxf mean, perturbation and departure
 ! & gross error check
@@ -204,7 +233,6 @@ subroutine set_lmlef_obs
   nobs=0
 !$OMP PARALLEL DO SCHEDULE(DYNAMIC) PRIVATE(n,i)
   do n=1,obsda%nobs
-    obsda%qc(n) = maxval(tmpqc0(n,:))
     if(obsda%qc(n) /= iqc_good) cycle
     nobs=nobs+1
     if(mean) then
@@ -238,7 +266,6 @@ subroutine set_lmlef_obs
     end if
   end do
 !$OMP END PARALLEL DO
-  deallocate(tmpqc0)
 
   write(6,'(I10,A)') nobs,' OBSERVATIONS TO BE ASSIMILATED'
 !
@@ -256,39 +283,40 @@ subroutine set_lmlef_obs
 !      & * exp(0.25d0 * (real(islot-nbslot,kind=dp) / sigma_obst)**2)
 !    nn = nn + nobslots(islot)
 !  end do
-!!
-!! select OBS IN THE NODE
-!!
-!  nn = 0
-!  do n=1,nobs
-!    if(obsda%qc(n) /= 1) CYCLE
-!    if(obsda%lat(n) < MINVAL(myrlat) .OR. MAXVAL(myrlat) < obsda%lat(n)) then
-!      dlat = MIN( ABS(MINVAL(myrlat)-obsda%lat(n)),ABS(MAXVAL(myrlat)-obsda%lat(n)) )
-!      if(dlat > dlat_zero) CYCLE
-!    end if
-!    if(obsda%lon(n) < MINVAL(myrlon) .OR. MAXVAL(myrlon) < obsda%lon(n)) then
-!      dlon1 = ABS(MINVAL(myrlon) - obsda%lon(n))
-!      dlon1 = MIN(dlon1,360.0d0-dlon1)
-!      dlon2 = ABS(MAXVAL(myrlon) - obsda%lon(n))
-!      dlon2 = MIN(dlon2,360.0d0-dlon2)
-!      dlon =  MIN(dlon1,dlon2) &
-!         & * pi*re*COS(obsda%lat(n)*pi/180.d0)/180.0d0
-!      if(dlon > dist_zero) CYCLE
-!    end if
-!    nn = nn+1
-!    obsda%elem(nn) = obsda%elem(n)
-!    obsda%lon(nn) = obsda%lon(n)
-!    obsda%lat(nn) = obsda%lat(n)
-!    obsda%lev(nn) = obsda%lev(n)
-!    obsda%dat(nn) = obsda%dat(n)
-!    obsda%err(nn) = obsda%err(n)
-!!    tmpk(nn) = tmpk(n)
-!    obsda%hxf(nn) = obsda%hxf(n)
-!    obsda%hxe(:,nn) = obsda%hxe(:,n)
-!    obsda%qc(nn) = obsda%qc(n)
-!  end do
-!  nobs = nn
-!  write(6,'(I10,A,I3.3)') nobs,' OBSERVATIONS TO BE ASSIMILATED IN MYIMAGE ',myimage
+!
+! search which image contains observation
+!
+  allocate( tmpimg(obsda%nobs)[*] )
+  tmpimg = 0
+  nn=0
+  is=1
+  ie=ni1+ighost
+  if(nidom(myimage)==nisep) ie=ni1
+  js=1
+  je=nj1+jghost
+  if(njdom(myimage)==njsep) je=nj1
+  do n=1,obsda%nobs
+    if(obsda%qc(n) /= iqc_good) cycle
+    if(obsda%lat(n) < myrlat(js) .or. myrlat(je) <= obsda%lat(n)) & ! latitude's order is S->N
+      cycle
+    if(obsda%lon(n) < myrlon(is) .or. myrlon(ie) <= obsda%lon(n)) & ! longitude's order is W->E
+      cycle
+    tmpimg(n) = myimage
+    nn=nn+1
+  end do
+  if(myimage.eq.1) then
+    do l=2,nimages
+      tmpimg(:)[1] = tmpimg(:)[1]+tmpimg(:)[l]
+    end do
+    do l=2,nimages
+      tmpimg(:)[l] = tmpimg(:)[1]
+    end do
+  end if
+  sync all
+  obsda%img(:) = tmpimg
+  if(debug_obs) write(6,*) 'obs%img ',obsda%img(:)
+  write(6,'(I10,A,I3.3)') nn,' OBSERVATIONS TO BE PROCESSED IN MYIMAGE ',myimage
+  deallocate( tmpimg )
 !
 ! SORT
 !
@@ -317,10 +345,10 @@ subroutine set_lmlef_obs
   end do
 !$OMP END DO
   if(debug_obs) then
-    write(6,'(3A4)') 'j','nj','njs'
-    write(6,'(3I4)') 0,nj(0),0
+    write(6,'(3A6)') 'j','nj','njs'
+    write(6,'(3I6)') 0,nj(0),0
     do j=1,nlat
-      write(6,'(3I4)') j,nj(j),njs(j)
+      write(6,'(3I6)') j,nj(j),njs(j)
     end do
   end if
   obsdasort%nobs=0
@@ -342,6 +370,7 @@ subroutine set_lmlef_obs
       tmpobs%hxf(njs(j)+nn) = obsda%hxf(n)
       tmpobs%hxe(:,njs(j)+nn) = obsda%hxe(:,n)
       tmpobs%qc(njs(j)+nn) = obsda%qc(n)
+      tmpobs%img(njs(j)+nn) = obsda%img(n)
     end do
   end do
 !$OMP END DO
@@ -372,6 +401,7 @@ subroutine set_lmlef_obs
         obsdasort%hxf(njs(j)+nn) = tmpobs%hxf(n)
         obsdasort%hxe(:,njs(j)+nn) = tmpobs%hxe(:,n)
         obsdasort%qc(njs(j)+nn) = tmpobs%qc(n)
+        obsdasort%img(njs(j)+nn) = tmpobs%img(n)
 !        obsnode(njs(j)+nn) = tmpnode
 !        obsij1(njs(j)+nn) = tmpij1
       end do
@@ -390,11 +420,11 @@ subroutine set_lmlef_obs
   if(debug_obs) then
     write(6,'(9a10)') 'elem','lon','lat','lev','dat','err','dmin','dep','qc'
     do n=1,obsdasort%nobs
-      write(6,'(i10,2f10.2,f10.1,4es10.2,i10)') &
+      write(6,'(i10,2f10.2,f10.1,4es10.2,2i10)') &
        & obsdasort%elem(n),&
        & obsdasort%lon(n),obsdasort%lat(n),obsdasort%lev(n),&
        & obsdasort%dat(n),obsdasort%err(n),obsdasort%dmin(n),&
-       & obsdasort%hxf(n),obsdasort%qc(n)
+       & obsdasort%hxf(n),obsdasort%qc(n),obsdasort%img(n)
     end do
 !    write(6,'(A)') 'nobsgrd'
 !    do j=1,nlat
@@ -405,7 +435,6 @@ subroutine set_lmlef_obs
 !    end do
   end if
   call obsout_deallocate( tmpobs )
-  deallocate( tmphdxf )
 
   return
 end subroutine set_lmlef_obs

@@ -53,11 +53,8 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! write header
   print *, 'posting date = ', idate(4), idate(2), idate(3), idate(1), '+', nint(fhour)
   sisl=0.0
-  do k=1,levs
-    sisl(k) = si(k)
-    sisl(levs+1+k) = sl(k)
-  end do
-  sisl(levs+1) = si(levs+1)
+  sisl(1:levs+1) = si(1:levs+1)
+  sisl(levs+2:2*levs+1) = sl(1:levs)
   write(ounit) fhour, idate, sisl, ext
   if ( nonhyd.eq.1 ) then
     print *, 'Input is a nonhydrostatic'

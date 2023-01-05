@@ -7,7 +7,8 @@ program decode_dcdf
   use kind_module
   use obs_module, only : obstype, get_nobs_upper, read_upper, &
      & obsin_allocate, obs_preproc, monit_obsin, &
-     & write_obs, ndate
+     & write_obs
+  use func_module, only : ndate
 
   implicit none
   character(len=5), dimension(4), parameter :: datatype=&
@@ -30,14 +31,15 @@ program decode_dcdf
 
   read(5,nml=param_decode)
   write(6,nml=param_decode)
-  iyy = atime(1) - (atime(1)/100)*100
-  imm = atime(2)
-  idd = atime(3)
-  write(cyymmdd,'(3i2.2)') iyy,imm,idd
-  write(odate(1:6),'(a6)') cyymmdd
   call ndate(atime,lmin,btime)
+  iyy = btime(1) - (btime(1)/100)*100
+  imm = btime(2)
+  idd = btime(3)
+  write(cyymmdd,'(3i2.2)') iyy,imm,idd
   write(chhnn,'(2i2.2)') btime(4:5)
+  print *, cyymmdd
   print *, chhnn
+  write(odate(1:6),'(a6)') cyymmdd
   write(odate(7:10),'(a4)') chhnn
   call ndate(atime,rmin,btime)
   write(chhnn,'(2i2.2)') btime(4:5)

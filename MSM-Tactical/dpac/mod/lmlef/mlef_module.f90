@@ -180,6 +180,9 @@ subroutine mlef_core(ne,nobs,nobsl,nfun,zxb,dep,parm_infl,alpha,wupd,flag&
   !niter = niter + 1
   if(nobsl == 0) then
     if(debug) write(6,'(A)') 'No observation to be assimilated'
+    if(present(jb)) jb=0.0d0
+    if(present(jo)) jo=0.0d0
+    if(present(gnorm_out)) gnorm_out=0.0d0
     flag = 0
     return
   end if
