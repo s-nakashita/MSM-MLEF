@@ -89,7 +89,8 @@ program addprtb
   iq=iv+levs
 !  icw=iq+2*levs
   ! base field
-  call read_sig(nisigb,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfldb,mapf,clat,clon)
+  call read_sig(nisigb,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfldb,mapf,clat,clon)
   !! set boundaries
   if((lonw.gt.-999.9d0).and.(lone.gt.-999.9d0)) then
     do i=1,igrd1
@@ -145,7 +146,8 @@ program addprtb
   allocate( dfld(igrd1,jgrd1,nfldsig) )
   allocate( dfldp(igrd1,jgrd1,nfldsig) )
   dfldp=0.0
-  call read_sig(nisigp1,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(nisigp1,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   dfldp = dfld
 !  dfldp(:,:,ips) = dfld(:,:,ips)
   do j=1,nlat
@@ -195,7 +197,8 @@ program addprtb
   call read_header(nisigp2,icld,label,idate,fhour,si,sl,ext,nfldsig)
   deallocate( dfld )
   allocate( dfld(igrd1,jgrd1,nfldsig) )
-  call read_sig(nisigp2,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(nisigp2,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   dfldp = dfldp - dfld
   do j=1,nlat
     do i=1,nlon

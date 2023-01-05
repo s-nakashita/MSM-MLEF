@@ -83,7 +83,8 @@ program readsig
   allocate( clat(jgrd1),clon(igrd1), factor(igrd1,jgrd1,levs) )
   allocate( buf4(igrd1,jgrd1) )
   print *, 'start reading and writing data'
-  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+  call read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
+    dfld,mapf,clat,clon)
   igz=1
   ips=igz+1
   it=ips+1

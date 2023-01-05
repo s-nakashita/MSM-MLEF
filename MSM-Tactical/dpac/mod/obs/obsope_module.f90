@@ -592,10 +592,9 @@ contains
     case(id_q_obs) !Specific humidity
       call itpl_3d(v3d(:,:,:,iv3d_q),ri,rj,rk,yobs)
     case(id_td_obs) !Dewpoint Temperature
-      call itpl_3d(v3d(:,:,:,iv3d_t),ri,rj,rk,t)
       call itpl_3d(v3d(:,:,:,iv3d_q),ri,rj,rk,q)
       call itpl_3d(p_full(:,:,:),ri,rj,rk,p)
-      call calc_td(t,q,p,yobs) 
+      call calc_td(q,p,yobs) 
     case(id_rh_obs) !Relative humidity
       call itpl_3d(v3d(:,:,:,iv3d_t),ri,rj,rk,t)
       call itpl_3d(v3d(:,:,:,iv3d_q),ri,rj,rk,q)

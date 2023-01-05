@@ -103,7 +103,7 @@ module func_module
 !
 ! dewpoint temperature
 !
-  subroutine calc_td(t,q,p,td)
+  subroutine calc_td(q,p,td)
     implicit none
     real(kind=dp),parameter :: a=19.48_dp
     real(kind=dp),parameter :: b=243.5_dp
@@ -115,9 +115,9 @@ module func_module
 !    real(kind=dp),parameter :: mi=9.778707_dp
 !    real(kind=dp),parameter :: tni=273.1466_dp
 
-    real(kind=dp),intent(in) :: t,q,p
+    real(kind=dp),intent(in) :: q,p
     real(kind=dp),intent(out):: td
-    real(kind=dp) :: es,fact,tc,lnes
+    real(kind=dp) :: es,lnes!,fact,tc
 
     if(q.lt.0.0_dp) then
       print *, 'humidity is less than 0, q=',q

@@ -63,9 +63,9 @@ program ensmspr
   dfldm = dfldm / nens
   dflds = sqrt( dflds/nens - dfldm**2 )
   ! write output
-  call write_sig(nmsig,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+  call write_sig(nmsig,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldm,mapf,clat,clon)
-  call write_sig(nssig,label,idate,fhour,si(1:levs+1),sl(1:levs),ext,&
+  call write_sig(nssig,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dflds,mapf,clat,clon)
 
   deallocate( dfld, dfldm, dflds ) 
