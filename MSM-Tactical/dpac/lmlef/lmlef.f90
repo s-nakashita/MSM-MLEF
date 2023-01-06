@@ -171,11 +171,11 @@ program lmlef
   end if
   ! apply observation operator with additional space for externally processed observations
   obsda%nobs = nobs_ext
-  if(single_obs) then !single observation option is valid only for serial operator
-    call obsope_serial(obs,obsda)
-  else
+!  if(single_obs) then !single observation option is valid only for serial operator
+!    call obsope_serial(obs,obsda)
+!  else
     call obsope_parallel(obs,obsda,gues3dc,gues2dc,gues3d,gues2d)
-  end if
+!  end if
   sync all
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
@@ -184,6 +184,24 @@ program lmlef
   ! process observation data
   !
   call set_lmlef_obs
+  !
+  ! (optional) write y-H(xf)
+  !
+  if(obsgues_output) then
+    ! departure => raw values
+    obsdasort%hxf(:) = obsdasort%dat(:) - obsdasort%hxf(:)
+    if(.not.mean) then
+      call file_member_replace(0,obsg_out_basename,obsf)
+    else
+      call file_member_replace(member+1,obsg_out_basename,obsf)
+    end if
+    call write_obsout(obsf,obsdasort,0)
+    do im=1,member
+      obsdasort%hxe(im,:) = obsdasort%hxe(im,:) + obsdasort%hxf(:)
+      call file_member_replace(im,obsg_out_basename,obsf)
+      call write_obsout(obsf,obsdasort,im)
+    end do
+  end if
 !
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(SET_OBS):',rtimer,rtimer-rtimer00
@@ -244,14 +262,14 @@ program lmlef
     ! departure => raw values
     obsdasort%hxf(:) = obsdasort%dat(:) - obsdasort%hxf(:)
     if(.not.mean) then
-      call file_member_replace(0,obsda_out_basename,obsf)
+      call file_member_replace(0,obsa_out_basename,obsf)
     else
-      call file_member_replace(member+1,obsda_out_basename,obsf)
+      call file_member_replace(member+1,obsa_out_basename,obsf)
     end if
     call write_obsout(obsf,obsdasort,0)
     do im=1,member
       obsdasort%hxe(im,:) = obsdasort%hxe(im,:) + obsdasort%hxf(:)
-      call file_member_replace(im,obsda_out_basename,obsf)
+      call file_member_replace(im,obsa_out_basename,obsf)
       call write_obsout(obsf,obsdasort,im)
     end do
   end if

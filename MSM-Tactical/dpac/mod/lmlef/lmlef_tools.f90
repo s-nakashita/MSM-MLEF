@@ -247,11 +247,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   if(cov_infl_mul < 0.0d0) then ! 3D parameter values are read-in
     inquire(file=infl_mul_in_basename,exist=ex)
     if(ex) then
-      if(myimage == 1) then
+      if(myimage == print_img) then
         write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is reading.. ',infl_mul_in_basename
         call read_restart(infl_mul_in_basename,work3dg,work2dg)
       end if
-      call scatter_grd(1,work3dg,work2dg,work3d,work2d)
+      call scatter_grd(print_img,work3dg,work2dg,work3d,work2d)
     else
       write(6,'(2A)') '!!WARNING: no such file exist: ',infl_mul_in_basename
       work3d = -1.0d0 * cov_infl_mul
@@ -339,6 +339,16 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! start optimization for all grids and variables
   do while ( niter <= maxiter )
     if( jout .and. (gflag==1) ) write(6,'(A,i4)') 'iteration', niter
+    ! global cost
+    ngrd=ni1*nj1*nlev
+    ne=member*ngrd
+    call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(work3d(1:ni1,1:nj1,:,1),(/ngrd/)),fglb)
+    sync all
+    if(myimage==print_img) then
+      do k=2,nimages
+        fglb[myimage] = fglb[myimage] + fglb[k]
+      end do
+    end if
     do ilev=1,nlev
       write(6,'(A,I3)') 'ilev = ',ilev
       do ij=1,nij1
@@ -373,18 +383,12 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end if
       end do
     end do
-    ngrd=ni1*nj1*nlev
-    ne=member*ngrd
-    call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(work3d(1:ni1,1:nj1,:,1),(/ngrd/)),fglb)
     sync all
-    if(myimage==1) then
-      do k=2,nimages
-        fglb[myimage] = fglb[myimage] + fglb[k]
-      end do
+    if(myimage==print_img) then
       flagall=0
       do k=1,nimages
         do ilev=1,nlev
-          do ij=1,nij1
+          do ij=1,nij1node(k)
             if(flag(ij,ilev)[k]/=0) then
               flagall=flagall+ABS(flag(ij,ilev)[k])
             end if
@@ -428,7 +432,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         write(6,'(2(A,I7))') 'flagall=',flagall,' / ',lngrd*nlev
         write(6,'(A,ES12.5)') 'J(sum)=',fsum
         write(6,'(A,ES12.5)') 'J(global)=',fglb
-        write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
+        if(niter<maxiter) write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
       !end if
       end if
 !      n=0
@@ -621,8 +625,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !  deallocate( gw,ggrad,ggold,gdesc,gdold )
   if(save_info) then
     ! write out cost functions
-    call gather_grd(1,jwork3d,jwork2d,work3dg,work2dg)
-    if(myimage == 1) then
+    call gather_grd(print_img,jwork3d,jwork2d,work3dg,work2dg)
+    if(myimage == print_img) then
       write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing.. ',info_out_basename
       call write_restart(info_out_basename,work3dg,work2dg)
     end if
@@ -635,8 +639,8 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   end if
   ! write out adaptive inflation parameters
   if(cov_infl_mul < 0.0d0) then
-    call gather_grd(1,work3d,work2d,work3dg,work2dg)
-    if(myimage == 1) then
+    call gather_grd(print_img,work3d,work2d,work3dg,work2dg)
+    if(myimage == print_img) then
       write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing.. ',infl_mul_out_basename
       call write_restart(infl_mul_out_basename,work3dg,work2dg)
     end if
@@ -1125,11 +1129,11 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     integer :: monit_nqc(nobstype,nqctype)
   
     allocate( tmphxf(obsdasort%nobs,0:member)[*] )
-    allocate( work3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
-    allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
+    allocate( work3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
+    allocate( work2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
     allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
-    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
-    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
+    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
+    allocate( p_full (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! full pressure levels (identical to all members)

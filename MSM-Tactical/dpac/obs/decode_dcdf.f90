@@ -47,6 +47,10 @@ program decode_dcdf
   write(odate(12:15),'(a4)') chhnn
   print *, odate
 
+  iyy = atime(1) - (atime(1)/100)*100
+  imm = atime(2)
+  idd = atime(3)
+  write(cyymmdd,'(3i2.2)') iyy,imm,idd
   do iof=1,4
     if(iuse(iof)==1) then
       cfile='dcdf.'//trim(datatype(iof))//'.'//cyymmdd

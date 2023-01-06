@@ -28,7 +28,8 @@ contains
     real(kind=dp), intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
     real(kind=dp), intent(in) :: gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)
     real(kind=dp), intent(in) :: gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)
-    integer :: nobsin,nobsout
+    integer :: nobsin
+    integer :: nobsout
     integer :: iof
     character(len=filelenmax) :: guesf, outf
     real(kind=dp), allocatable :: v3d(:,:,:,:)
@@ -39,6 +40,8 @@ contains
     real(kind=dp), allocatable :: wk2d(:,:)[:]
     integer, allocatable :: iwk2d(:,:)[:]
     integer :: is,ie,js,je
+!!! for single point observation
+    logical :: single_use=.true.
     real(kind=dp) :: lonb,latb
     real(kind=dp) :: hxf,dep
 
@@ -52,7 +55,7 @@ contains
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
-   
+
     allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
     allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
     allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
@@ -72,6 +75,7 @@ contains
     je=nj1+jghost
     if(njdom(myimage)==njsep) je=nj1
     do while(im<=member)
+      if(single_obs) single_use=.true.
       nobsout=0
       if(im.gt.0) then
         v3d=gues3d(:,:,:,im,:)
@@ -94,6 +98,17 @@ contains
       latb=undef
       do iof=1,obsin_num
         do n=1,obsin(iof)%nobs
+          !!! single point observation
+          if(single_obs.and.myimage==print_img) then
+            if(single_use.and.(lonb.ne.undef).and.(latb.ne.undef)) then
+              if(lonb.ne.obsin(iof)%lon(n).or.latb.ne.obsin(iof)%lat(n)) then
+                write(6,'(a,i5,a,f10.2,a,f10.2)') &
+                        'MYIMAGE ',myimage,' observation point : lon=',lonb,' lat=',latb
+                single_use=.false.
+                !exit
+              end if
+            end if
+          end if
           nobsout=nobsout+1
           obsout%elem(nobsout) = obsin(iof)%elem(n)
           obsout%lon(nobsout)  = obsin(iof)%lon(n)
@@ -105,7 +120,7 @@ contains
           ! horizontal domain check
           if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
              .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
-            if(myimage.eq.1) &
+            if(myimage.eq.print_img) &
             write(0,'(a,2(a,f8.2))') &
             & 'warning: observation is outside of the horizontal domain ', &
             & 'lon=',obsin(iof)%lon(n),' lat=',obsin(iof)%lat(n)
@@ -119,7 +134,6 @@ contains
              .or.obsin(iof)%lat(n).lt.myrlat(js)&
              .or.obsin(iof)%lat(n).ge.myrlat(je)) then
           else !obsout%img == myimage
-          obsout%img(nobsout)=myimage
           call phys2ijk(p_full,obsin(iof)%elem(n),&
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout),.true.)
@@ -138,6 +152,23 @@ contains
 !              end if
 !!debug
             end if !luseobs
+            if(single_obs) then
+              if(myimage/=print_img.or.(.not.single_use)) then
+                obsout%qc(nobsout)=iqc_out_h
+                wk2d(im,nobsout)=0.0d0
+              else
+                if(lonb.eq.undef.and.latb.eq.undef) then
+                  lonb=obsin(iof)%lon(n)
+                  latb=obsin(iof)%lat(n)
+                  if(latb.lt.lats.or.latb.gt.latn.or.&
+                   lonb.lt.lonw.or.lonb.gt.lone) then
+                    lonb=undef; latb=undef
+                    obsout%qc(nobsout)=iqc_out_h
+                    wk2d(im,nobsout)=0.0d0
+                  end if
+                end if
+              end if !single_img
+            end if !single_obs
           end if !iqc_good
           iwk2d(im,nobsout)=obsout%qc(nobsout)
           end if !obsout%img==myimage
@@ -145,45 +176,45 @@ contains
       end do ! iof=1,obsin_num
 
       im=im+1
-      end do !do while (im<=member)
-      ! broadcast hxf, qc
-      if(myimage.eq.1) then
-        do img=2,nimages
-          wk2d(:,1:nobsout)[myimage]=wk2d(:,1:nobsout)[myimage]+wk2d(:,1:nobsout)[img]
-          do n=1,nobsout
-            if(.not.mean) then
-              im=0
-            else
-              im=1
-            end if
-            do while(im<=member) 
-              iwk2d(im,n)[myimage]=max(iwk2d(im,n)[myimage],iwk2d(im,n)[img])
-              im=im+1
-            end do
+    end do !do while (im<=member)
+    ! broadcast hxf, qc
+    if(myimage.eq.1) then
+      do img=2,nimages
+        wk2d(:,1:nobsout)[myimage]=wk2d(:,1:nobsout)[myimage]+wk2d(:,1:nobsout)[img]
+        do n=1,nobsout
+          if(.not.mean) then
+            im=0
+          else
+            im=1
+          end if
+          do while(im<=member) 
+            iwk2d(im,n)[myimage]=max(iwk2d(im,n)[myimage],iwk2d(im,n)[img])
+            im=im+1
           end do
         end do
-        do img=2,nimages
-          wk2d(:,1:nobsout)[img] = wk2d(:,1:nobsout)[myimage]
-          iwk2d(:,1:nobsout)[img] = iwk2d(:,1:nobsout)[myimage]
-        end do
-      end if
-      sync all
+      end do
+      do img=2,nimages
+        wk2d(:,1:nobsout)[img] = wk2d(:,1:nobsout)[myimage]
+        iwk2d(:,1:nobsout)[img] = iwk2d(:,1:nobsout)[myimage]
+      end do
+    end if
+    sync all
+    if(.not.mean) then
+      obsout%hxf(1:nobsout)=wk2d(0,1:nobsout)
+    end if
+    obsout%hxe(:,1:nobsout)=wk2d(1:member,1:nobsout)
+    if(obs_out) then
       if(.not.mean) then
-        obsout%hxf(1:nobsout)=wk2d(0,1:nobsout)
+        im=0
+      else
+        im=1
       end if
-      obsout%hxe(:,1:nobsout)=wk2d(1:member,1:nobsout)
-      if(obs_out) then
-        if(.not.mean) then
-          im=0
-        else
-          im=1
-        end if
-        im=im+myimage-1
-        do while(im<=member)
-          do n=1,nobsout
-            obsout%qc(n) = iwk2d(im,n)
-          end do
-          if(debug_obs) then
+      im=im+myimage-1
+      do while(im<=member)
+        do n=1,nobsout
+          obsout%qc(n) = iwk2d(im,n)
+        end do
+        if(debug_obs) then
           print '(10a10)','number','elem','lon','lat','lev','dat','err','dmin','hxf','qc'
           nn=0
           do n=1,nobsout
@@ -196,36 +227,36 @@ contains
               hxf=obsout%hxe(im,n)
             end if
             print '(i10,a10,2f10.2,f10.1,4es10.2,i10)', &
-           &  n,obelmlist(uid_obs(obsout%elem(n))),&
-           &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
-           &  obsout%err(n),obsout%dmin(n), &
-           &  hxf,obsout%qc(n)
+         &  n,obelmlist(uid_obs(obsout%elem(n))),&
+         &  obsout%lon(n),obsout%lat(n),obsout%lev(n),obsout%dat(n),&
+         &  obsout%err(n),obsout%dmin(n), &
+         &  hxf,obsout%qc(n)
           end do
-          end if
-          call file_member_replace(im,obsout_basename,outf)
-          call write_obsout(outf,obsout,im)
-          im=im+nimages
-        end do
-      end if
-      do n=1,nobsout
-        obsout%qc(n) = maxval(iwk2d(:,n))
+        end if
+        call file_member_replace(im,obsout_basename,outf)
+        call write_obsout(outf,obsout,im)
+        im=im+nimages
       end do
-      ! broadcast image
-      iwk2d=0
-      iwk2d(1,1:nobsout) = obsout%img(1:nobsout)
-      if(myimage.eq.1) then
-        do img=2,nimages
-          iwk2d(1,1:nobsout)[myimage]=iwk2d(1,1:nobsout)[myimage] + iwk2d(1,1:nobsout)[img]
-          end do
-        do img=2,nimages
-          iwk2d(1,1:nobsout)[img] = iwk2d(1,1:nobsout)[myimage]
-        end do
-      end if
-      sync all
-      obsout%img(1:nobsout) = iwk2d(1,1:nobsout)
-      if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
-      deallocate( v3d,v2d )
-      deallocate( wk2d,iwk2d )
+    end if
+    do n=1,nobsout
+      obsout%qc(n) = maxval(iwk2d(:,n))
+    end do
+    ! broadcast image
+    iwk2d=0
+    iwk2d(1,1:nobsout) = obsout%img(1:nobsout)
+    if(myimage.eq.1) then
+      do img=2,nimages
+        iwk2d(1,1:nobsout)[myimage]=iwk2d(1,1:nobsout)[myimage] + iwk2d(1,1:nobsout)[img]
+      end do
+      do img=2,nimages
+        iwk2d(1,1:nobsout)[img] = iwk2d(1,1:nobsout)[myimage]
+      end do
+    end if
+    sync all
+    obsout%img(1:nobsout) = iwk2d(1,1:nobsout)
+!    if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
+    deallocate( v3d,v2d )
+    deallocate( wk2d,iwk2d )
     return
   end subroutine obsope_parallel
 !
@@ -325,8 +356,8 @@ contains
               if(lonb.eq.undef.and.latb.eq.undef) then
                 lonb=obsin(iof)%lon(n)
                 latb=obsin(iof)%lat(n)
-                if(latb.lt.28.0.or.latb.gt.32.0.or.&
-                   lonb.lt.125.0.or.lonb.gt.131.0) then
+                if(latb.lt.lats.or.latb.gt.latn.or.&
+                   lonb.lt.lonw.or.lonb.gt.lone) then
                   lonb=undef; latb=undef
                   obsout%qc(nobsout)=iqc_out_h
                 end if
@@ -479,6 +510,14 @@ contains
       end do
       aj=(rlat1-myrlat(j-1))/(myrlat(j)-myrlat(j-1))
       rj=real(j-1,kind=dp)+aj
+      ! check whether observation is within horizontal domain or not
+      if(ri.lt.real(is-1).or.ri.gt.real(ie).or.rj.lt.real(js-1).or.rj.gt.real(je)) then
+        write(0,'(a,4(a,f8.2))') &
+        & 'warning: observation is outside of the horizontal domain ', &
+        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj
+        qc=iqc_out_h
+        return
+      end if
 !!DEBUG      write(6,'(6(a,f8.2))') &
 !!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',myrlon(i),' rlat=',myrlat(j)
       ri=ri+real(ighost,kind=dp)
@@ -505,14 +544,6 @@ contains
         aj=(rlat1-rlat(j-1))/(rlat(j)-rlat(j-1))
         rj=real(j-1,kind=dp)+aj
       end if
-      ! check whether observation is within horizontal domain or not
-      if(ri.lt.1.0.or.ri.gt.nlon.or.rj.lt.1.0.or.rj.gt.nlat) then
-        write(0,'(a,4(a,f8.2))') &
-        & 'warning: observation is outside of the horizontal domain ', &
-        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj
-        qc=iqc_out_h
-        return
-      end if
 !!DEBUG      write(6,'(6(a,f8.2))') &
 !!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
@@ -520,6 +551,29 @@ contains
     if(elm.gt.9999) then !surface observation
       rk=0.0
     else
+      !! for hydrometeor variables
+      if(elm==id_q_obs.or.elm==id_rh_obs.or.elm==id_td_obs) then
+        if(rlev1.lt.q_update_top) then
+          write(0,'(2a,f8.1,a,i5)') &
+          & 'warning: observation is too high for hydrometeors, ',&
+          & 'lev=',rlev1,' elem=',elm
+          qc=iqc_out_vhi
+          return
+        end if
+      end if
+      !! fixed level
+      if(fixed_level) then
+        do k=1,25
+          if(rlev1.eq.plevfix(k)) exit
+        end do
+        if(k.gt.25) then
+          write(0,'(2a,f8.1,a,i5)') &
+          & 'warning: observation is not on the mandatory levels, ',&
+          & 'lev=',rlev1,' elem=',elm
+          qc=iqc_otype
+          return
+        end if
+      end if
       ! horizontal interpolation
       do k=1,nlev
         i=ceiling(ri)
@@ -720,8 +774,8 @@ contains
         bias(i)=undef
         rmse(i)=undef
       else
-        bias(i)=bias(i)/real(nobs(i),kind=dp)
-        rmse(i)=sqrt(rmse(i)/real(nobs(i),kind=dp))
+        bias(i)=bias(i)/real(nqc(i,1),kind=dp)
+        rmse(i)=sqrt(rmse(i)/real(nqc(i,1),kind=dp))
       end if
     end do
     return

@@ -7,6 +7,15 @@ head_da=${HEAD2:-da}
 ## experiment parameters
 ires=${IRES:-27}
 single=${SINGLEOBS:-F}
+if [ $single = T ];then
+  debug_obs=T
+  print_img=5
+fi
+lats=${DA_SINGLE_LATS}
+latn=${DA_SINGLE_LATN}
+lonw=${DA_SINGLE_LONW}
+lone=${DA_SINGLE_LONE}
+fixed_level=${DA_FIXED_LEVEL}
 nisep=${NISEP:-5}
 njsep=${NJSEP:-2}
 ighost=${IGHOST:-1}
@@ -54,39 +63,32 @@ imm=`expr $mm + 0`
 idd=`expr $dd + 0`
 ihh=`expr $hh + 0`
 set -e
+if [ $cycleda -eq 1 ];then
+  head=$head_bv
+else
+  head=$head_da
+fi
+pdate=`date -j -f "%Y%m%d%H" -v-${fhour}H +"%Y%m%d%H" "$adate"`
+fh=`printf '%0.2d' $fhour`
 
-## input observation
-if [ $lmin -lt 0 ];then
-sdate=`date -j -f "%Y%m%d%H%M" -v${lmin}M +"%y%m%d%H%M" "${adate}00"`
-else
-sdate=`date -j -f "%Y%m%d%H%M" -v+${lmin}M +"%y%m%d%H%M" "${adate}00"`
-fi
-if [ $rmin -lt 0 ];then
-edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
-else
-edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
-fi
-obsf=upper${prep}.${sdate}-${edate}
-$USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
 ## preprocessed observation
 obsda_in=F
 obsextf=obsda${prep}
 ## output files
 obsinf=obsg${prep}
 obsoutf=obsa${prep}
-logf=stdout${prep}
+logf=stdout.${head_da}
 if [ "${single}" = "T" ];then
 obsextf=${obsextf}.single
 obsinf=${obsinf}.single
 obsoutf=${obsoutf}.single
-logf=${logf}.single
+#logf=${logf}serope.
 fi
 luseobs=
 if [ "${selobs}" != "all" ];then
 obsextf=${obsextf}.${selobs}
 obsinf=${obsinf}.${selobs}
 obsoutf=${obsoutf}.${selobs}
-logf=${logf}.${selobs}
 case $selobs in
   'u'  ) luseobs="T,F,F,F,F,F,F,F,F" ;;
   'v'  ) luseobs="F,T,F,F,F,F,F,F,F" ;;
@@ -105,6 +107,20 @@ echo $logf
 wdir=${analdir}/${adate}
 mkdir -p $wdir
 cd $wdir
+#if [ ! -f ${logf}_n${NODE}.txt ]; then
+### input observation
+if [ $lmin -lt 0 ];then
+sdate=`date -j -f "%Y%m%d%H%M" -v${lmin}M +"%y%m%d%H%M" "${adate}00"`
+else
+sdate=`date -j -f "%Y%m%d%H%M" -v+${lmin}M +"%y%m%d%H%M" "${adate}00"`
+fi
+if [ $rmin -lt 0 ];then
+edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
+else
+edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
+fi
+obsf=upper${prep}.${sdate}-${edate}
+$USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
 ### namelist
 cat <<EOF >lmlef.nml
 &namlst_commlef
@@ -120,11 +136,16 @@ cat <<EOF >lmlef.nml
 &param_obsope
  obsin_num=1,
  obsin_name='${obsf}',
- obs_out=T,
+ obs_out=F,
  obsout_basename=,
  fguess_basename=,
  single_obs=${single},
+ lats=${lats},
+ latn=${latn},
+ lonw=${lonw},
+ lone=${lone},
  luseobs=${luseobs},
+ fixed_level=${fixed_level},
  slot_start=,
  slot_end=,
  slot_base=,
@@ -135,17 +156,19 @@ cat <<EOF >lmlef.nml
  nisep=${nisep},
  jghost=${jghost},
  ighost=${ighost},
+ print_img=${print_img},
 &end
 &param_lmlef
  obsda_in=${obsda_in},
- obsda_in_basename='${obsinf}.@@@@',
- obsda_out_basename='${obsoutf}.@@@@',
+ obsda_in_basename='${obsextf}.@@@@',
+ obsg_out_basename='${obsinf}.@@@@',
+ obsa_out_basename='${obsoutf}.@@@@',
  gues_in_basename=,
  anal_out_basename=,
  mean=${mean},
  tl=${tl},
  scl_mem=${scl_mem},
- debug_obs=,
+ debug_obs=${debug_obs},
  sigma_obs=${sigh},
  sigma_obsv=${sigv},
  gross_error=,
@@ -154,25 +177,19 @@ cat <<EOF >lmlef.nml
  q_update_top=${q_update_top},
  q_adjust=T,
  oma_monit=T,
+ obsgues_output=T,
  obsanal_output=T,
 &end
 EOF
 #cat lmlef.nml
 
 ## prepare input files
-if [ $cycleda -eq 1 ];then
-  head=$head_bv
-else
-  head=$head_da
-fi
-pdate=`date -j -f "%Y%m%d%H" -v-${fhour}H +"%Y%m%d%H" "$adate"`
 rm -f ${obsf}.dat
 ln -s ${obsdir}/${adate}/${obsf}.dat .
-rm -f gues.*.grd ${obsinf}.*.dat
-fh=`printf '%0.2d' $fhour`
+rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.grd
 if [ $obsda_in = T ];then
-ln -s ${obsdir}/${pdate}/${obsextf}.0000.dat ${obsinf}.0000.dat
+ln -s ${obsdir}/${pdate}/${obsextf}.0000.dat .
 fi
 if [ -f ${guesdir}/${pdate}/infl.grd ];then
   ln -s ${guesdir}/${pdate}/infl.grd .
@@ -182,19 +199,23 @@ while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem}.grd
 if [ $obsda_in = T ];then
-ln -s ${obsdir}/${adate}/${obsf}.0${mem}.dat ${obsinf}.0${mem}.dat
+ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat .
 fi
 m=`expr $m + 1`
 done
 ln -fs lmlef.nml STDIN
 ln -fs ${bindir}/lmlef .
 ## start calculation
-#if [ ! -f ${logf}_n${NODE}.txt ]; then
 rm -f ${obsoutf}.*.dat anal.*.grd
-mpiexec -n $NODE ./lmlef 2>${logf}.err #|| exit 11
-mv NOUT-001 ${logf}_n${NODE}.txt
-#rm NOUT-*
-#fi
+mpiexec -n $NODE ./lmlef 2>${logf}err || exit 11
+if [ ! -z ${print_img} ];then
+img=`printf '%0.3d' $print_img`
+mv NOUT-$img ${logf}n${NODE}.txt
+else
+mv NOUT-001 ${logf}n${NODE}.txt
+fi
+rm -f NOUT-*
+#fi # ! -f ${logf}_n${NODE}.txt
 
 ## post process
 ### write GrADS files
@@ -234,10 +255,18 @@ cp $guesdir/$pdate/rmtn.parm .
 cp $guesdir/$pdate/rmtnoss .
 cp $guesdir/$pdate/rmtnslm .
 cp $guesdir/$pdate/rmtnvar .
-mv anal.0000.grd r_sig.f00
-cp ${guesdir}/${pdate}/r_sfc.f$fh r_sfc.f00
+mkdir -p $wdir/${head_da}000
+cd $wdir/${head_da}000
+mv ../anal.0000.grd r_sig.f00
+mv ../anal.ctrl.bin .
+mv ../anal.ctrl.ctl .
+mv ../${obsinf}.0000.dat .
+mv ../${obsoutf}.0000.dat . 
+cd $wdir
+cp $wdir/${head_da}000/r_sig.f00 .
 cp r_sig.f00 r_sigi
 cp r_sig.f00 r_sigitdt
+cp ${guesdir}/${pdate}/r_sfc.f$fh r_sfc.f00
 cp r_sfc.f00 r_sfci
 m=1
 while [ $m -le $member ];do
@@ -255,6 +284,8 @@ cp $guesdir/$pdate/${head}${mem}/rmtnoss .
 cp $guesdir/$pdate/${head}${mem}/rmtnslm .
 cp $guesdir/$pdate/${head}${mem}/rmtnvar .
 mv ../anal.0$mem.grd r_sig.f00
+mv ../${obsinf}.0$mem.dat .
+mv ../${obsoutf}.0$mem.dat . 
 cp ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh r_sfc.f00
 cp r_sig.f00 r_sigi
 cp r_sig.f00 r_sigitdt
@@ -265,8 +296,12 @@ done
 for emem in mean sprd;do
 mkdir -p ${guesdir}/${pdate}/${head}${emem}
 mv gues.${emem}.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
-mkdir -p ${wdir}/${head}${emem}
-mv anal.${emem}.grd ${wdir}/${head}${emem}/r_sig.f00
+mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
+mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
+mkdir -p ${wdir}/${head_da}${emem}
+mv anal.${emem}.grd ${wdir}/${head_da}${emem}/r_sig.f00
+mv anal.${emem}.bin ${wdir}/${head_da}${emem}/
+mv anal.${emem}.ctl ${wdir}/${head_da}${emem}/
 done
 #if [ $saveens -eq 1 ];then
 #m=1

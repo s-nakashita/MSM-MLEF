@@ -200,7 +200,7 @@ subroutine set_lmlef_obs
       end do 
     end if
     sync all
-    obsda%hxf(obsda%nobs-nobs_ext+1:obsda%nobs) = tmphdxf(:,0)
+    if(.not.mean) obsda%hxf(obsda%nobs-nobs_ext+1:obsda%nobs) = tmphdxf(:,0)
     do im=1,member
       do n=1,obsda_ext%nobs
         obsda%hxe(im,obsda%nobs-nobs_ext+n)=tmphdxf(n,im)
@@ -409,7 +409,7 @@ subroutine set_lmlef_obs
     end do
     if(nn /= nj(j)) then
 !$OMP CRITICAL
-      write(6,'(A,I2.2)') 'OBS DATA SORT ERROR: ',nn,nj(j)
+      write(6,'(A,2I2.2)') 'OBS DATA SORT ERROR: ',nn,nj(j)
       write(6,'(F6.2,A,F6.2)') rlat(j),'< LAT <',rlat(j+1)
       write(6,'(F6.2,A,F6.2)') MINVAL(tmpobs%lat(njs(j)+1:njs(j)+nj(j))),'< OBSLAT <',MAXVAL(tmpobs%lat(njs(j)+1:njs(j)+nj(j)))
 !$OMP END CRITICAL

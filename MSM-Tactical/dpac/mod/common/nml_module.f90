@@ -20,15 +20,21 @@ module nml_module
   integer, save :: obsin_num=1
   character(filelenmax) :: obsin_name(nobsfilemax) = 'obs'
 !  logical, save :: obsda_run(nobsfilemax) = .true.
-  logical, save :: obs_out = .true.
+  logical, save :: obs_out = .false.
   character(filelenmax) :: obsout_basename = 'obsda.@@@@'
   character(filelenmax) :: fguess_basename = 'gues.@@@@'
 
   logical, save :: single_obs=.false.
+  real(kind=dp),save :: lonw=0.0d0
+  real(kind=dp),save :: lone=0.0d0
+  real(kind=dp),save :: lats=0.0d0
+  real(kind=dp),save :: latn=0.0d0
   logical, save :: luseobs(nobstype)=(/&
   !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
   & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0
+
+  logical, save :: fixed_level=.false. ! only used mandatory level data
 
   integer, save :: slot_start = 1
   integer, save :: slot_end = 1
@@ -41,11 +47,13 @@ module nml_module
   ! note: njsep * nisep = nimages
   integer, save :: jghost = 0  ! number of ghost point in latitude
   integer, save :: ighost = 0  ! number of ghost point in longitude
+  integer, save :: print_img=1 ! standart output image
 
   !! lmlef
   logical, save :: obsda_in = .false.
   character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
-  character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
+  character(filelenmax) :: obsg_out_basename = 'obsg.@@@@'
+  character(filelenmax) :: obsa_out_basename = 'obsa.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
   character(filelenmax) :: anal_out_basename = 'anal.@@@@'
   logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
@@ -112,8 +120,10 @@ contains
       obsout_basename, &
       fguess_basename, &
       single_obs, &
+      lonw, lone, lats, latn, &
       luseobs, &
       nobsmax, &
+      fixed_level, &
       slot_start, &
       slot_end, &
       slot_base, &
@@ -140,7 +150,8 @@ contains
       njsep, &
       nisep, &
       jghost, &
-      ighost
+      ighost, &
+      print_img
 
     rewind(5)
     read (5,nml=param_corsm,iostat=ierr)
@@ -162,7 +173,8 @@ contains
     namelist /param_lmlef/ &
       obsda_in, &
       obsda_in_basename, &
-      obsda_out_basename, &
+      obsg_out_basename, &
+      obsa_out_basename, &
       gues_in_basename, &
       anal_out_basename, &
       mean, &

@@ -195,12 +195,12 @@ contains
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
 
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
-    if(myimage.eq.1) then
+    if(myimage.eq.print_img) then
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',trim(filename)
       call read_restart(filename,v3dg,v2dg)
     end if
     sync all
-    call scatter_grd(1,v3dg,v2dg,v3d,v2d)
+    call scatter_grd(print_img,v3dg,v2dg,v3d,v2d)
     return
   end subroutine read_cntl
 !
@@ -214,10 +214,10 @@ contains
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
 
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
-    call gather_grd(1,v3d,v2d,v3dg,v2dg)
+    call gather_grd(print_img,v3d,v2d,v3dg,v2dg)
     sync all
 
-    if(myimage.eq.1) then
+    if(myimage.eq.print_img) then
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
@@ -370,15 +370,15 @@ contains
 !$OMP END PARALLEL DO
     end do
 
-    call gather_grd(1,v3dm,v2dm,v3dg,v2dg)
-    if(myimage.eq.1) then
+    call gather_grd(print_img,v3dm,v2dm,v3dg,v2dg)
+    if(myimage.eq.print_img) then
       call file_member_replace(member+1,basename,filename)
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
     sync all
-    call gather_grd(1,v3ds,v2ds,v3dg,v2dg)
-    if(myimage.eq.1) then
+    call gather_grd(print_img,v3ds,v2ds,v3dg,v2dg)
+    if(myimage.eq.print_img) then
       call file_member_replace(member+2,basename,filename)
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)

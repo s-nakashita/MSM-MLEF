@@ -70,8 +70,8 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=10
+export CYCLESTART=5
+export CYCLEMAX=5
 export DASTART=5
 export ENDHOUR=6 # cycle interval
 export PRTHOUR=1
@@ -85,7 +85,8 @@ export RSFC_MERGE=yes
 export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
-export RUNFCST=yes
+#export RUNFCST=yes
+export RUNFCST=no
 
 # Ensemble size
 export MEMBER=10
@@ -99,7 +100,12 @@ head=bv${TETYPE}${SCL}${BP}
 #fi #q adjustment
 export HEAD=$head
 # DA option
-export SINGLEOBS=F
+export SINGLEOBS=T
+export DA_SINGLE_LATS=28.0
+export DA_SINGLE_LATN=32.0
+export DA_SINGLE_LONW=125.0
+export DA_SINGLE_LONE=131.0
+export DA_FIXED_LEVEL=T
 export NISEP=2
 export NJSEP=5
 export IGHOST=1
@@ -111,16 +117,23 @@ export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=5
-export HLOC=300 #km
-export VLOC=4   #*0.1ln p
+export MAXITER=1
+export HLOC=500 #km
+export VLOC=1   #*0.1ln p
 export MINFL=10 #%
+export Q_UPDATE_TOP=20000.0 #Pa
 head2=da${PREP}
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi
 if [ ${SELOBS} != all ];then
   head2=${head2}.${SELOBS}
+fi
+if [ $DA_FIXED_LEVEL = T ];then
+  head2=${head2}.fixed
+fi
+if [ $DA_SCL_MEM = T ];then
+  head2=${head2}.scl
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.mi${MINFL}.
 export HEAD2=$head2

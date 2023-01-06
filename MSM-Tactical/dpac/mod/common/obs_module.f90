@@ -85,7 +85,11 @@ module obs_module
   real(kind=dp),parameter,public :: obserr(nobstype) = &
   & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
   &   2.0d0,10.0d0,1.0d0/)
-
+  ! mandatory levels
+  real(kind=dp),parameter,public :: plevfix(25) = &
+  & (/1000.0d2,925.0d2,900.0d2,850.0d2,800.0d2,700.0d2,600.0d2,500.0d2,400.0d2,&
+  &            350.0d2,300.0d2,250.0d2,200.0d2,175.0d2,150.0d2,125.0d2,100.0d2,&
+  &             70.0d2, 50.0d2, 40.0d2, 30.0d2, 20.0d2, 15.0d2, 10.0d2,  5.0d2/)
 !
 ! QC flags
 !
@@ -912,7 +916,7 @@ contains
         wk(5)=wk(5)*100.0 !hPa -> Pa
       case(id_rh_obs)
         wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*100.0 !nondimensional -> %
+        wk(5)=wk(5)*0.01  !% -> nondimensional
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -952,7 +956,7 @@ contains
         wk(5)=wk(5)*0.01 !Pa->hPa
       case(id_rh_obs)
         wk(4)=wk(4)*0.01 !Pa->hPa
-        wk(5)=wk(5)*0.01 !%->nondimensional
+        wk(5)=wk(5)*100.0 !nondimensional->%
       case default
         wk(4)=wk(4)*0.01 !Pa->hPa
       end select
@@ -984,9 +988,9 @@ contains
         wk(8)=wk(8)*100.0 !hPa -> Pa
       case(id_rh_obs)
         wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*100.0 !nondimensional -> %
-        wk(6)=wk(6)*100.0 !nondimensional -> %
-        wk(8)=wk(8)*100.0 !nondimensional -> %
+        wk(5)=wk(5)*0.01 !% -> nondimensional
+        wk(6)=wk(6)*0.01 !% -> nondimensional
+        wk(8)=wk(8)*0.01 !% -> nondimensional
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -1043,9 +1047,9 @@ contains
         wk(8) = wk(8) * 0.01 !Pa->hPa
       case(id_rh_obs)
         wk(4) = wk(4) * 0.01 !Pa->hPa
-        wk(5) = wk(5) * 0.01 !%->nondimensional
-        wk(6) = wk(6) * 0.01 !%->nondimensional
-        wk(8) = wk(8) * 0.01 !%->nondimensional
+        wk(5) = wk(5) * 100.0 !nondimensional->%
+        wk(6) = wk(6) * 100.0 !nondimensional->%
+        wk(8) = wk(8) * 100.0 !nondimensional->%
       case default
         wk(4) = wk(4) * 0.01 !Pa->hPa
       end select
