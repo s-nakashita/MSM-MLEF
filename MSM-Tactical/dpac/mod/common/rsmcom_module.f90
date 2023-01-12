@@ -6,9 +6,10 @@ module rsmcom_module
 ! 22-08-04 SN create
 !
   use kind_module
+  use nml_module, only : filelenmax
   use phconst_module, only : rad2deg
-  use read_module, only: levmax,nwext,read_header,read_sig
-  use write_module, only: write_sig
+  use read_module, only: levmax,nwext,read_header,read_sig,nfldsfc,read_sfc
+  use write_module, only: write_sig,write_sfc
   implicit none
   public
 ! 
@@ -51,10 +52,43 @@ module rsmcom_module
   !!! in r_sig.fNN
   integer,save :: nflds
   !!! 2D variables
-  integer,save      :: nv2d=2    !gz,ps,(wbtm)
+  integer,save      :: nv2d
+  integer,save      :: nv2d_sig=2    !gz,ps,(wbtm)
   integer,parameter :: iv2d_gz=1 ! terrain height
   integer,parameter :: iv2d_ps=2 ! surface pressure
   integer,parameter :: iv2d_wb=3 ! vertical velocity at bottom level
+  integer,parameter :: nv2d_sfc=nfldsfc !r_sfc
+  integer,parameter :: iv2d_tsfc=1
+  integer,parameter :: iv2d_smc_1=2
+  integer,parameter :: iv2d_smc_2=3
+  integer,parameter :: iv2d_sheleg=4
+  integer,parameter :: iv2d_stc_1=5
+  integer,parameter :: iv2d_stc_2=6
+  integer,parameter :: iv2d_tg3=7
+  integer,parameter :: iv2d_zorl=8
+  integer,parameter :: iv2d_cv=9
+  integer,parameter :: iv2d_cvb=10
+  integer,parameter :: iv2d_cvt=11
+  integer,parameter :: iv2d_slmsk=12
+  integer,parameter :: iv2d_vfrac=13
+  integer,parameter :: iv2d_f10m=14
+  integer,parameter :: iv2d_canopy=15
+  integer,parameter :: iv2d_vtype=16
+  integer,parameter :: iv2d_stype=17
+  integer,parameter :: iv2d_uustar=18
+  integer,parameter :: iv2d_ffmm=19
+  integer,parameter :: iv2d_ffhh=20
+  integer,parameter :: iv2d_alvsf=21
+  integer,parameter :: iv2d_alvwf=22
+  integer,parameter :: iv2d_alnsf=23
+  integer,parameter :: iv2d_alnwf=24
+  integer,parameter :: iv2d_facsf=25
+  integer,parameter :: iv2d_facwf=26
+  character(len=6),parameter :: varnames_sfc(nfldsfc) = (/&
+  '  TSFC',' SMC_1',' SMC_2','SHELEG',' STC_1',' STC_2','   TG3',&
+  '  ZORL','    CV','   CVB','   CVT',' SLMSK',' VFRAC','  F10m',&
+  'CANOPY',' VTYPE',' STYPE','UUSTAR','  FFMM','  FFHH',' ALVSF',&
+  ' ALVWF',' ALNSF',' ALNWF',' FACSF',' FACWF'/)
   !!! 3D variables
   !!! pp,tt,ww are only for nonhydrostatic
   integer,save      :: nv3d
@@ -71,7 +105,7 @@ module rsmcom_module
   integer,parameter :: iv3d_ww=9 ! vertical velocity at half levels (except bottom)
   
   integer,save :: nlevall
-  character(len=4),allocatable :: varnames(:)
+  character(len=6),allocatable :: varnames(:)
 !
 ! IO
 !
@@ -86,6 +120,7 @@ module rsmcom_module
 !    integer,intent(in) :: nsig ! input sigma file unit
     character(len=*), intent(in) :: cfile !input sigma file
     integer :: nsig
+    character(len=filelenmax) :: filename
     integer :: nskip
     real(kind=sp) :: ext(nwext)
     real(kind=dp) :: si(levmax+1),sl(levmax)
@@ -97,8 +132,9 @@ module rsmcom_module
     
     !nsig=70
     call search_fileunit(nsig)
-    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
-    open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
+    filename=trim(cfile)//'.sig'//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsig
+    open(nsig,file=filename,access='sequential',form='unformatted',action='read')
     call read_header(nsig,icld,label,idate,fhour,si,sl,ext,nflds)
     iwav1  = int(ext(1))
     jwav1  = int(ext(2))
@@ -136,22 +172,27 @@ module rsmcom_module
     write(6,'(a,f7.5,x,f7.5)') 'sigh=',minval(sigh),maxval(sigh)
 
     if(nonhyd.eq.1) then
-      nv2d=3
+      nv2d_sig=3
+      nv2d=nv2d_sig+nv2d_sfc
       nv3d=nv3d_hyd+nv3d_nonhyd
       write(6,*) 'model version is nonhydrostatic'
       allocate( varnames(nv3d+nv2d) )
-      varnames = (/'   T','   U','   V','   Q','  OZ','  CW',&
-                   '  Pn','  Tn','  Wn','  GZ','  Ps','  Wb'/)
+      varnames(1:nv3d+nv2d_sig) = (/&
+              '     T','     U','     V','     Q','    OZ','    CW',&
+              '    Pn','    Tn','    Wn','    GZ','    Ps','    Wb'/)
     else
-      nv2d=2
+      nv2d_sig=2
+      nv2d=nv2d_sig+nv2d_sfc
       nv3d=nv3d_hyd
       write(6,*) 'model version is hydrostatic'
       allocate( varnames(nv3d+nv2d) )
-      varnames = (/'   T','   U','   V','   Q','  OZ','  CW',&
-                   '  GZ','  Ps'/)
+      varnames(1:nv3d+nv2d_sig) = (/&
+              '     T','     U','     V','     Q','    OZ','    CW',&
+              '    GZ','    Ps'/)
     end if
+    varnames(nv3d+nv2d_sig+1:) = varnames_sfc
     nlevall=nv3d*nlev+nv2d
-    nskip=2+nlevall!+3
+    nskip=2+(nlevall-nv2d_sfc)!+3
     allocate( sfld(lngrd) )
     rewind(nsig)
     do i=1,nskip
@@ -246,14 +287,17 @@ module rsmcom_module
 !
 ! read restart file
 !
-  subroutine read_restart(cfile,v3dg,v2dg)
+  subroutine read_restart(cfile,v3dg,v2dg,convert)
     implicit none
     character(len=*), intent(in) :: cfile
     !integer, intent(in) :: nsig
     real(kind=dp), intent(out) :: v3dg(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(out) :: v2dg(nlon,nlat,nv2d)
+    logical, intent(in), optional :: convert
 
-    integer :: nsig
+    integer :: nsig,nsfc
+    character(len=filelenmax) :: filename
+    character(len=3) :: clev
     real(kind=dp), allocatable :: dfld(:,:,:)
     real(kind=dp), allocatable :: dummp(:,:,:),dumlat(:),dumlon(:) !dummy
     integer :: k,kk
@@ -264,10 +308,17 @@ module rsmcom_module
 
     !nsig=70
     call search_fileunit(nsig)
-    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
-    open(nsig,file=trim(cfile)//filesuffix,access='sequential',form='unformatted',action='read')
+    clev='sig'
+    filename=trim(cfile)//'.'//clev//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsig
+    open(nsig,file=filename,access='sequential',form='unformatted',action='read')
+    if( present(convert) ) then
+    call read_sig( nsig,igrd1,jgrd1,nlev,nflds,nonhyd,icld,fhour,sig,&
+      &  dfld,dummp,dumlat,dumlon,convert=convert )
+    else
     call read_sig( nsig,igrd1,jgrd1,nlev,nflds,nonhyd,icld,fhour,sig,&
       &  dfld,dummp,dumlat,dumlon )
+    end if
     kk=1
     v2dg(:,:,iv2d_gz)=dfld(:,:,kk)
     kk=kk+1
@@ -315,19 +366,35 @@ module rsmcom_module
     end if
     close(nsig)
 
+    deallocate( dfld )
+    allocate( dfld(igrd1,jgrd1,nfldsfc) )
+    call search_fileunit(nsfc)
+    clev='sfc'
+    filename=trim(cfile)//'.'//clev//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsfc
+    open(nsfc,file=filename,access='sequential',form='unformatted',action='read')
+    call read_sfc(nsfc,igrd1,jgrd1,dfld)
+    do k=1,nfldsfc
+      v2dg(:,:,nv2d_sig+k) = dfld(:,:,k)
+    end do
+    close(nsfc)
+
     return
   end subroutine read_restart
 !
 ! write restart file
 !
-  subroutine write_restart(cfile,v3dg,v2dg)
+  subroutine write_restart(cfile,v3dg,v2dg,convert)
     implicit none
     character(len=*), intent(in) :: cfile
     !integer, intent(in) :: nsig
     real(kind=dp), intent(in) :: v3dg(nlon,nlat,nlev,nv3d)
     real(kind=dp), intent(in) :: v2dg(nlon,nlat,nv2d)
+    logical, intent(in), optional :: convert
 
-    integer :: nsig
+    integer :: nsig,nsfc
+    character(len=filelenmax) :: filename
+    character(len=3) :: clev
     real(kind=dp), allocatable :: dfld(:,:,:)
     real(kind=dp) :: si(levmax+1),sl(levmax)
     real(kind=sp) :: ext(nwext)
@@ -401,11 +468,31 @@ module rsmcom_module
     end if
     !nsig=80
     call search_fileunit(nsig)
-    write(6,'(3a,i3)') 'open file ',trim(cfile)//filesuffix,' unit=',nsig
-    open(nsig,file=trim(cfile)//filesuffix,form='unformatted',access='sequential')
+    clev='sig'
+    filename=trim(cfile)//'.'//clev//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsig
+    open(nsig,file=filename,form='unformatted',access='sequential')
+    if( present(convert) )then
+    call write_sig(nsig,label,idate,fhour,si,sl,ext,&
+     &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon,convert=convert)
+    else
     call write_sig(nsig,label,idate,fhour,si,sl,ext,&
      &  igrd1,jgrd1,nlev,nflds,nonhyd,icld,dfld,mapf,rlat,rlon)
+    end if
     close(nsig)
+
+    deallocate( dfld )
+    allocate( dfld(igrd1,jgrd1,nfldsfc) )
+    do k=1,nfldsfc
+      dfld(:,:,k) = v2dg(:,:,nv2d_sig+k)
+    end do
+    call search_fileunit(nsfc)
+    clev='sfc'
+    filename=trim(cfile)//'.'//clev//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsfc
+    open(nsfc,file=filename,access='sequential',form='unformatted')
+    call write_sfc(nsfc,igrd1,jgrd1,dfld,label,idate,fhour)
+    close(nsfc)
 
     return
   end subroutine write_restart

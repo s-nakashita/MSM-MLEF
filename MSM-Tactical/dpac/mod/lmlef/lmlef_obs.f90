@@ -77,7 +77,7 @@ subroutine set_lmlef_obs
   dist_zero = sigma_obs * sqrt(10.0d0/3.0d0) * 2.0d0
   dist_zerov = sigma_obsv * sqrt(10.0d0/3.0d0) * 2.0d0
   dlat_zero = dist_zero / re * rad2deg
-  allocate(dlon_zero(nj1max))
+  allocate(dlon_zero(nj1))
   do j=1,nj1
     dlon_zero(j) = dlat_zero / cos(myrlat(j)*deg2rad)
   end do
@@ -185,16 +185,14 @@ subroutine set_lmlef_obs
       allocate(wk2d(obsda_ext%nobs,member+1))
       allocate(iwk2d(obsda_ext%nobs,member+1))
     end if
-    if(myimage==1) then
-      wk2d = tmphdxf
-      iwk2d = tmpqc0
-      do i=2, nimages 
+    wk2d = 0.0d0
+    iwk2d = 0
+    if(myimage==print_img) then
+      do i=1, nimages 
         wk2d = wk2d + tmphdxf(:,:)[i]
         iwk2d = iwk2d + tmpqc0(:,:)[i]
       end do 
-      tmphdxf = wk2d
-      tmpqc0 = iwk2d
-      do i=2, nimages 
+      do i=1, nimages 
         tmphdxf(:,:)[i] = wk2d
         tmpqc0(:,:)[i] = iwk2d
       end do 
@@ -269,7 +267,7 @@ subroutine set_lmlef_obs
 
   write(6,'(I10,A)') nobs,' OBSERVATIONS TO BE ASSIMILATED'
 !
-! output departure statistics
+! output departure statistics before sort
 !
   call monit_dep(obsda%nobs,obsda%elem,obsda%hxf,obsda%qc,&
    &  monit_nobs,monit_bias,monit_rmse,monit_nqc)
@@ -304,12 +302,14 @@ subroutine set_lmlef_obs
     tmpimg(n) = myimage
     nn=nn+1
   end do
-  if(myimage.eq.1) then
-    do l=2,nimages
-      tmpimg(:)[1] = tmpimg(:)[1]+tmpimg(:)[l]
+  sync all
+  if(myimage.eq.print_img) then
+    do l=1,nimages
+      if(l.eq.myimage) cycle
+      tmpimg(:)[myimage] = tmpimg(:)[myimage]+tmpimg(:)[l]
     end do
-    do l=2,nimages
-      tmpimg(:)[l] = tmpimg(:)[1]
+    do l=1,nimages
+      tmpimg(:)[l] = tmpimg(:)[myimage]
     end do
   end if
   sync all
@@ -331,7 +331,7 @@ subroutine set_lmlef_obs
   nj = 0
 !$OMP PARALLEL PRIVATE(i,j,n,nn)
 !$OMP DO SCHEDULE(DYNAMIC)
-  do j=1,nlat
+  do j=1,nlat-1
     do n=1,obsda%nobs
       if(obsda%qc(n) /= iqc_good) cycle
       if(obsda%lat(n) < rlat(j) .or. rlat(j+1) <= obsda%lat(n)) cycle
@@ -409,7 +409,7 @@ subroutine set_lmlef_obs
     end do
     if(nn /= nj(j)) then
 !$OMP CRITICAL
-      write(6,'(A,2I2.2)') 'OBS DATA SORT ERROR: ',nn,nj(j)
+      write(6,'(A,2I6)') 'OBS DATA SORT ERROR: ',nn,nj(j)
       write(6,'(F6.2,A,F6.2)') rlat(j),'< LAT <',rlat(j+1)
       write(6,'(F6.2,A,F6.2)') MINVAL(tmpobs%lat(njs(j)+1:njs(j)+nj(j))),'< OBSLAT <',MAXVAL(tmpobs%lat(njs(j)+1:njs(j)+nj(j)))
 !$OMP END CRITICAL
@@ -417,6 +417,12 @@ subroutine set_lmlef_obs
   end do
 !$OMP END DO
 !$OMP END PARALLEL
+!
+! output departure statistics after sort
+!
+  call monit_dep(obsdasort%nobs,obsdasort%elem,obsdasort%hxf,obsdasort%qc,&
+   &  monit_nobs,monit_bias,monit_rmse,monit_nqc)
+  call monit_print(monit_nobs,monit_bias,monit_rmse,monit_nqc)
   if(debug_obs) then
     write(6,'(9a10)') 'elem','lon','lat','lev','dat','err','dmin','dep','qc'
     do n=1,obsdasort%nobs

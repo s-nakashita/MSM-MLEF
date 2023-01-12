@@ -67,13 +67,17 @@ module nml_module
   real(kind=dp),save :: sigma_obst=3.0d0
   real(kind=dp),save :: gross_error=10.0d0
   !!! lmlef_tools
-  real(kind=dp),save    :: cov_infl_mul = -0.01d0 !multiplicative inflation
+  real(kind=dp),save    :: cov_infl_mul = 0.d0 !multiplicative inflation
 ! > 0: globally constant covariance inflation
 ! < 0: 3D inflation values input from a GPV file
   character(filelenmax) :: infl_mul_in_basename = 'infl'
   character(filelenmax) :: infl_mul_out_basename = 'infl'
   real(kind=dp),save    :: sp_infl_add = 0.d0 !additive inflation
   character(filelenmax) :: infl_add_in_basename = 'addi.@@@@'
+  real(kind=dp),save    :: sp_infl_rtpp = 0.d0 !relaxation to prior perturbations
+  real(kind=dp),save    :: sp_infl_rtps = 0.d0 !relaxation to prior spread
+  logical,save          :: relax_spread_out = .FALSE.
+  character(filelenmax) :: relax_spread_out_basename = 'rtps'
 !TVS  logical,parameter :: msw_vbc = .FALSE.
   integer,save          :: maxiter = 5
   logical,save          :: nonlinear=.TRUE. ! If True, observation operator is explicitly evaluated for each iteration
@@ -190,6 +194,10 @@ contains
       infl_mul_out_basename, &
       sp_infl_add, &
       infl_add_in_basename, &
+      sp_infl_rtpp, &
+      sp_infl_rtps, &
+      relax_spread_out, &
+      relax_spread_out_basename, &
       maxiter, &
       nonlinear, &
       zupd, &

@@ -71,8 +71,8 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=5
-export CYCLEMAX=5
-export DASTART=5
+export CYCLEMAX=6
+export DASTART=6
 export ENDHOUR=6 # cycle interval
 export PRTHOUR=1
 export INCBASE=3
@@ -85,8 +85,8 @@ export RSFC_MERGE=yes
 export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
-#export RUNFCST=yes
-export RUNFCST=no
+export RUNFCST=yes
+export RUNFCST=no # debug
 
 # Ensemble size
 export MEMBER=10
@@ -100,16 +100,16 @@ head=bv${TETYPE}${SCL}${BP}
 #fi #q adjustment
 export HEAD=$head
 # DA option
-export SINGLEOBS=T
+export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
-export DA_FIXED_LEVEL=T
-export NISEP=2
-export NJSEP=5
+export DA_FIXED_LEVEL=F
+export NISEP=10
+export NJSEP=1
 export IGHOST=1
-export JGHOST=1
+export JGHOST=0
 export LOBSMIN=-60
 export ROBSMIN=60
 export SELOBS=all
@@ -119,9 +119,13 @@ export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
 export HLOC=500 #km
-export VLOC=1   #*0.1ln p
+export VLOC=3   #*0.1ln p
 export MINFL=10 #%
+export RTPP=0 #%
+export RTPS=0 #%
+export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
+export DA_SAVE_INFO=T
 head2=da${PREP}
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
@@ -135,7 +139,21 @@ fi
 if [ $DA_SCL_MEM = T ];then
   head2=${head2}.scl
 fi
-head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.mi${MINFL}.
+DA_INFL=
+if [ $MINFL -gt 0 ];then
+  DA_INFL=mi${MINFL}.
+fi
+if [ $RTPP -gt 0 ];then
+  DA_INFL=${DA_INFL}rp${RTPP}.
+fi
+if [ $RTPS -gt 0 ];then
+  DA_INFL=${DA_INFL}rs${RTPS}.
+fi
+DA_NODE=`expr $NISEP \* $NJSEP`
+#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
+#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ser.n${DA_NODE}.
+#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}n${DA_NODE}.
+head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ni${NISEP}nj${NJSEP}.
 export HEAD2=$head2
 
 #### rsmlocation
