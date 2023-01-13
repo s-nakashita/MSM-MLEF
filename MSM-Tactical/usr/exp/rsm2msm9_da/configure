@@ -17,15 +17,8 @@ else
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
-#export BASEDIR0=$WORKUSR/DATA/gefs
-if [ $GLOBAL = GFS ];then #deterministic
-  export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad
-  export BASEDIR1=$WORKUSR/gfsp2rsm27_rda
-#  export BASEDIR0=$WORKUSR/DATA/gfs
-#  export BASEDIR1=$WORKUSR/DATA/gfs/rda
-fi #deterministic
-export IRES=27
+export BASEDIR0=$WORKUSR/rsm2rsm27_da
+export IRES=9
 
 # --------------- compile options ----------------
 # machine dependent
@@ -52,15 +45,15 @@ export THREAD=no
 
 # compile model option
 export NEST=C2R   # G2R C2R P2R N2R
-export NONHYD=no
+export NONHYD=yes
+export INTDTB=yes           # internal evolved base field T
 export RAS=no
 export SAS=yes
 export NCLDB=1
 export NCLD=1
 export GTOPO30=yes
-export CHGTLEV=no 
-export SLRFIX=yes 
-export BGF=1                    # CDELX ~= BGF * RDELX
+export CHGTLEV=no              # top level damping
+export BGF=3                        # CDELX ~= BGF * RDELX
 export MBC=yes 
 export LBC=no 
 
@@ -70,16 +63,17 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=5
-export CYCLEMAX=10
-export DASTART=5
+export CYCLESTART=4
+export CYCLEMAX=7
+export DASTART=2
 export ENDHOUR=6 # cycle interval
 export PRTHOUR=1
+#export PSEC=60   # output interval in seconds (debug)
+#export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
 export INCHOUR=3
-export TIMESTEP=120
+export TIMESTEP=30
 export IMDLPHY=1
-export NEWMTN=.FALSE.
 export CLIM=0
 export RSFC_MERGE=yes
 export POSTTYPE=sync
@@ -90,7 +84,7 @@ export RUNFCST=yes
 
 # Ensemble size
 export MEMBER=10
-# BGM option
+# BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
@@ -118,11 +112,11 @@ export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
-export HLOC=500 #km
+export HLOC=300 #km
 export VLOC=3   #*0.1ln p
 export MINFL=0 #%
-export RTPP=0 #%
-export RTPS=90 #%
+export RTPP=90 #%
+export RTPS=0 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
@@ -149,37 +143,27 @@ fi
 if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
-DA_NODE=`expr $NISEP \* $NJSEP`
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
-#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ser.n${DA_NODE}.
-#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}n${DA_NODE}.
-#head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ni${NISEP}nj${NJSEP}.
 export HEAD2=$head2
 
 #### rsmlocation
 
-# d01 domain 70E-170W 22S-65N
-export  IGRD=324
-export  JGRD=288
+# d02 domain 110E-150E 16N-46N
+export  IGRD=384
+export  JGRD=324
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
-export  RORIENT=120.0
-export  RDELX=27000.
-export  RDELY=27000.
-export  RCENLAT=23.5
-export  RCENLON=120.0
-export  RLFTGRD=133.
-export  RBTMGRD=121.
-# test dimension and shift
-#export  IGRD=128                             # release_test
-#export  JGRD=108                             # release_test
-#export  RLFTGRD=57.                          # release_test
-#export  RBTMGRD=63.                          # release_test
-
-## base field from running RSM 
-export  CIGRD=384 
-export  CJGRD=324
+export  RORIENT=140.0
+export  RDELX=9000.
+export  RDELY=9300.
+export  RCENLAT=35.0
+export  RCENLON=130.0
+export  RLFTGRD=183.0
+export  RBTMGRD=190.0
+# d01 domain 70E-170W 22S-65N
+export  CIGRD=324
+export  CJGRD=288
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
@@ -188,22 +172,8 @@ export  CDELX=27000.
 export  CDELY=27000.
 export  CCENLAT=23.5
 export  CCENLON=120.0
-export  CLFTGRD=163.
-export  CBTMGRD=139.
-## ---- get data from NCEP operational NOMAD with selected domain ----
-#export  DTOOL=curl         # wget or curl
-#export  CPROJ=4.           # equal latitude longitude
-#export  CLAT1=-25 
-#export  CLAT2=70
-#export  CLON1=60 
-#export  CLON2=200
-#export  LEVS=47
-#export  LEVS=33            # modified
-#export  PGBRES=0.25        # 0.50 or 0.25
-#export  INCBASE=3        # 3 or 6 hours
-#export  INCHOUR=$INCBASE
-#export  CIGRD=$(echo "($CLON2-($CLON1))/$PGBRES" | bc)
-#export  CJGRD=$(echo "($CLAT2-($CLAT1))/$PGBRES" | bc)
+export  CLFTGRD=133.
+export  CBTMGRD=121.
 
 #
 # load default configure file

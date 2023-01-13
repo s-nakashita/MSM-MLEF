@@ -476,7 +476,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       call obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       hfirst=.FALSE.
     end if
-  end do
+  end do ! while ( niter <= maxiter )
   if (niter>=maxiter) write(6,'(A,I4)') 'iteration number exceeds ',maxiter
   ! update analysis
   if(relax_spread_out) then
@@ -696,6 +696,55 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       end if ! q limit and/or super saturation (dry) adjustment
     end do !ij=1,nij1
   end do !ilev=1,nlev
+  ! (for non-hydrostatic) pp, tt and ww is replaced by hydrostatic 
+  if(nonhyd.eq.1) then
+    if(var_update(iv3d_pp)==0) then !pp
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_pp) = anal2dc(i,j,iv2d_ps) * sig(ilev)
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_pp) = anal2d(i,j,m,iv2d_ps) * sig(ilev)
+            end do
+          end do
+        end do
+      end do
+    end if !pp
+    if(var_update(iv3d_tt)==0) then !tt
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_tt) = anal3dc(i,j,ilev,iv3d_t)
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_tt) = anal3d(i,j,ilev,m,iv3d_t)
+            end do
+          end do
+        end do
+      end do
+    end if !tt
+    if(var_update(iv3d_ww)==0) then !ww
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_ww) = 0.0_dp
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_ww) = 0.0_dp
+            end do
+          end do
+        end do
+      end do
+    end if !ww
+    if(var_update(nv3d+iv2d_wb)==0) then !wb
+      do j=1,nj1
+        do i=1,ni1
+          anal2dc(i,j,iv2d_wb) = 0.0_dp
+          do m=1,member
+            anal2d(i,j,m,iv2d_wb) = 0.0_dp
+          end do
+        end do
+      end do
+    end if !wb
+  end if
   sync all
   ! end optimization
   deallocate( zxb,dep,trans,transrlx,nobsl,nobs_use,rloc )

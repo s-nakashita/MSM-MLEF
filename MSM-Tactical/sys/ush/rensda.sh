@@ -60,7 +60,7 @@ q_update_top=${Q_UPDATE_TOP}
 save_info=${DA_SAVE_INFO}
 ## end of inputs
 #debug_obs=T #debug
-print_img=$NODE #debug
+#print_img=$NODE #debug
 if [ $single = T ];then
   debug_obs=T
   print_img=5
@@ -238,8 +238,9 @@ ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat .
 fi
 m=`expr $m + 1`
 done
-ln -fs lmlef.nml STDIN
-ln -fs ${bindir}/lmlef .
+rm -f STDIN lmlef
+ln -s lmlef.nml STDIN
+ln -s ${bindir}/lmlef .
 ## start calculation
 rm -f ${obsoutf}.*.dat anal.*.grd
 mpiexec -n $NODE ./lmlef 2>${logf}err || exit 11
@@ -249,7 +250,7 @@ mv NOUT-$img ${logf}txt
 else
 mv NOUT-001 ${logf}txt
 fi
-#rm -f NOUT-*
+rm -f NOUT-*
 #fi # ! -f ${logf}_n${NODE}.txt
 
 ## post process
@@ -302,7 +303,8 @@ EOF
   ln -s dainfo.bin fort.51
   ln -s dainfo.ctl fort.61
   ln -s ${bindir}/read_info .
-  ./read_info < read_info.nml || exit 12
+  echo "dainfo" >> read_info.log
+  ./read_info < read_info.nml >> read_info.log || exit 12
   sed -i -e 's/DATAFILE/dainfo.bin/g' dainfo.ctl
   rm dainfo.ctl-e
   m=1
@@ -329,7 +331,8 @@ EOF
   fi
   ln -s ewgt.0${mem}.sig.grd fort.11
   ln -s ewgt.0${mem}.bin fort.51
-  ./read_info < read_info.nml || exit 12
+  echo "ewgt $mem" >> read_info.log
+  ./read_info < read_info.nml >> read_info.log || exit 12
   if [ $m -eq 1 ];then
   sed -i -e 's/DATAFILE/..\/'${head_da}'%e\/ewgt.0%e.bin/g' ewgt.ctl
   rm ewgt.ctl-e
@@ -338,18 +341,21 @@ EOF
   done
 fi
 ### prepare forecast initial files
-mkdir -p $wdir/${head_da}000
-cd $wdir/${head_da}000
+if [ -d ${head_da}000 ]; then
+  rm -rf ${head_da}000
+fi
+mkdir -p ${head_da}000
+cd ${head_da}000
 ### copy namelists
-cp $guesdir/$pdate/rsmparm .
-cp $guesdir/$pdate/rsmlocation .
-cp $guesdir/$pdate/rfcstparm .
-cp $guesdir/$pdate/station.parm .
+cp ../rsmparm .
+cp ../rsmlocation .
+cp ../rfcstparm .
+cp ../station.parm .
 ### copy orography data
-cp $guesdir/$pdate/rmtn.parm .
-cp $guesdir/$pdate/rmtnoss .
-cp $guesdir/$pdate/rmtnslm .
-cp $guesdir/$pdate/rmtnvar .
+cp ../rmtn.parm .
+cp ../rmtnoss .
+cp ../rmtnslm .
+cp ../rmtnvar .
 mv ../anal.0000.sig.grd r_sig.f00
 mv ../anal.0000.sfc.grd r_sfc.f00
 mv ../gues.ctrl.bin .
@@ -375,21 +381,25 @@ fi
 cp r_sig.f00 r_sigi
 cp r_sig.f00 r_sigitdt
 cp r_sfc.f00 r_sfci
+cd $wdir
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
-mkdir -p $wdir/${head_da}${mem}
-cd $wdir/${head_da}${mem}
+if [ -d ${head_da}${mem} ];then
+  rm -rf ${head_da}${mem}
+fi
+mkdir -p ${head_da}${mem}
+cd ${head_da}${mem}
 ### copy namelists
-cp $guesdir/$pdate/${head}${mem}/rsmparm .
-cp $guesdir/$pdate/${head}${mem}/rsmlocation .
-cp $guesdir/$pdate/${head}${mem}/rfcstparm .
-cp $guesdir/$pdate/${head}${mem}/station.parm .
+cp ../rsmparm .
+cp ../rsmlocation .
+cp ../rfcstparm .
+cp ../station.parm .
 ### copy orography data
-cp $guesdir/$pdate/${head}${mem}/rmtn.parm .
-cp $guesdir/$pdate/${head}${mem}/rmtnoss .
-cp $guesdir/$pdate/${head}${mem}/rmtnslm .
-cp $guesdir/$pdate/${head}${mem}/rmtnvar .
+cp ../rmtn.parm .
+cp ../rmtnoss .
+cp ../rmtnslm .
+cp ../rmtnvar .
 mv ../anal.0$mem.sig.grd r_sig.f00
 mv ../anal.0$mem.sfc.grd r_sfc.f00
 if [ -f ../${obsinf}.0$mem.dat ]; then
@@ -413,11 +423,14 @@ mv gues.${emem}.sig.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
 mv gues.${emem}.sfc.grd ${guesdir}/${pdate}/${head}${emem}/r_sfc.f$fh
 mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
 mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
-mkdir -p ${wdir}/${head_da}${emem}
-mv anal.${emem}.sig.grd ${wdir}/${head_da}${emem}/r_sig.f00
-mv anal.${emem}.sfc.grd ${wdir}/${head_da}${emem}/r_sfc.f00
-mv anal.${emem}.bin ${wdir}/${head_da}${emem}/
-mv anal.${emem}.ctl ${wdir}/${head_da}${emem}/
+if [ -d ${head_da}${emem} ];then
+  rm -rf ${head_da}${emem}
+fi
+mkdir -p ${head_da}${emem}
+mv anal.${emem}.sig.grd ${head_da}${emem}/r_sig.f00
+mv anal.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f00
+mv anal.${emem}.bin ${head_da}${emem}/
+mv anal.${emem}.ctl ${head_da}${emem}/
 done
 rm gues.*.grd
 if [ $obsda_in = T ];then

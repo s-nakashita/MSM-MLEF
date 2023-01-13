@@ -118,7 +118,6 @@ program lmlef
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
-  sync all
 !-----------------------------------------------------------------------
 ! First guess ensemble
 !-----------------------------------------------------------------------
@@ -180,7 +179,6 @@ program lmlef
 !  else
     call obsope_parallel(obs,obsda,gues3dc,gues2dc,gues3d,gues2d)
 !  end if
-  sync all
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
@@ -218,9 +216,9 @@ program lmlef
       call write_obsout(obsf,obsout,im)
     end do
     call obsout_deallocate(obsout)
+    sync all
   end if
 !
-  sync all
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(SET_OBS):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
@@ -236,7 +234,6 @@ program lmlef
    call das_lmlefy (gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2d)
 !  end if
 !
-  sync all
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(DAS_LMLEF):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
@@ -265,12 +262,11 @@ program lmlef
   !
   ! write analysis
   !
-  sync all
   if(.not.mean) then
     call file_member_replace(0,anal_out_basename,analf)
     call write_cntl(analf,anal3dc,anal2dc)
     sync all
-  END if
+  end if
   call write_ens(anal_out_basename,anal3d,anal2d)
   !
   ! write ensemble mean and spread

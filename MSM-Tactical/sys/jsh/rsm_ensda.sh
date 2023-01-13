@@ -67,6 +67,7 @@ SSTLAG=${SSTLAG:-0}
 #
 FCSTSEC=`expr $INCHOUR \* 3600`
 PRNTSEC=`expr $PRTHOUR \* 3600`
+PRNTSEC=${PSEC:-$PRNTSEC}
 RSWRSEC=`expr $RSWRHOUR \* 3600`
 RLWRSEC=`expr $RLWRHOUR \* 3600`
 BASESEC=`expr $INCBASE \* 3600`
@@ -172,7 +173,7 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}mean ]; then
+#  if [ -d ${head}000 ]; then
 #    echo 'DA already done'
 #  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
@@ -275,7 +276,7 @@ done #while [ $mem -le $MEMBER ]
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}mean
+#  fi # -d ${head}000
 else
 #
 # control
@@ -558,9 +559,15 @@ while [ $h -lt $FEND ]; do
     hr=`expr $h + $PRTHOUR`
     while [ $hr -lt $hx ];do
       if [ $hr -lt 10 ];then hr=0$hr;fi
+      if [ $IOUTNHR -eq 1 ]; then
       mv r_sigf$hr   r_sig.f$hr
       mv r_sfcf$hr   r_sfc.f$hr
       mv r_flxf$hr   r_flx.f$hr
+      else
+      mv r_sigf${hr}:00:00   r_sig.f$hr
+      mv r_sfcf${hr}:00:00   r_sfc.f$hr
+      mv r_flxf${hr}:00:00   r_flx.f$hr
+      fi
       hr=`expr $hr + $PRTHOUR`
     done
 #
@@ -588,9 +595,15 @@ while [ $h -lt $FEND ]; do
 #
       if [ $hx -eq $ENDHOUR ]; then
         if [ $hx -lt 10 ];then hx=0$hx;fi
+        if [ $IOUTNHR -eq 1 ]; then
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
+        else
+        mv r_sigf${hx}:00:00   r_sig.f$hx
+        mv r_sfcf${hx}:00:00   r_sfc.f$hx
+        mv r_flxf${hx}:00:00   r_flx.f$hx
+        fi
         $USHDIR/rpgb_post.sh $hx || exit 16
       fi
 
