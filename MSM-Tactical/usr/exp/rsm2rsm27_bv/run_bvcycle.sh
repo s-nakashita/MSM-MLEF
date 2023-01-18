@@ -1,14 +1,17 @@
 #!/bin/sh
 export GLOBAL=GFS
+export MEMBER=10
 export IDATE=2022082900
 export BV_H=6
 export TETYPE=dry
 export SCL=
 export QADJ=yes
+export BP=wbp
 #export GLOBAL=GFS
 #export IDATE=2022061400
 #export BV_H=12
 export SIGN=
+export PYENV='/home/nakashita/.local/bin/python3'
 
 EXPDIR=`pwd`
 POSTDIR=`cd ../../post && pwd`
@@ -23,8 +26,14 @@ export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
+if [ do$BP = dowbp ];then
+cd $POSTDIR
+./run_addprtbbase.sh
+cd -
+fi
+
 MEM=1
-while [ $MEM -le 10 ]; do
+while [ $MEM -le $MEMBER ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR
 PDATE=`cat pdate2.txt | awk '{if(NR == '$MEM') {print $1}}'`
@@ -57,13 +66,6 @@ fi
 fi
 #### breeding
 export BV=yes
-#for j in $(seq 0 1 1);do
-j=0
-if [ $j -eq 0 ];then
-export BP=
-else
-export BP=wbp
-fi
 ### start cycle
 cd $EXPDIR
 if [ $CYCLE -gt 1 ]; then
@@ -82,7 +84,6 @@ export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
-#done
 MEM=`expr $MEM + 1`
 done
 done

@@ -70,10 +70,12 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=5
+export CYCLESTART=9
 export CYCLEMAX=10
-export DASTART=5
-export ENDHOUR=6 # cycle interval
+export DASTART=11
+export INCCYCLE=6 # cycle interval
+export ENDHOUR=24 # forecast length
+export EXTEND=0 # forecast extends to $ENDHOUR at $EXTEND UTC
 export PRTHOUR=1
 export INCBASE=3
 export INCHOUR=3
@@ -94,6 +96,8 @@ export MEMBER=10
 export TETYPE=dry
 export SCL=
 export QADJ=yes
+export BP=wbp
+export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}
 #if [ do$QADJ = doyes ];then #q adjustment
 #  head=${head}_qadj

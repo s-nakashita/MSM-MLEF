@@ -43,6 +43,8 @@ fi
 eidate=$yearend$monthend$dayend$hourend
 end_hr=`$UTLDIR/nhour $eidate $CDATE$CHOUR`
 ENDHOUR=${ENDHOUR:-$end_hr}
+INCCYCLE=${INCCYCLE:-$ENDHOUR}
+EXTEND=${EXTEND}
 #
 #-----------------------------------------------
 # determine model run parameters
@@ -94,9 +96,16 @@ SDATE0=$SDATE
 while [ $CYCLE -le $CYCLEMAX ];do
   if [ $CYCLE -gt 1 ];then
     PCYCLE=`expr $CYCLE - 1`
-    inch=`expr $ENDHOUR \* $PCYCLE`
+    inch=`expr $INCCYCLE \* $PCYCLE`
     SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
     export SDATE
+    HZ=`echo $SDATE | cut -c9-10`
+    HZ=`expr $HZ`
+    if [ ! -z $EXTEND ] && [ $HZ -ne $EXTEND ]; then
+      export ENDHOUR=$INCCYCLE
+    fi
+  else
+    export ENDHOUR=$INCCYCLE
   fi
   if [ $CYCLE -lt $DASTART ];then
     BGM=yes
@@ -126,7 +135,7 @@ export RUNDIR BASEDIR BASESFCDIR
 mkdir -p $RUNDIR
 cd $RUNDIR || exit 1
 #### define fcst parameters ######
-echo "CYCLE $CYCLE (DA $CYCLEDA) / $CYCLEMAX" > cycle.txt
+echo "CYCLE $CYCLE (ENDHOUR $ENDHOUR) (DA $CYCLEDA) / $CYCLEMAX" > cycle.txt
 # rsm location first
 if [ -s $WORK/route ] ; then
   cp -f $WORK/route route
@@ -191,7 +200,7 @@ if [ do$DA = doyes ]; then
 	echo 'First guess ensemble at the same resolution required for IRES='$IRES
 	exit 6
       else
-    fh=${ENDHOUR}
+    fh=${INCCYCLE}
     PDATE=`${UTLDIR}/ndate -$fh ${SDATE}`
     if [ $fh -lt 10 ];then fh=0$fh; fi
     mem=0
@@ -357,10 +366,17 @@ fi #restart
 # BGM rescaling (ensemble)
 #
 if [ do$BGM = doyes ]; then
+if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+  # Base field perturbation
+  cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
+  NSAMPLE=`expr $MEMBER \* 2`
+  $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
+  $USHDIR/raddprtbbase.sh || exit 5
+fi
 mem=1
 while [ $mem -le $MEMBER ];do
-  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ]; then
-    cp $DISKUSR/exp/rsm2rsm27_da/pdate.txt pdate.txt
+  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
+    cp $DISKUSR/exp/$EXPN/pdate.txt pdate.txt
     PDATE=`cat pdate.txt | awk '{if(NR == '$mem'){print $1}}'`
     export PDATE
   fi
@@ -455,6 +471,10 @@ while [ $mem -le $MEMBER ];do
       mem=0$mem
     fi
     cd $RUNDIR/${head}${mem}
+    if [ do$BP = dowbp ]; then
+      export BASEDIR=${base_dir}/${mem}
+      export BASESFCDIR=$BASEDIR
+    fi
     if [ $IRES -lt 27 ];then
     export BASEDIR=${base_dir}/${HEAD}${mem}
     export BASESFCDIR=$BASEDIR

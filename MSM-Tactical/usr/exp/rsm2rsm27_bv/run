@@ -2,6 +2,7 @@
 #
 set -x
 export SDATE=${SDATE:-2022083000}
+export MEMBER=${MEMBER:-10}
 export MEM=${MEM:-000}
 export SIGN=${SIGN}
 export BV=${BV:-no}

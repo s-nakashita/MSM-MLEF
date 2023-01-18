@@ -4,6 +4,10 @@
 #### set all definitions ####
 #############################
 #export SDATE=2022083100
+yyyy=`echo $SDATE | cut -c1-4`
+if [ $yyyy -lt 2021 ];then
+  export IQVAR=2
+fi
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure
 echo $RUNDIR

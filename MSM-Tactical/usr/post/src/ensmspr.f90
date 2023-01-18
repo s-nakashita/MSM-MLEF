@@ -5,8 +5,12 @@ program ensmspr
   implicit none
   integer, parameter :: icld=1
   ! ensemble size
-  integer, parameter :: nens=10
-  ! input files' units (first member, increased linearly with members)
+  integer :: nens=10
+  character(len=10) :: file_basename='r_LEV.@@@@'
+  character(len=10) :: filename
+  logical :: lflx=.true. !whether write flux file or not
+  namelist /namlst_ensmspr/ nens, lflx
+  ! input files' units
   integer, parameter :: nisig=11, nisfc=21, niflx=31
   integer            :: nsig,     nsfc,     nflx
   ! output files' units
@@ -25,9 +29,18 @@ program ensmspr
   integer :: igrd1, jgrd1, levs, nonhyd
   integer :: n
 
+  ! namelist
+  read (5,nml=namlst_ensmspr)
+  write(6,nml=namlst_ensmspr)
 !!! sigma files (r_sig.fNN)
   ! headers are assumed to be identical for all members
+  filename=file_basename
+  write(filename(3:5),'(a3)') 'sig'
+  write(filename(7:10),'(i4.4)') 1
+  write(6,*) 'open file ',filename
+  open(nisig,file=filename,access='sequential',form='unformatted',action='read')
   call read_header(nisig,icld,label,idate,fhour,si,sl,ext,nfldsig)
+  close(nisig)
   print*, label
   print*, idate
   print*, fhour
@@ -52,13 +65,19 @@ program ensmspr
   
   dfldm=0.0d0
   dflds=0.0d0
-  nsig=nisig
+  !nsig=nisig
   do n=1,nens
-    call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+    filename=file_basename
+    write(filename(3:5),'(a3)') 'sig'
+    write(filename(7:10),'(i4.4)') n
+    write(6,*) 'open file ',filename
+    open(nisig,file=filename,access='sequential',form='unformatted',action='read')
+    call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
+    close(nisig)
     print*, n, maxval(dfld(:,:,3)),minval(dfld(:,:,3))
     dfldm = dfldm + dfld
     dflds = dflds + dfld**2
-    nsig=nsig+1
+  !  nsig=nsig+1
   end do
   dfldm = dfldm / nens
   dflds = sqrt( dflds/nens - dfldm**2 )
@@ -76,13 +95,19 @@ program ensmspr
   allocate( slmsk(igrd1,jgrd1) ) !assuming sea-land mask identical for all members
   dfldm=0.0d0
   dflds=0.0d0
-  nsfc=nisfc
+!  nsfc=nisfc
   do n=1,nens
-    call read_sfc(nsfc,igrd1,jgrd1,dfld)
+    filename=file_basename
+    write(filename(3:5),'(a3)') 'sfc'
+    write(filename(7:10),'(i4.4)') n
+    write(6,*) 'open file ',filename
+    open(nisfc,file=filename,access='sequential',form='unformatted',action='read')
+    call read_sfc(nisfc,igrd1,jgrd1,dfld)
+    close(nisfc)
     print*, n, maxval(dfld(:,:,1)), minval(dfld(:,:,1))
     dfldm = dfldm + dfld
     dflds = dflds + dfld**2
-    nsfc = nsfc+1
+!    nsfc = nsfc+1
   end do
   dfldm = dfldm / nens
   dflds = sqrt( dflds/nens - dfldm**2 )
@@ -92,19 +117,26 @@ program ensmspr
   call write_sfc(nssfc,igrd1,jgrd1,dflds,label,idate,fhour)
   deallocate( dfld, dfldm, dflds ) 
 
+  if(lflx) then
 !!! flux files (r_flx.fNN)
   allocate( dfld(igrd1,jgrd1,nfldflx) )
   allocate( dfldm(igrd1,jgrd1,nfldflx), dflds(igrd1,jgrd1,nfldflx) )
   dfldm=0.0d0
   dflds=0.0d0
-  nflx=niflx
+!  nflx=niflx
   do n=1,nens
+    filename=file_basename
+    write(filename(3:5),'(a3)') 'flx'
+    write(filename(7:10),'(i4.4)') n
+    write(6,*) 'open file ',filename
+    open(niflx,file=filename,access='sequential',form='unformatted',action='read')
     ids(:)=0
-    call read_flx(nflx,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
+    call read_flx(niflx,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
+    close(niflx)
     print*, n, maxval(dfld(:,:,1)), minval(dfld(:,:,1))
     dfldm = dfldm + dfld
     dflds = dflds + dfld**2
-    nflx = nflx+1
+!    nflx = nflx+1
   end do
   dfldm = dfldm / nens
   dflds = sqrt( dflds/nens - dfldm**2 )
@@ -116,4 +148,5 @@ program ensmspr
                & idate,fhour,zhour,&
                & rdelx,rdely,clat,clon,rtruth,rorient,rproj)
   deallocate( dfld, dfldm, dflds ) 
+  end if
 end program

@@ -134,11 +134,11 @@ else
   fi
   PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${IDATE}"` #a
   echo $PDATE #a
-  if [ do$BP = dowbp ];then
-    ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
-  else
+#  if [ do$BP = dowbp ];then
+#    ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
+#  else
     ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
-  fi
+#  fi
   #if [ $PCYCLE -eq 1 ]; then
   #ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
   #else

@@ -40,8 +40,12 @@ else #BGM
   fi #q adjustment
   export RUNDIR=$TEMP/$SDATE/${head}_c${CYCLE}
   # basedir
-  if [ do$BP != do ];then #base perturbation by global ensemble
+  if [ do$BP = dowbp ];then #base perturbation by global ensemble
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
+    if [ $GLOBAL = GFS ];then #deterministic
+      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${MEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${MEM}
+    fi #deterministic
   else #no base perturbation
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
     if [ $GLOBAL = GFS ];then #deterministic

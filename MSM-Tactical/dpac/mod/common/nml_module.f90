@@ -5,7 +5,6 @@ module nml_module
 ! 22-12-08 SN create
 !
   use kind_module
-  use obs_module, only: nobstype
   implicit none
   public
 
@@ -29,7 +28,7 @@ module nml_module
   real(kind=dp),save :: lone=0.0d0
   real(kind=dp),save :: lats=0.0d0
   real(kind=dp),save :: latn=0.0d0
-  logical, save :: luseobs(nobstype)=(/&
+  logical, save :: luseobs(9)=(/&
   !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
   & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0

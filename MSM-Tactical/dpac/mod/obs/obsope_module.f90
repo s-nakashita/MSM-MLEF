@@ -26,8 +26,8 @@ contains
     type(obstype2), intent(inout):: obsout
     real(kind=dp), intent(in) :: gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
     real(kind=dp), intent(in) :: gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
-    real(kind=dp), intent(in) :: gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)
-    real(kind=dp), intent(in) :: gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)
+    real(kind=dp), intent(in), optional :: gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)
+    real(kind=dp), intent(in), optional :: gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)
     integer :: nobsin
     integer :: nobsout
     integer :: iof
@@ -77,7 +77,7 @@ contains
     do while(im<=member)
       if(single_obs) single_use=.true.
       nobsout=0
-      if(im.gt.0) then
+      if(im.gt.0.and.present(gues3d)) then
         v3d=gues3d(:,:,:,im,:)
         v2d=gues2d(:,:,  im,:)
       else
@@ -203,9 +203,11 @@ contains
       if(.not.mean) then
         obsout%hxf(n)=wk2d(0,n)
       end if
+      if(member.gt.0) then
       do im=1,member
         obsout%hxe(im,n)=wk2d(im,n)
       end do
+      end if
     end do
     if(obs_out) then
       if(.not.mean) then
@@ -242,24 +244,30 @@ contains
         call write_obsout(outf,obsout,im)
         im=im+nimages
       end do
+      sync all
     end if
     do n=1,nobsout
       obsout%qc(n) = maxval(iwk2d(:,n))
     end do
     ! broadcast image
+    if(.not.mean) then
+      im=0
+    else
+      im=1
+    end if
     iwk2d=0
-    iwk2d(1,1:nobsout) = obsout%img(1:nobsout)
+    iwk2d(im,1:nobsout) = obsout%img(1:nobsout)
     if(myimage.eq.print_img) then
       do img=1,nimages
         if(img.eq.myimage) cycle
-        iwk2d(1,1:nobsout)[myimage]=iwk2d(1,1:nobsout)[myimage] + iwk2d(1,1:nobsout)[img]
+        iwk2d(im,1:nobsout)[myimage]=iwk2d(im,1:nobsout)[myimage] + iwk2d(im,1:nobsout)[img]
       end do
       do img=1,nimages
-        iwk2d(1,1:nobsout)[img] = iwk2d(1,1:nobsout)[myimage]
+        iwk2d(im,1:nobsout)[img] = iwk2d(im,1:nobsout)[myimage]
       end do
     end if
     sync all
-    obsout%img(1:nobsout) = iwk2d(1,1:nobsout)
+    obsout%img(1:nobsout) = iwk2d(im,1:nobsout)
 !    if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
     deallocate( v3d,v2d )
     deallocate( wk2d,iwk2d )

@@ -63,12 +63,13 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=4
+export CYCLESTART=2
 export CYCLEMAX=7
-export DASTART=2
-export ENDHOUR=6 # cycle interval
+export DASTART=8
+export INCCYCLE=6 # cycle interval
+export ENDHOUR=6 # forecast length
 export PRTHOUR=1
-#export PSEC=60   # output interval in seconds (debug)
+#export PSEC=300   # output interval in seconds (debug)
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
 export INCHOUR=3
@@ -83,11 +84,13 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=0
 # BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
+export BP=
+export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}
 #if [ do$QADJ = doyes ];then #q adjustment
 #  head=${head}_qadj
@@ -115,8 +118,8 @@ export MAXITER=1
 export HLOC=300 #km
 export VLOC=3   #*0.1ln p
 export MINFL=0 #%
-export RTPP=90 #%
-export RTPS=0 #%
+export RTPP=0 #%
+export RTPS=90 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T

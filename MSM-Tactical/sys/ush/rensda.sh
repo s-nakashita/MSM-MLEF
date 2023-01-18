@@ -10,7 +10,7 @@ member=${MEMBER:-10}
 # analysis date
 adate=${SDATE:-2022061812}
 # first guess lead time
-fhour=${ENDHOUR:-0}
+fhour=${INCCYCLE:-0}
 # model resolution
 ires=${IRES:-27}
 # observation settings
