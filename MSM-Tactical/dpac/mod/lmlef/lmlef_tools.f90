@@ -58,7 +58,7 @@ subroutine init_das_lmlef
   allocate( var_update(nv3d+nv2d) )
   if(nonhyd.eq.1) then !nonhydrostatic
   var_local = reshape( &
-!!          T      U      V      Q     OZ     CW     Pn     Tn      W     GZ     Ps     Wb
+!!          Th     U      V      Q     OZ     CW     Pn     Tn      W     GZ     Ps     Wb
    & (/ 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! U
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! V
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! T
@@ -69,8 +69,10 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
    & ,(/nv3d+nv2d_sig,nobstype/))
-!!                               T  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
-  var_update(1:nv3d+nv2d_sig)=(/ 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0/)
+!!                              Th  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
+  var_update(1:nv3d+nv2d_sig)=(/ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0/)
+  iv3d_t = iv3d_tn !non-hydrostatic temperature updated
+  iv3d_tt= iv3d_th !hydrostatic temperature not updated
   else !hydrostatic
   var_local = reshape( &
 !!          T      U      V      Q     OZ     CW     GZ     Ps 
@@ -86,6 +88,8 @@ subroutine init_das_lmlef
    & ,(/nv3d+nv2d_sig,nobstype/))
 !!                                  T  U  V  Q OZ CW GZ Ps
    var_update(1:nv3d+nv2d_sig) = (/ 1, 1, 1, 1, 1, 1, 0, 1/)
+   iv3d_t = iv3d_th
+   iv3d_tt= iv3d_t
   end if
   var_update(nv3d+nv2d_sig+1:) = 0 ! r_sfc variables not update
   write(cn,'(i4)') nv3d+nv2d
@@ -282,7 +286,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     do ij=1,nij1
       i=mod(ij-1,ni1)+1
       j=(ij-1)/ni1 + 1
-      logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
+      logpfm(ij,:) = gues3dc(i,j,:,iv3d_pn)
     end do
   else
     allocate( tmpps(1:nij1) )
@@ -658,7 +662,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
                   anal3dc(i,j,ilev,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
-              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pp),qlim)
+              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pn),qlim)
             else                       
               call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal2dc(i,j,iv2d_ps)*sig(ilev),qlim)
             end if
@@ -680,7 +684,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
                   anal3d(i,j,ilev,m,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
-              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pp),qlim)
+              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pn),qlim)
             else                       
               call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal2d(i,j,m,iv2d_ps)*sig(ilev),qlim)
             end if
@@ -696,20 +700,20 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       end if ! q limit and/or super saturation (dry) adjustment
     end do !ij=1,nij1
   end do !ilev=1,nlev
-  ! (for non-hydrostatic) pp, tt and ww is replaced by hydrostatic 
+  ! (for non-hydrostatic) pn, tt and wn is replaced by hydrostatic 
   if(nonhyd.eq.1) then
-    if(var_update(iv3d_pp)==0) then !pp
+    if(var_update(iv3d_pn)==0) then !pn
       do ilev=1,nlev
         do j=1,nj1
           do i=1,ni1
-            anal3dc(i,j,ilev,iv3d_pp) = anal2dc(i,j,iv2d_ps) * sig(ilev)
+            anal3dc(i,j,ilev,iv3d_pn) = anal2dc(i,j,iv2d_ps) * sig(ilev)
             do m=1,member
-              anal3d(i,j,ilev,m,iv3d_pp) = anal2d(i,j,m,iv2d_ps) * sig(ilev)
+              anal3d(i,j,ilev,m,iv3d_pn) = anal2d(i,j,m,iv2d_ps) * sig(ilev)
             end do
           end do
         end do
       end do
-    end if !pp
+    end if !pn
     if(var_update(iv3d_tt)==0) then !tt
       do ilev=1,nlev
         do j=1,nj1
@@ -722,13 +726,13 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end do
       end do
     end if !tt
-    if(var_update(iv3d_ww)==0) then !ww
+    if(var_update(iv3d_wn)==0) then !wn
       do ilev=1,nlev
         do j=1,nj1
           do i=1,ni1
-            anal3dc(i,j,ilev,iv3d_ww) = 0.0_dp
+            anal3dc(i,j,ilev,iv3d_wn) = 0.0_dp
             do m=1,member
-              anal3d(i,j,ilev,m,iv3d_ww) = 0.0_dp
+              anal3d(i,j,ilev,m,iv3d_wn) = 0.0_dp
             end do
           end do
         end do
@@ -1278,7 +1282,7 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! full pressure levels (identical to all members)
     if(nonhyd.eq.1) then !non-hydrostatic
-      p_full(:,:,:) = gues3dc(:,:,:,iv3d_pp)
+      p_full(:,:,:) = gues3dc(:,:,:,iv3d_pn)
     else
       call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,gues2dc(:,:,iv2d_ps),p_full)
     end if

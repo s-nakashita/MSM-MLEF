@@ -12,6 +12,7 @@ program obsope
   use obs_module, only : nobstype, nqctype, obstype, obstype2, &
    &  obsin_allocate, get_nobs, read_obs, monit_obsin
   use obsope_module, only: obsope_parallel, monit_dep, monit_print
+  use lmlef_tools, only: init_das_lmlef
   implicit none
   type(obstype), allocatable :: obs(:)
   type(obstype2) :: obsout
@@ -49,6 +50,7 @@ program obsope
   call file_member_replace(0,fguess_basename,guesf)
   call set_rsmparm(guesf)
   call set_corsm
+  call init_das_lmlef
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer

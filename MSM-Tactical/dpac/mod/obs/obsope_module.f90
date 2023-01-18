@@ -10,7 +10,7 @@ module obsope_module
   use co_module
   use rsmcom_module
   use corsm_module
-  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh
+  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj
   use obs_module
   implicit none
   private
@@ -89,7 +89,7 @@ contains
       write(6,'(a,i4,a,2f10.2)')&
               'member ',im,' v2d(iv2d_ps)=',maxval(v2d(1:ni1,1:nj1,iv2d_ps)),minval(v2d(1:ni1,1:nj1,iv2d_ps))
       if(nonhyd.eq.1) then !non-hydrostatic
-        p_full = v3d(:,:,:,iv3d_pp)
+        p_full = v3d(:,:,:,iv3d_pn)
       else
         call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2d(:,:,iv2d_ps),p_full)
       end if
@@ -312,7 +312,7 @@ contains
       call read_restart(guesf,v3dg,v2dg)
 !      if(im.eq.0) then !all members assumed to have the same pressure levels
         if(nonhyd.eq.1) then !non-hydrostatic
-          p_full = v3dg(:,:,:,iv3d_pp)
+          p_full = v3dg(:,:,:,iv3d_pn)
         else
           call calc_pfull(nlon,nlat,nlev,sig,v2dg(:,:,iv2d_ps),p_full)
         end if
@@ -580,9 +580,9 @@ contains
 !!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
     ! rlev1 -> rk
-    if(elm.gt.9999) then !surface observation
-      rk=0.0
-    else
+    if(elm.gt.9999) then !surface observation : rlev = height [m]
+      rk=rlev1
+    else !upper observation : rlev = pressure [Pa]
       !! for hydrometeor variables
       if(elm==id_q_obs.or.elm==id_rh_obs.or.elm==id_td_obs) then
         if(rlev1.lt.q_update_top) then
@@ -659,7 +659,7 @@ contains
     real(kind=dp), intent(in) :: p_full(:,:,:) !(nlon,nlat,nlev) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
     real(kind=dp), intent(out):: yobs
     
-    real(kind=dp) :: t,q,p
+    real(kind=dp) :: t,q,p,gz
     real(kind=dp) :: u,v
     
     integer :: i,j,k
@@ -698,6 +698,14 @@ contains
       call itpl_3d(v3d(:,:,:,iv3d_u),ri,rj,rk,u)
       call itpl_3d(v3d(:,:,:,iv3d_v),ri,rj,rk,v)
       call calc_wd(u,v,yobs)
+    case(id_ps_obs) !Surface pressure
+      call itpl_2d(v2d(:,:,iv2d_ps),ri,rj,yobs)
+      call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,gz) !surface elevation
+      !call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
+      call itpl_2d(v2d(:,:,iv2d_tsfc),ri,rj,t)
+      call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
+      call prsadj(yobs,rk-gz,t,q)
+      print *, rk, gz, yobs !debug
     end select
     return
 

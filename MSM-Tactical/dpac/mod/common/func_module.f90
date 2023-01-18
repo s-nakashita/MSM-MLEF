@@ -6,12 +6,12 @@ module func_module
 ! 22-12-05 SN create
 !
   use kind_module
-  use phconst_module, only : re, pi, rad2deg, deg2rad, fvirt, t0, rd, rv
+  use phconst_module
   implicit none
   private
 !
   public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, calc_q2,&
-   &        calc_wd, calc_uv, distll_1, ndate, nhour
+   &        calc_wd, calc_uv, prsadj, distll_1, ndate, nhour
   contains
 !
 ! p_full
@@ -261,6 +261,23 @@ module func_module
 
     return
   end subroutine calc_uv
+!
+! pressure adjustment for different height
+!
+  subroutine prsadj(p,dz,t,q)
+    implicit none
+    real(kind=dp),intent(inout) :: p !(in)original (out)target
+    real(kind=dp),intent(in)    :: dz !target - original level
+    real(kind=dp),intent(in)    :: t !original level
+    real(kind=dp),intent(in)    :: q !original level
+    real(kind=dp) :: tv
+
+    if(dz.gt.0.0) then
+      tv = t * (1.0_dp + fvirt*q)
+      p = p * ((1.0_dp - lapse/tv*dz)**(grav/rd/lapse))
+    end if
+    return
+  end subroutine prsadj
 !
 ! distance between two points (alon,alat)-(blon,blat)
 !

@@ -18,7 +18,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-for CYCLE in $(seq 1 5);do
+for CYCLE in $(seq 5 5);do
 export CYCLE
 ### control
 cd $EXPDIR
@@ -32,7 +32,7 @@ cd $POSTDIR
 cd -
 fi
 
-MEM=1
+MEM=8
 while [ $MEM -le $MEMBER ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR
@@ -75,11 +75,11 @@ if [ $CYCLE -gt 1 ]; then
    export SDATE
 fi
 . ./configure
-#if [ ! -d $RUNDIR ]; then
+if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $EXPDIR
-#fi
+fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR

@@ -45,9 +45,9 @@ cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
 cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnvar $OUTDIR/
-rm -rf tmp
-mkdir -p tmp
-cd tmp
+rm -rf $OUTDIR/tmp
+mkdir -p $OUTDIR/tmp
+cd $OUTDIR/tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field

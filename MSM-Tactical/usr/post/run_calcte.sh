@@ -114,7 +114,7 @@ for dt in $(seq 0 $inch $dte);do
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
- epsq=${epsq},
+ epsq=,
  lonw=110.0,
  lone=153.0,
  lats=15.0,
@@ -125,7 +125,7 @@ EOF
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
- epsq=${epsq},
+ epsq=,
  lonw=,
  lone=,
  lats=,

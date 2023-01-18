@@ -3,9 +3,10 @@ program decode_dcdf
 ! decode dcdf files
 ! history:
 ! 22-12-09 SN create
+! 23-01-18 surf observation decode add
 !
   use kind_module
-  use obs_module, only : obstype, get_nobs_upper, read_upper, &
+  use obs_module, only : obstype, get_nobs_dcdf, read_upper, read_synop, &
      & obsin_allocate, obs_preproc, monit_obsin, &
      & write_obs
   use func_module, only : ndate
@@ -13,7 +14,7 @@ program decode_dcdf
   implicit none
   character(len=5), dimension(4), parameter :: datatype=&
    & (/'upper','surf ','tovs ','misc '/)
-  integer, dimension(4), parameter :: iuse=(/1,0,0,0/)
+  integer, dimension(4), parameter :: iuse=(/1,1,0,0/)
   character(len=100) :: cfile,ofile
   character(len=15) :: odate='yymmddhhnn-hhnn'
   character(len=6) :: cyymmdd
@@ -55,31 +56,32 @@ program decode_dcdf
     if(iuse(iof)==1) then
       cfile='dcdf.'//trim(datatype(iof))//'.'//cyymmdd
       print *, cfile
-      call get_nobs_upper(cfile,atime,lmin,rmin,ndataall,obs%nobs)
+      call get_nobs_dcdf(datatype(iof),cfile,atime,lmin,rmin,ndataall,obs%nobs)
       print *, 'total(data) ',ndataall
       print *, 'total(obs)  ', obs%nobs
-      call read_upper(cfile,atime,lmin,rmin,ndataall,obs)
+      if(datatype(iof)=='upper') then
+        call read_upper(cfile,atime,lmin,rmin,ndataall,obs)
+      else if(datatype(iof)=='surf ') then
+        call read_synop(cfile,atime,lmin,rmin,ndataall,obs)
+      end if
       print *, 'total(use)  ',obs%nobs
       call monit_obsin(obs%nobs,obs%elem,obs%dat)
 
-      if(lpreproc) then
+      ofile=trim(datatype(iof))//'.'//odate
+      if(lpreproc.and.(datatype(iof)=='upper')) then
         call obs_preproc(obs,iwnd,iq)
         call monit_obsin(obs%nobs,obs%elem,obs%dat)
+        if(iq.eq.2) then
+          ofile=trim(datatype(iof))//'_preprh.'//odate
+        else
+          ofile=trim(datatype(iof))//'_prep.'//odate
+        end if
       end if
 !      do i=1,min(obs%nobs,100)
 !        print '(i6,x,i5,3f9.1,es15.4,f7.1)', i,obs%elem(i),&
 !        &  obs%lon(i),obs%lat(i),obs%lev(i),obs%dat(i),&
 !        &  obs%dmin(i)
 !      end do
-      if(lpreproc) then
-      if(iq.eq.2) then
-      ofile=trim(datatype(iof))//'_preprh.'//odate
-      else
-      ofile=trim(datatype(iof))//'_prep.'//odate
-      end if
-      else
-      ofile=trim(datatype(iof))//'.'//odate
-      end if
       print *, ofile
       call write_obs(ofile,obs)
     end if

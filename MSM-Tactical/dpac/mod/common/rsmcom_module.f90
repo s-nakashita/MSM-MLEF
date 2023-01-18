@@ -90,19 +90,20 @@ module rsmcom_module
   'CANOPY',' VTYPE',' STYPE','UUSTAR','  FFMM','  FFHH',' ALVSF',&
   ' ALVWF',' ALNSF',' ALNWF',' FACSF',' FACWF'/)
   !!! 3D variables
-  !!! pp,tt,ww are only for nonhydrostatic
+  !!! pn,tn,ww are only for nonhydrostatic
   integer,save      :: nv3d
-  integer,parameter :: nv3d_hyd=6    !t,u,v,q,oz,cw 
-  integer,parameter :: nv3d_nonhyd=3 !pp,tt,ww(halflevel)
-  integer,parameter :: iv3d_t=1  ! temperature
+  integer,parameter :: nv3d_hyd=6    !th,u,v,q,oz,cw 
+  integer,parameter :: nv3d_nonhyd=3 !pn,tn,ww(halflevel)
+  integer,parameter :: iv3d_th=1 ! hydrostatic temperature
   integer,parameter :: iv3d_u=2  ! x-direction wind
   integer,parameter :: iv3d_v=3  ! y-direction wind
   integer,parameter :: iv3d_q=4  ! specific humidity
   integer,parameter :: iv3d_oz=5 ! ozone mixing ratio
   integer,parameter :: iv3d_cw=6 ! cloud water
-  integer,parameter :: iv3d_pp=7 ! full pressure perturbation
-  integer,parameter :: iv3d_tt=8 ! temperature perturbation
-  integer,parameter :: iv3d_ww=9 ! vertical velocity at half levels (except bottom)
+  integer,parameter :: iv3d_pn=7 ! full pressure
+  integer,parameter :: iv3d_tn=8 ! non-hydrostatic temperature
+  integer,parameter :: iv3d_wn=9 ! vertical velocity at half levels (except bottom)
+  integer,save      :: iv3d_t,iv3d_tt !update and not update temperature indexes
   
   integer,save :: nlevall
   character(len=6),allocatable :: varnames(:)
@@ -178,7 +179,7 @@ module rsmcom_module
       write(6,*) 'model version is nonhydrostatic'
       allocate( varnames(nv3d+nv2d) )
       varnames(1:nv3d+nv2d_sig) = (/&
-              '     T','     U','     V','     Q','    OZ','    CW',&
+              '    Th','     U','     V','     Q','    OZ','    CW',&
               '    Pn','    Tn','    Wn','    GZ','    Ps','    Wb'/)
     else
       nv2d_sig=2
@@ -325,7 +326,7 @@ module rsmcom_module
     v2dg(:,:,iv2d_ps)=dfld(:,:,kk)
     kk=kk+1
     do k=1,nlev
-      v3dg(:,:,k,iv3d_t) = dfld(:,:,kk) 
+      v3dg(:,:,k,iv3d_th) = dfld(:,:,kk) 
       kk=kk+1
     end do
     do k=1,nlev
@@ -350,17 +351,17 @@ module rsmcom_module
     end do
     if(nonhyd.eq.1) then
       do k=1,nlev
-        v3dg(:,:,k,iv3d_pp) = dfld(:,:,kk)
+        v3dg(:,:,k,iv3d_pn) = dfld(:,:,kk)
         kk=kk+1
       end do
       do k=1,nlev
-        v3dg(:,:,k,iv3d_tt) = dfld(:,:,kk)
+        v3dg(:,:,k,iv3d_tn) = dfld(:,:,kk)
         kk=kk+1
       end do
       v2dg(:,:,iv2d_wb) = dfld(:,:,kk)
       kk=kk+1
       do k=1,nlev
-        v3dg(:,:,k,iv3d_ww) = dfld(:,:,kk)
+        v3dg(:,:,k,iv3d_wn) = dfld(:,:,kk)
         kk=kk+1
       end do
     end if
@@ -427,7 +428,7 @@ module rsmcom_module
     dfld(:,:,kk)=v2dg(:,:,iv2d_ps)
     kk=kk+1
     do k=1,nlev
-      dfld(:,:,kk)=v3dg(:,:,k,iv3d_t)
+      dfld(:,:,kk)=v3dg(:,:,k,iv3d_th)
       kk=kk+1
     end do
     do k=1,nlev
@@ -452,17 +453,17 @@ module rsmcom_module
     end do
     if(nonhyd.eq.1) then
       do k=1,nlev
-        dfld(:,:,kk)=v3dg(:,:,k,iv3d_pp)
+        dfld(:,:,kk)=v3dg(:,:,k,iv3d_pn)
         kk=kk+1
       end do
       do k=1,nlev
-        dfld(:,:,kk)=v3dg(:,:,k,iv3d_tt)
+        dfld(:,:,kk)=v3dg(:,:,k,iv3d_tn)
         kk=kk+1
       end do
       dfld(:,:,kk)=v2dg(:,:,iv2d_wb)
       kk=kk+1
       do k=1,nlev
-        dfld(:,:,kk)=v3dg(:,:,k,iv3d_ww)
+        dfld(:,:,kk)=v3dg(:,:,k,iv3d_wn)
         kk=kk+1
       end do
     end if

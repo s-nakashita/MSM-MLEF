@@ -65,7 +65,7 @@ export FCST=yes
 # --------------- run option --------------------
 export CYCLESTART=2
 export CYCLEMAX=7
-export DASTART=8
+export DASTART=2
 export INCCYCLE=6 # cycle interval
 export ENDHOUR=6 # forecast length
 export PRTHOUR=1
@@ -84,7 +84,7 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=0
+export MEMBER=10
 # BGM option for base
 export TETYPE=dry
 export SCL=
@@ -147,6 +147,7 @@ if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
+head2=${head2}tn.
 export HEAD2=$head2
 
 #### rsmlocation
