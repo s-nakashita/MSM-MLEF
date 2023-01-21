@@ -752,7 +752,8 @@ end subroutine read_sfc
 !======================================================================
 ! read flux file
 !======================================================================
-subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
+subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
+                ,ind_t2m,ind_q2m,ind_u10m,ind_v10m)
 !
 ! read flux file
 !
@@ -771,6 +772,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   integer, intent(out)      :: ids(255)
   integer, intent(out)      :: iparam(nfldflx)
   real(kind=sp), intent(out) :: fhour, zhour
+  integer, optional, intent(out) :: ind_t2m,ind_q2m,ind_u10m,ind_v10m
   integer, parameter :: iprs=1, itemp=11, iznlw=33, imerw=34, isphum=51, ipwat=54, &
   &                     ipcpr=59, isnowd=65, icldf=71, iccldf=72, islmsk=81, izorl=83, &
   &                     ialbdo=84, isoilm=144, icemsk=91, ilhflx=121, ishflx=122, izws=124, &
@@ -1502,6 +1504,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   if(verbose) print *,l,'read cemsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! u10
   l=l+1
+  if(present(ind_u10m)) ind_u10m=l
   if(verbose) print *, 'itype ',iznlw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1533,6 +1536,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   if(verbose) print *,l,'read u10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! v10
   l=l+1
+  if(present(ind_v10m)) ind_v10m=l
   if(verbose) print *, 'itype ',imerw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1564,6 +1568,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   if(verbose) print *,l,'read v10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! t2
   l=l+1
+  if(present(ind_t2m)) ind_t2m=l
   if(verbose) print *, 'itype ',itemp,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1595,6 +1600,7 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
   if(verbose) print *,l,'read t2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! q2
   l=l+1
+  if(present(ind_q2m)) ind_q2m=l
   if(verbose) print *, 'itype ',isphum,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&

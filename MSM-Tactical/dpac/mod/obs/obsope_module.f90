@@ -709,8 +709,10 @@ contains
       call itpl_2d(v2d(:,:,iv2d_ps),ri,rj,yobs)
       call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,gz) !surface elevation
       if(debug_obs) print *, 'zmodel ', gz,' psmodel ', yobs !debug
-      call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
-      call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
+      !call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
+      !call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
+      call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m),ri,rj,t)
+      call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m),ri,rj,q)
       call prsadj(yobs,rk-gz,t,q)
       if(debug_obs) then
         print *, 'zmodel ', gz,' psadj   ', yobs !debug
