@@ -14,8 +14,8 @@ program lmlef
   use func_module, only: ndate
   use rsmcom_module
   use corsm_module
-  use obs_module, only: get_nobs, read_obs, write_obsout, monit_obsin, &
-          obsin_allocate
+  use obs_module, only: obstype2, get_nobs, read_obs, write_obsout, monit_obsin, &
+          obsin_allocate, obsout_allocate, obsout_deallocate
   use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy
@@ -34,12 +34,15 @@ program lmlef
   real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
   real(kind=dp) :: rtimer00,rtimer
   integer,dimension(5) :: fdate,adate !year,month,day,hour,minutes
+  integer :: iymdh
   integer :: dtmin !minutes
   integer :: im,iof,ierr
   character(8) :: stdoutf='NOUT-000'
   character(filelenmax) :: guesf,analf,obsf
   integer :: ltype=1 ! 0=CW, 1=Y
 !  NAMELIST /NAMLST_LMLEF/ ltype
+  ! for output obs
+  type(obstype2) :: obsout
 !-----------------------------------------------------------------------
 ! Initial settings
 !-----------------------------------------------------------------------
@@ -115,7 +118,6 @@ program lmlef
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
-  sync all
 !-----------------------------------------------------------------------
 ! First guess ensemble
 !-----------------------------------------------------------------------
@@ -169,14 +171,14 @@ program lmlef
   else
     nobs_ext=0
   end if
+  sync all
   ! apply observation operator with additional space for externally processed observations
   obsda%nobs = nobs_ext
-  if(single_obs) then !single observation option is valid only for serial operator
-    call obsope_serial(obs,obsda)
-  else
+!  if(single_obs) then !single observation option is valid only for serial operator
+!    call obsope_serial(obs,obsda)
+!  else
     call obsope_parallel(obs,obsda,gues3dc,gues2dc,gues3d,gues2d)
-  end if
-  sync all
+!  end if
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
@@ -184,6 +186,38 @@ program lmlef
   ! process observation data
   !
   call set_lmlef_obs
+  !
+  ! (optional) write y-H(xf)
+  !
+  if(obsgues_output) then
+    obsout%nobs = obsdasort%nobs
+    call obsout_allocate(obsout,member)
+    obsout%elem = obsdasort%elem
+    obsout%lon  = obsdasort%lon
+    obsout%lat  = obsdasort%lat
+    obsout%lev  = obsdasort%lev
+    obsout%dat  = obsdasort%dat
+    obsout%err  = obsdasort%err
+    obsout%dmin = obsdasort%dmin
+    obsout%hxf  = obsdasort%hxf
+    obsout%hxe  = obsdasort%hxe
+    obsout%qc   = obsdasort%qc
+    ! departure => raw values
+    obsout%hxf(:) = obsout%dat(:) - obsout%hxf(:)
+    if(.not.mean) then
+      call file_member_replace(0,obsg_out_basename,obsf)
+    else
+      call file_member_replace(member+1,obsg_out_basename,obsf)
+    end if
+    call write_obsout(obsf,obsout,0)
+    do im=1,member
+      obsout%hxe(im,:) = obsout%hxe(im,:) + obsout%hxf(:)
+      call file_member_replace(im,obsg_out_basename,obsf)
+      call write_obsout(obsf,obsout,im)
+    end do
+    call obsout_deallocate(obsout)
+    sync all
+  end if
 !
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(SET_OBS):',rtimer,rtimer-rtimer00
@@ -194,7 +228,6 @@ program lmlef
   !
   ! LMLEF
   !
-  !sync all
 !  if(ltype==0) then
 !    call das_lmlefcw(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2d)
 !  else
@@ -210,6 +243,8 @@ program lmlef
   !
   ! modify posting date
   !
+  iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
+  print *, 'first guess date ', iymdh, '+', nint(fhour)
   dtmin=int(fhour)*60
   fdate(1)=idate(4)
   fdate(2)=idate(2)
@@ -222,15 +257,16 @@ program lmlef
   idate(3)=adate(3)
   idate(1)=adate(4)
   fhour=0.0
+  iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
+  print *, 'analysis date ', iymdh, '+', nint(fhour)
   !
   ! write analysis
   !
-  sync all
   if(.not.mean) then
     call file_member_replace(0,anal_out_basename,analf)
     call write_cntl(analf,anal3dc,anal2dc)
     sync all
-  END if
+  end if
   call write_ens(anal_out_basename,anal3d,anal2d)
   !
   ! write ensemble mean and spread
@@ -241,19 +277,32 @@ program lmlef
   ! (optional) write y-H(xa)
   !
   if(obsanal_output) then
+    obsout%nobs = obsdasort%nobs
+    call obsout_allocate(obsout,member)
+    obsout%elem = obsdasort%elem
+    obsout%lon  = obsdasort%lon
+    obsout%lat  = obsdasort%lat
+    obsout%lev  = obsdasort%lev
+    obsout%dat  = obsdasort%dat
+    obsout%err  = obsdasort%err
+    obsout%dmin = obsdasort%dmin
+    obsout%hxf  = obsdasort%hxf
+    obsout%hxe  = obsdasort%hxe
+    obsout%qc   = obsdasort%qc
     ! departure => raw values
-    obsdasort%hxf(:) = obsdasort%dat(:) - obsdasort%hxf(:)
+    obsout%hxf(:) = obsout%dat(:) - obsout%hxf(:)
     if(.not.mean) then
-      call file_member_replace(0,obsda_out_basename,obsf)
+      call file_member_replace(0,obsa_out_basename,obsf)
     else
-      call file_member_replace(member+1,obsda_out_basename,obsf)
+      call file_member_replace(member+1,obsa_out_basename,obsf)
     end if
-    call write_obsout(obsf,obsdasort,0)
+    call write_obsout(obsf,obsout,0)
     do im=1,member
-      obsdasort%hxe(im,:) = obsdasort%hxe(im,:) + obsdasort%hxf(:)
-      call file_member_replace(im,obsda_out_basename,obsf)
-      call write_obsout(obsf,obsdasort,im)
+      obsout%hxe(im,:) = obsout%hxe(im,:) + obsout%hxf(:)
+      call file_member_replace(im,obsa_out_basename,obsf)
+      call write_obsout(obsf,obsout,im)
     end do
+    call obsout_deallocate(obsout)
   end if
 !
   call cpu_time(rtimer)

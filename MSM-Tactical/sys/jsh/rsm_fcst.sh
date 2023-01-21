@@ -207,7 +207,7 @@ if [ do$POSTTYPE = dosync ]; then
     $USHDIR/rpgb_post.sh 00 || exit 5
 fi
 #
-fi
+fi #restart
 #######################################
 # Forecast loop
 ########################################

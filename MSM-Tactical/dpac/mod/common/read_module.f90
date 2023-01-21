@@ -14,7 +14,7 @@ module read_module
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
   integer, parameter, public :: lsoil=2, nfldsfc=26
   integer, parameter, public :: nfldflx=56
-  logical, parameter, public :: verbose=.FALSE.
+  logical, parameter, public :: verbose=.false.
 
   public :: read_header, read_sig, read_sfc, read_flx
 contains
@@ -98,7 +98,7 @@ end subroutine read_header
 ! read sigma file
 !======================================================================
 subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
-                  & dfld,mapf,clat,clon)
+                  & dfld,mapf,clat,clon,convert)
 ! input :
 ! iunit sigma file (sequential, with header)
 ! 
@@ -115,6 +115,8 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   real(kind=dp), intent(out) :: dfld(igrd1,jgrd1,nflds)
   real(kind=dp), intent(out) :: mapf(igrd1,jgrd1,3) !map factor
   real(kind=dp), intent(out) :: clat(jgrd1),clon(igrd1)
+  logical, intent(in), optional :: convert
+  logical :: convert_
   integer :: iret
   integer :: nwf, irec
   integer :: i,j,k,l,m
@@ -124,6 +126,10 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   real(kind=sp), allocatable :: sfld(:)
   real(kind=sp), allocatable :: factor(:,:,:)
   
+  convert_=.true.
+  if( present(convert) ) then
+    convert_=convert
+  end if
   iret = 0
   rewind(iunit)
 ! read label
@@ -228,6 +234,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   if(verbose) print *,icw+k-1, 'read CW at lev=',k, dfld(1,1,icw+k-1),&
 &  maxval(dfld(:,:,icw+k-1)), minval(dfld(:,:,icw+k-1))
   end do
+  if(convert_) then
   ! modify the virtual temperature into temperature
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),0)
 !  do k=1,levs
@@ -238,6 +245,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
 !      end do
 !    end do
 !  end do
+  end if
   if (nonhyd.eq.1) then
   ! pn
   ipn=icw+levs
@@ -267,7 +275,9 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   if(verbose) print *,itn+k-1, 'read TvN at lev=',k, dfld(1,1,itn+k-1),&
 &  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
   end do  
+  if(convert_) then
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),0)
+  end if
   ! wn
   iwn=itn+levs
   do k=1,levs+1
@@ -323,6 +333,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   end do
   if(verbose) print *,'read XM2 ', mapf(1,1,1), &
 &  maxval(mapf(:,:,1)), minval(mapf(:,:,1))
+  if(convert_) then
 ! modify variables by map factor
  ! U,V
   do k=1,levs
@@ -333,6 +344,7 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
       end do
     end do
   end do
+  end if
 ! fm2x, fm2y
   read(iunit) (sfld(i),i=1,nwf) ! fm2x
   do j=1,jgrd1

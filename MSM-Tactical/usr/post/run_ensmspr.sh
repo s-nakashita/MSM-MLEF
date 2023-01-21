@@ -12,7 +12,7 @@ SDATE=${1}
 IRES=${2}
 #export SDATE IRES
 EDATE=${3:-$SDATE}
-MEM=000
+MEMBER=10
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 while [ $SDATE -le $EDATE ];do
@@ -66,18 +66,21 @@ nsig=11
 nsfc=21
 nflx=31
 MEM=1
-while [ $MEM -le 10 ]; do
+while [ $MEM -le $MEMBER ]; do
 if [ $MEM -lt 10 ];then
 MEM=00$MEM
 else
 MEM=0$MEM
 fi
-ln -s $DATADIR/$MEM/r_sig.f$fh fort.$nsig
-ln -s $DATADIR/$MEM/r_sfc.f$fh fort.$nsfc
-ln -s $DATADIR/$MEM/r_flx.f$fh fort.$nflx
-nsig=`expr $nsig + 1`
-nsfc=`expr $nsfc + 1`
-nflx=`expr $nflx + 1`
+ln -s $DATADIR/$MEM/r_sig.f$fh r_sig.0$MEM
+ln -s $DATADIR/$MEM/r_sfc.f$fh r_sfc.0$MEM
+ln -s $DATADIR/$MEM/r_flx.f$fh r_flx.0$MEM
+#ln -s $DATADIR/$MEM/r_sig.f$fh fort.$nsig
+#ln -s $DATADIR/$MEM/r_sfc.f$fh fort.$nsfc
+#ln -s $DATADIR/$MEM/r_flx.f$fh fort.$nflx
+#nsig=`expr $nsig + 1`
+#nsfc=`expr $nsfc + 1`
+#nflx=`expr $nflx + 1`
 MEM=`expr $MEM + 1`
 done
 ln -s r_sigm.f$fh fort.51

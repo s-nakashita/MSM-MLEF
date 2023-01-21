@@ -2,6 +2,7 @@
 #
 set -x
 export SDATE=${SDATE:-2022083000}
+export MEMBER=${MEMBER:-10}
 export MEM=${MEM:-000}
 export SIGN=${SIGN}
 export BV=${BV:-no}
@@ -10,6 +11,7 @@ export CYCLE=${CYCLE:-0}
 export BV_H=${BV_H:-6}
 export TETYPE=${TETYPE}
 export SCL=${SCL}
+export SCLBASE=${SCLBASE}
 export QADJ=${QADJ:-no}
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`

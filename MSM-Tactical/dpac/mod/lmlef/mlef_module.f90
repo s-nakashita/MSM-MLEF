@@ -206,18 +206,18 @@ subroutine mlef_core(ne,nobs,nobsl,nfun,zxb,dep,parm_infl,alpha,wupd,flag&
   if (nfun == 0) then
     dgout = 0.0_dp
     if (flag == 1) then !FIRST
-      if (allocateD(grad)) deallocate(grad)
+      if (allocated(grad)) deallocate(grad)
       allocate( grad(ne) )
-      if (allocateD(gold)) deallocate(gold)
+      if (allocated(gold)) deallocate(gold)
       allocate( gold(ne) )
-      if (allocateD(desc)) deallocate(desc)
+      if (allocated(desc)) deallocate(desc)
       allocate( desc(ne) )
-      if (allocateD(dold)) deallocate(dold)
+      if (allocated(dold)) deallocate(dold)
       allocate( dold(ne) )
-      if (allocateD(wa)) deallocate(wa)
+      if (allocated(wa)) deallocate(wa)
       allocate( wa(ne) )
       if (opt>0) then
-        if (allocateD(trans0)) deallocate(trans0)
+        if (allocated(trans0)) deallocate(trans0)
         allocate( trans0(ne,ne) )
         trans0 = 0.0_dp
         do i=1,ne
@@ -1050,7 +1050,7 @@ end subroutine line_search
 !  transform matrix : trans = [I+Z^TZ]^{-1/2} = V\Sigma^{-1/2}V^T
 !  where I+Z^TZ = V\SigmaV^T (Eigen value decomposition)
 !=======================================================================
-subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,dfs,dfn,evalout)
+subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,pao,dfs,dfn,evalout)
   implicit none
   integer, intent(in) :: ne
   integer, intent(in) :: nobs
@@ -1059,6 +1059,7 @@ subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,dfs,dfn,evalout)
   real(kind=dp), intent(in) :: zxb(nobs,ne)
   real(kind=dp), intent(out) :: trans(ne,ne)
   real(kind=dp), intent(in) :: parm_infl
+  real(kind=dp), intent(out), optional :: pao(ne,ne) ! analysis error cov. in ensemble space
   real(kind=dp), intent(out), optional :: dfs ! degree of freedom for signal
   real(kind=dp), intent(out), optional :: dfn ! degree of freedom for noise
   real(kind=dp), intent(out), optional :: evalout(ne)
@@ -1115,6 +1116,12 @@ subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,dfs,dfn,evalout)
     do i=1,ne
       trans(i,i) = sqrt(1.0_dp / rho)
     end do
+    if( present(pao) ) then
+      pao = 0.0_dp
+      do i=1,ne
+        pao(i,i) = 1.0_dp / rho
+      end do
+    end if
     return
   end if
   call dgemm('t','n',ne,ne,nobsl,1.0_dp,zxb(1:nobsl,:),nobsl,zxb(1:nobsl,:),&
@@ -1168,6 +1175,16 @@ subroutine calc_trans(ne,nobs,nobsl,wupd,zxb,trans,parm_infl,dfs,dfn,evalout)
     do i=1,ne
       print '(i2,'//trim(cn)//'es13.5)', i, trans(i,:)
     enddo
+  end if
+  if( present(pao) ) then
+    work=0.0_dp
+    do j = 1, ne
+      do i = 1, ne 
+        work(i,j) = eivec(i,j) / eival(j)
+      end do 
+    end do
+    call dgemm('n','t',ne,ne,ne,1.0_dp,work,ne,eivec,&
+    &          ne,0.0_dp,pao,ne)
   end if
   deallocate( work, eival, eivec )
   return

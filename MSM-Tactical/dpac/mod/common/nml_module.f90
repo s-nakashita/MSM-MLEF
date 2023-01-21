@@ -5,7 +5,6 @@ module nml_module
 ! 22-12-08 SN create
 !
   use kind_module
-  use obs_module, only: nobstype
   implicit none
   public
 
@@ -20,15 +19,21 @@ module nml_module
   integer, save :: obsin_num=1
   character(filelenmax) :: obsin_name(nobsfilemax) = 'obs'
 !  logical, save :: obsda_run(nobsfilemax) = .true.
-  logical, save :: obs_out = .true.
+  logical, save :: obs_out = .false.
   character(filelenmax) :: obsout_basename = 'obsda.@@@@'
   character(filelenmax) :: fguess_basename = 'gues.@@@@'
 
   logical, save :: single_obs=.false.
-  logical, save :: luseobs(nobstype)=(/&
+  real(kind=dp),save :: lonw=0.0d0
+  real(kind=dp),save :: lone=0.0d0
+  real(kind=dp),save :: lats=0.0d0
+  real(kind=dp),save :: latn=0.0d0
+  logical, save :: luseobs(9)=(/&
   !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
   & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0
+
+  logical, save :: fixed_level=.false. ! only used mandatory level data
 
   integer, save :: slot_start = 1
   integer, save :: slot_end = 1
@@ -41,11 +46,13 @@ module nml_module
   ! note: njsep * nisep = nimages
   integer, save :: jghost = 0  ! number of ghost point in latitude
   integer, save :: ighost = 0  ! number of ghost point in longitude
+  integer, save :: print_img=1 ! standart output image
 
   !! lmlef
   logical, save :: obsda_in = .false.
   character(filelenmax) :: obsda_in_basename = 'obsda.@@@@'
-  character(filelenmax) :: obsda_out_basename = 'obsda.@@@@'
+  character(filelenmax) :: obsg_out_basename = 'obsg.@@@@'
+  character(filelenmax) :: obsa_out_basename = 'obsa.@@@@'
   character(filelenmax) :: gues_in_basename = 'gues.@@@@'
   character(filelenmax) :: anal_out_basename = 'anal.@@@@'
   logical,save      :: mean = .FALSE. ! If True, ensemble mean is analyzed
@@ -59,13 +66,17 @@ module nml_module
   real(kind=dp),save :: sigma_obst=3.0d0
   real(kind=dp),save :: gross_error=10.0d0
   !!! lmlef_tools
-  real(kind=dp),save    :: cov_infl_mul = -0.01d0 !multiplicative inflation
+  real(kind=dp),save    :: cov_infl_mul = 0.d0 !multiplicative inflation
 ! > 0: globally constant covariance inflation
 ! < 0: 3D inflation values input from a GPV file
   character(filelenmax) :: infl_mul_in_basename = 'infl'
   character(filelenmax) :: infl_mul_out_basename = 'infl'
   real(kind=dp),save    :: sp_infl_add = 0.d0 !additive inflation
   character(filelenmax) :: infl_add_in_basename = 'addi.@@@@'
+  real(kind=dp),save    :: sp_infl_rtpp = 0.d0 !relaxation to prior perturbations
+  real(kind=dp),save    :: sp_infl_rtps = 0.d0 !relaxation to prior spread
+  logical,save          :: relax_spread_out = .FALSE.
+  character(filelenmax) :: relax_spread_out_basename = 'rtps'
 !TVS  logical,parameter :: msw_vbc = .FALSE.
   integer,save          :: maxiter = 5
   logical,save          :: nonlinear=.TRUE. ! If True, observation operator is explicitly evaluated for each iteration
@@ -112,8 +123,10 @@ contains
       obsout_basename, &
       fguess_basename, &
       single_obs, &
+      lonw, lone, lats, latn, &
       luseobs, &
       nobsmax, &
+      fixed_level, &
       slot_start, &
       slot_end, &
       slot_base, &
@@ -140,7 +153,8 @@ contains
       njsep, &
       nisep, &
       jghost, &
-      ighost
+      ighost, &
+      print_img
 
     rewind(5)
     read (5,nml=param_corsm,iostat=ierr)
@@ -162,7 +176,8 @@ contains
     namelist /param_lmlef/ &
       obsda_in, &
       obsda_in_basename, &
-      obsda_out_basename, &
+      obsg_out_basename, &
+      obsa_out_basename, &
       gues_in_basename, &
       anal_out_basename, &
       mean, &
@@ -178,6 +193,10 @@ contains
       infl_mul_out_basename, &
       sp_infl_add, &
       infl_add_in_basename, &
+      sp_infl_rtpp, &
+      sp_infl_rtps, &
+      relax_spread_out, &
+      relax_spread_out_basename, &
       maxiter, &
       nonlinear, &
       zupd, &

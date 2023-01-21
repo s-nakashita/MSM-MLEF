@@ -20,7 +20,8 @@ contains
 ! write sigma file
 !======================================================================
 subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
-&                    igrd1,jgrd1,levs,nflds,nonhyd,icld,dfld,mapf,clat,clon)
+&                    igrd1,jgrd1,levs,nflds,nonhyd,icld,dfld,mapf,clat,clon,&
+&                    convert)
 ! input :
 ! ounit sigma file (sequential, with header)
 ! dfld  variables (double precision)
@@ -37,6 +38,8 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   real(kind=dp), intent(inout) :: dfld(igrd1,jgrd1,nflds)
   real(kind=dp), intent(in) :: mapf(igrd1,jgrd1,3)
   real(kind=dp), intent(in) :: clat(jgrd1), clon(igrd1)
+  logical, intent(in), optional :: convert
+  logical :: convert_
   real(kind=sp) :: sisl(2*levmax+1)
   integer :: iret
   integer :: nwf, irec
@@ -47,6 +50,10 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   real(kind=sp), allocatable :: sfld(:)
   real(kind=sp), allocatable :: factor(:,:,:)
   
+  convert_=.true.
+  if( present(convert) ) then
+    convert_=convert
+  end if
   iret = 0
 ! write label
   write(ounit) label
@@ -88,8 +95,10 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   ! T
   it=ips+1
   iq=it+3*levs
+  if(convert_) then
   ! temperature => virtual temperature
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),1)
+  end if
   do k=1, levs
     do j=1,jgrd1
       do i=1,igrd1
@@ -104,6 +113,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   iu=it+levs
   iv=iu+levs
   do k=1, levs
+    if(convert_) then
 ! modify variables by map factor
     do j=1,jgrd1
       do i=1,igrd1
@@ -111,6 +121,7 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
         dfld(i,j,iv+k-1)=dfld(i,j,iv+k-1)/sqrt(mapf(i,j,1))
       end do
     end do
+    end if
     do j=1,jgrd1
       do i=1,igrd1
         sfld(i+(j-1)*igrd1) = real(dfld(i,j,iu+k-1),kind=sp) 
@@ -182,8 +193,10 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   end do
   ! tn
   itn=ipn+levs
+  if (convert_) then
   ! temperature => virtual temperature
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),1)
+  end if
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1

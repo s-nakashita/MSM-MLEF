@@ -26,6 +26,7 @@ export BASEDIR=${BASEDIR:-$DISKSYS/inp/gfsp/$SDATE}
 # machine dependent
 export MACHINE=${MACHINE:-ibm_xlf}
 export RUNENV=${RUNENV:-}                                # execute command
+export PYENV=${PYENV:-python3}                                  # python execute command
 export MARCH=${MARCH:-mpi}                               # no use now
 export LAMMPI=${LAMMPI:-no}
 export MPICH=${MPICH:-yes}                               # define mpikind for linux mpich and aix pe

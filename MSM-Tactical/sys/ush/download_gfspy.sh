@@ -45,6 +45,11 @@ while [ $fh -le $fend ]; do
    fh=`expr $fh + $INCBASE`
 done
 echo $PRODUCT
+if [ $IQVAR -eq 2 ]; then
+PARAMS='CLWMR/HGT/O3MR/R H/TMP/U GRD/V GRD/LAND/TSOIL/T CDC/SOILW/ICEC/WEASD'
+else
+PARAMS='CLWMR/HGT/O3MR/SPF H/TMP/U GRD/V GRD/LAND/TSOIL/T CDC/SOILW/ICEC/WEASD'
+fi
 #if [ $fend -lt 100 ]; then fend=0$fend; fi
 #tarf=gfs.0p25.${SDATE}.f000-${fend}.grib2.tar
 #if [ ! -f $tarf ]
@@ -58,7 +63,7 @@ sys.path.append('${DISK}/rda-apps-clients/')
 import rdams_client as rc
 import time
 # Checks if q request is ready.
-def check_ready(rqst_id, wait_interval=120):
+def check_ready(rqst_id, wait_interval=60):
     for i in range(100):
         res = rc.get_status(rqst_id)
         request_status = res['result']['status']
@@ -73,7 +78,7 @@ control = {
 'dataset' : 'ds084.1',
 'date':'${SDATE}00/to/${SDATE}00',
 'datetype':'init',
-'param':'CLWMR/HGT/O3MR/SPF H/TMP/U GRD/V GRD/LAND/TSOIL/T CDC/SOILW/ICEC/WEASD',
+'param':'${PARAMS}',
 #'level':,
 #'oformat':'WMO GRIB2',
 'nlat':${LATMAX},

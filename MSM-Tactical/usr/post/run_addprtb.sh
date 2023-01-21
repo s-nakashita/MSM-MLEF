@@ -17,6 +17,7 @@ TETYPE=${TETYPE}
 SCL=${SCL}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
+SCLBASE=${SCLBASE}
 CYCLE=${1:-$CYCLE}
 #IDATE=${1}
 #IRES=${2}
@@ -63,9 +64,9 @@ if [ $CYCLE -gt 1 ]; then
   echo "forecast hour=${fh}"
   IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 fi
-WDIR=bv${TETYPE}${SCL}${PMEM}${BP}
+WDIR=bv${TETYPE}${SCL}${PMEM}${BP}${SCLBASE}
 if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-  WDIR=bv${TETYPE}${SCL}${BV_H}h${PMEM}${BP}
+  WDIR=bv${TETYPE}${SCL}${BV_H}h${PMEM}${BP}${SCLBASE}
 fi
 if [ do$QADJ = doyes ];then
   WDIR=${WDIR}_qadj
@@ -78,9 +79,9 @@ cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
 cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
 cp $DATADIR/$IDATE/rmtnvar $OUTDIR/
-rm -rf tmp
-mkdir -p tmp
-cd tmp
+rm -rf ${OUTDIR}/tmp
+mkdir -p $OUTDIR/tmp
+cd $OUTDIR/tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field
@@ -134,11 +135,11 @@ else
   fi
   PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${IDATE}"` #a
   echo $PDATE #a
-  if [ do$BP = dowbp ];then
-    ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
-  else
+#  if [ do$BP = dowbp ];then
+#    ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
+#  else
     ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
-  fi
+#  fi
   #if [ $PCYCLE -eq 1 ]; then
   #ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
   #else
@@ -158,7 +159,11 @@ if [ do$QADJ = doyes ];then
 fi
 SPINUP=`expr 24 / $BV_H + 1`
 if [ do$SCL != do ];then
-  teref=${SCL}.0d0
+  teref=${SCL}
+  if echo "$SCL" | grep -q "^[0-9]\+$";then
+    # SCL is integer
+    teref=${SCL}.0d0
+  fi
 else
   teref=3.0d0
 fi

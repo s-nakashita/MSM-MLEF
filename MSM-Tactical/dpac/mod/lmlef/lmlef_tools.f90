@@ -8,6 +8,8 @@ module lmlef_tools
 !   07/25/2022 construct
 !   08/26/2022 option for saving cost and ensemble weights added
 !   12/15/2022 modified for MSM
+!   01/09/2023 add surface variables to control variables
+!   01/10/2023 add RTPP & RTPS inflation methods
 !
 !=======================================================================
   use kind_module
@@ -51,12 +53,12 @@ subroutine init_das_lmlef
   end if
   write(6,'(A,F7.4)') 'pscale=', pscale
 !! variable localization
-  allocate( var_local(nv3d+nv2d,nobstype) )
-  allocate( var_local_n2n(nv3d+nv2d) )
+  allocate( var_local(nv3d+nv2d_sig,nobstype) )
+  allocate( var_local_n2n(nv3d+nv2d_sig) )
   allocate( var_update(nv3d+nv2d) )
   if(nonhyd.eq.1) then !nonhydrostatic
   var_local = reshape( &
-!!          T      U      V      Q     OZ     CW     Pn     Tn      W     GZ     Ps     Wb
+!!          Th     U      V      Q     OZ     CW     Pn     Tn      W     GZ     Ps     Wb
    & (/ 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! U
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! V
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! T
@@ -66,9 +68,11 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Td
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
-   & ,(/nv3d+nv2d,nobstype/))
-!!              T  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
-  var_update=(/ 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0/)
+   & ,(/nv3d+nv2d_sig,nobstype/))
+!!                              Th  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
+  var_update(1:nv3d+nv2d_sig)=(/ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0/)
+  iv3d_t = iv3d_tn !non-hydrostatic temperature updated
+  iv3d_tt= iv3d_th !hydrostatic temperature not updated
   else !hydrostatic
   var_local = reshape( &
 !!          T      U      V      Q     OZ     CW     GZ     Ps 
@@ -81,14 +85,18 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Td
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
-   & ,(/nv3d+nv2d,nobstype/))
-!!                 T  U  V  Q OZ CW GZ Ps
-   var_update = (/ 1, 1, 1, 1, 1, 1, 0, 1/)
+   & ,(/nv3d+nv2d_sig,nobstype/))
+!!                                  T  U  V  Q OZ CW GZ Ps
+   var_update(1:nv3d+nv2d_sig) = (/ 1, 1, 1, 1, 1, 1, 0, 1/)
+   iv3d_t = iv3d_th
+   iv3d_tt= iv3d_t
   end if
+  var_update(nv3d+nv2d_sig+1:) = 0 ! r_sfc variables not update
   write(cn,'(i4)') nv3d+nv2d
-  write(6,'(a4)') cn
-  write(6,'('//trim(cn)//'a4)') varnames
-  write(6,'('//trim(cn)//'i4)') var_update
+  write(6,'(a,a4)') '#variables = ',cn
+  write(6,'(a)') 'var_update'
+  write(6,'('//trim(cn)//'(a6,x))') varnames
+  write(6,'('//trim(cn)//'(i6,x))') var_update
   return
 end subroutine init_das_lmlef
 !-----------------------------------------------------------------------
@@ -132,17 +140,22 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   real(kind=dp),allocatable :: work2de(:,:,:,:)[:]
   real(kind=dp),allocatable :: jwork3d(:,:,:,:)[:]
   real(kind=dp),allocatable :: jwork2d(:,:,:)[:]
+  real(kind=dp),allocatable :: rtps3d(:,:,:,:)[:] !RTPS coefficients
+  real(kind=dp),allocatable :: rtps2d(:,:,:)[:] !RTPS coefficients
   real(kind=dp),allocatable :: work3dg(:,:,:,:)
   real(kind=dp),allocatable :: work2dg(:,:,:)
   real(kind=dp),allocatable :: logpfm(:,:)[:]
+  real(kind=dp),allocatable :: infl_mul3d(:,:,:) !multiplicative inflation parameter
   real(kind=dp),allocatable :: tmpps(:)
-  real(kind=dp) :: alpha
+  real(kind=dp) :: alpha,tmpbeta
   real(kind=dp) :: fsum, dginit, dgout, gnormall
   real(kind=dp) :: parm, parm_upd
   real(kind=dp) :: jb1,jo1
   real(kind=dp) :: dfs,dfn
   real(kind=dp),allocatable :: evalout(:)
   real(kind=dp),allocatable :: trans(:,:)
+  real(kind=dp),allocatable :: transrlx(:,:)
+  real(kind=dp),allocatable :: pao(:,:)
 !  real(kind=dp),allocatable :: trans(:,:,:,:)
   integer, allocatable :: nobs_use(:,:,:), nobsl(:,:)
   integer, allocatable :: nfun(:,:)
@@ -171,15 +184,16 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! Variable localization
   !
   var_local_n2n(1) = 1
-  do n=2,nv3d+nv2d
+  do n=2,nv3d+nv2d_sig
     do i=1,n
       var_local_n2n(n) = i
       if(maxval(abs(var_local(i,:)-var_local(n,:))) < TINY(var_local)) EXIT
     end do
   end do
-  write(cn,'(i4)') nv3d+nv2d
-  write(6,'('//trim(cn)//'a4)') varnames
-  write(6,'('//trim(cn)//'i4)') var_local_n2n
+  write(cn,'(i4)') nv3d+nv2d_sig
+  write(6,'(a)') 'var_local'
+  write(6,'('//trim(cn)//'(a6,x))') varnames(1:nv3d+nv2d_sig)
+  write(6,'('//trim(cn)//'(i6,x))') var_local_n2n
   !
   ! FCST PERTURBATIONS
   !
@@ -235,32 +249,34 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   !
   allocate( work3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
   allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
+  allocate( infl_mul3d(1:ni1,1:nj1,nlev) ) !inflation parameter
   allocate( work3dg(nlon,nlat,nlev,nv3d) ) !also used for saving cost
   allocate( work2dg(nlon,nlat,nv2d) ) !also used for saving cost
   if(cov_infl_mul >= 0.0d0) then ! fixed multiplicative inflation parameter
     work3d = cov_infl_mul
     work2d = cov_infl_mul
-    work3d(:,:,nlev,:) = 0.01d0
-    work3dg = cov_infl_mul !for global cost
-    work3dg(:,:,nlev,:) = 0.01d0
+!    work3d(:,:,nlev,:) = 0.01d0
+    infl_mul3d = cov_infl_mul
   end if
   if(cov_infl_mul < 0.0d0) then ! 3D parameter values are read-in
     inquire(file=infl_mul_in_basename,exist=ex)
     if(ex) then
-      if(myimage == 1) then
+      if(myimage == print_img) then
         write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is reading.. ',infl_mul_in_basename
-        call read_restart(infl_mul_in_basename,work3dg,work2dg)
+        call read_restart(infl_mul_in_basename,work3dg,work2dg,convert=.false.)
       end if
-      call scatter_grd(1,work3dg,work2dg,work3d,work2d)
+      call scatter_grd(print_img,work3dg,work2dg,work3d,work2d)
+      infl_mul3d = work3d(1:ni1,1:nj1,1:nlev,1)
     else
       write(6,'(2A)') '!!WARNING: no such file exist: ',infl_mul_in_basename
       work3d = -1.0d0 * cov_infl_mul
       work2d = -1.0d0 * cov_infl_mul
-      work3dg = -1.0d0 * cov_infl_mul !for global cost
+      infl_mul3d = -1.0d0 * cov_infl_mul
+!      work3dg = -1.0d0 * cov_infl_mul !for global cost
     end if
   end if
   if(debug) then
-    write(6,'(A,2F13.5)') 'prior inflation = ', minval(work3dg(:,:,:,1)), maxval(work3dg(:,:,:,1))
+    write(6,'(A,2F13.5)') 'prior inflation = ', minval(infl_mul3d(:,:,:)), maxval(infl_mul3d(:,:,:))
   end if
   !
   ! p_full for background control
@@ -270,7 +286,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     do ij=1,nij1
       i=mod(ij-1,ni1)+1
       j=(ij-1)/ni1 + 1
-      logpfm(ij,:) = gues3dc(i,j,:,iv3d_pp)
+      logpfm(ij,:) = gues3dc(i,j,:,iv3d_pn)
     end do
   else
     allocate( tmpps(1:nij1) )
@@ -283,9 +299,9 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     deallocate( tmpps )
   end if
   logpfm = log(logpfm)
-  !if(debug) then
-  write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm(1:nij1,:)), maxval(logpfm(1:nij1,:))
-  !end if
+  if(debug) then
+    write(6,'(A,2F13.5)') 'log p_full = ', minval(logpfm(1:nij1,:)), maxval(logpfm(1:nij1,:))
+  end if
   !
   ! MAIN ASSIMILATION LOOP
   !
@@ -308,13 +324,17 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   !! ensemble transformation matrix
   allocate( trans(member,member) )
 !  allocate( trans(member,member,nij1,nlev) )
+  allocate( transrlx(member,member) )
+  if(sp_infl_rtps > 0.0d0 ) then
+    allocate( pao(member,member) )
+  end if
   if(save_info) then
-    ! for save local cost functions and local DFS (dummy)
+    ! for save local cost functions, local DFS and obs number per grids
     allocate( jwork3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
     allocate( jwork2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
     jwork3d = 0.0d0
     jwork2d = 0.0d0
-    ! for save ensemble weights
+    ! for save ensemble weights and eigenvalues of tranform matrix
     allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
     allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,member,nv2d)[*] )
     allocate( evalout(member) )
@@ -339,6 +359,17 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   ! start optimization for all grids and variables
   do while ( niter <= maxiter )
     if( jout .and. (gflag==1) ) write(6,'(A,i4)') 'iteration', niter
+    ! global cost
+    ngrd=ni1*nj1*nlev
+    ne=member*ngrd
+    call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(infl_mul3d,(/ngrd/)),fglb)
+    sync all
+    if(myimage==print_img) then
+      do k=1,nimages
+        if(k==myimage) cycle
+        fglb[myimage] = fglb[myimage] + fglb[k]
+      end do
+    end if
     do ilev=1,nlev
       write(6,'(A,I3)') 'ilev = ',ilev
       do ij=1,nij1
@@ -353,13 +384,13 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           call obs_local(ij,ilev,n,zxb,dep,rloc,&
           & nobsl(ij,ilev),nobs_use(:,ij,ilev),&
           & logpfm,hfirst)
-          parm = work3d(i,j,ilev,n)
+          parm = infl_mul3d(i,j,ilev)
           ! adaptive inflation
-          parm_upd = parm
           if((cov_infl_mul < 0.0d0).and.(nobsl(ij,ilev).gt.0).and.hfirst) then
+            parm_upd = parm
             call est_infl(parm_upd,nobsl(ij,ilev),zxb,dep,rloc)
+            work3d(i,j,ilev,1) = parm_upd   
           end if
-          work3d(i,j,ilev,n) = parm_upd   
           call mlef_core(member,nobstotal,nobsl(ij,ilev),nfun(ij,ilev),&
             & zxb,dep,parm,alpha,w(:,ij,ilev),flag(ij,ilev)&
 !            & ,trans(:,:,ij,ilev)&
@@ -373,18 +404,12 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end if
       end do
     end do
-    ngrd=ni1*nj1*nlev
-    ne=member*ngrd
-    call global_cost(ne,ngrd,reshape(w(:,1:nij1,:),(/ne/)),reshape(work3d(1:ni1,1:nj1,:,1),(/ngrd/)),fglb)
     sync all
-    if(myimage==1) then
-      do k=2,nimages
-        fglb[myimage] = fglb[myimage] + fglb[k]
-      end do
+    if(myimage==print_img) then
       flagall=0
       do k=1,nimages
         do ilev=1,nlev
-          do ij=1,nij1
+          do ij=1,nij1node(k)
             if(flag(ij,ilev)[k]/=0) then
               flagall=flagall+ABS(flag(ij,ilev)[k])
             end if
@@ -392,7 +417,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         end do
       end do
       gnormall=0.0d0
-      fsum=0.0D0
+      fsum=0.0d0
       ne=0
 !      n=0
       do k=1,nimages
@@ -428,7 +453,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         write(6,'(2(A,I7))') 'flagall=',flagall,' / ',lngrd*nlev
         write(6,'(A,ES12.5)') 'J(sum)=',fsum
         write(6,'(A,ES12.5)') 'J(global)=',fglb
-        write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
+        if(niter<maxiter) write(6,'(A,ES12.5)') '|g(global)|=',sqrt(gnormall)
       !end if
       end if
 !      n=0
@@ -455,9 +480,15 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       call obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       hfirst=.FALSE.
     end if
-  end do
+  end do ! while ( niter <= maxiter )
   if (niter>=maxiter) write(6,'(A,I4)') 'iteration number exceeds ',maxiter
   ! update analysis
+  if(relax_spread_out) then
+    allocate( rtps3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
+    allocate( rtps2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
+    rtps3d = 1.0_dp
+    rtps2d = 1.0_dp
+  end if
   do ilev=1,nlev
    do ij=1,nij1
       i=mod(ij-1,ni1)+1
@@ -467,24 +498,49 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       call obs_local(ij,ilev,n,zxb,dep,rloc,&
       & nobsl(ij,ilev),nobs_use(:,ij,ilev),&
       & logpfm,hfirst)
-      parm = work3d(i,j,ilev,n)
       if(save_info) then
+        jwork3d(i,j,ilev,5) = real(nobsl(ij,ilev),kind=dp)
+        jwork3d(i,j,ilev,6) = real(sum(rloc(1:nobsl(ij,ilev))),kind=dp)
+      end if
+      parm = infl_mul3d(i,j,ilev)
+      if(save_info) then
+        if(sp_infl_rtps>0.0d0) then
         call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm,&
-        & dfs,dfn,evalout)
+        & pao=pao,dfs=dfs,dfn=dfn,evalout=evalout)
+        else
+        call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm,&
+        & dfs=dfs,dfn=dfn,evalout=evalout)
+        end if
         jwork3d(i,j,ilev,3) = dfs
         jwork3d(i,j,ilev,4) = dfn
-        ! save eigenvalues
+        ! save ensemble weights and eigenvalues
         do m=1,member
+          work3de(i,j,ilev,m,1) = w(m,ij,ilev)
           work3de(i,j,ilev,m,2) = evalout(m)
         end do
       else
+        if(sp_infl_rtps>0.0d0) then
+        call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm,&
+                pao=pao)
+        else
         call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm)
+        end if
+      end if
+      if(sp_infl_rtpp>0.0d0) then
+      !
+      ! Relaxation-to-prior-perturbations (Zhang et al. 2004)
+      !
+      !  write(6,'(A)') '===== Relaxation to prior perturbations ====='
+      !  write(6,'(A,F10.4)') '  parameter:',sp_infl_rtpp
+      !  write(6,'(A)') '============================================='
+        call trans_rtpp(trans,transrlx)
+      else
+        transrlx = trans
       end if
       if(mean) then
         do k=1,member
           do m=1,member
-            trans(k,m) = trans(k,m) + w(k,ij,ilev)*pscale
-!            trans(k,m,ij,ilev) = trans(k,m,ij,ilev) + w(k,ij,ilev)*pscale
+            transrlx(k,m) = transrlx(k,m) + w(k,ij,ilev)*pscale
           end do
         end do
       end if
@@ -499,25 +555,39 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           end if
         end if
       ! update ensemble
+        if(sp_infl_rtps>0.0d0.and.var_update(n)==1) then
+        !
+        ! Relaxation-to-prior-spread (Whitaker and Hamill 2012)
+        !
+        !  write(6,'(A)') '===== Relaxation to prior spread ====='
+        !  write(6,'(A,F10.4)') '  parameter:',sp_infl_rtps
+        !  write(6,'(A)') '======================================'
+          if(relax_spread_out) then
+          call trans_rtps(trans,pao,gues3d(i,j,ilev,:,n),transrlx,rtps3d(i,j,ilev,n))
+          else
+          call trans_rtps(trans,pao,gues3d(i,j,ilev,:,n),transrlx,tmpbeta)
+          end if
+          if(mean) then
+            do k=1,member
+              do m=1,member
+                transrlx(k,m) = transrlx(k,m) + w(k,ij,ilev)*pscale
+              end do
+            end do
+          end if
+        end if
         do m=1,member
           anal3d(i,j,ilev,m,n) = anal3dc(i,j,ilev,n)
           if(var_update(n)==1) then
             do k=1,member
               anal3d(i,j,ilev,m,n) = anal3d(i,j,ilev,m,n) &
-                & + gues3d(i,j,ilev,k,n) * trans(k,m) / pscale
+                & + gues3d(i,j,ilev,k,n) * transrlx(k,m) / pscale
             end do
           else
             anal3d(i,j,ilev,m,n) = anal3d(i,j,ilev,m,n) + gues3d(i,j,ilev,m,n) / pscale
           end if
         end do
-        if(save_info) then
-          ! save ensemble weights
-          do m=1,member
-            work3de(i,j,ilev,m,n) = w(m,ij,ilev)
-          end do
-        end if
-        ! copy cost functions and adaptive inflation parameters
-        if( n>1 )then
+        ! copy adaptive inflation parameters
+        if( n>1 .and. cov_infl_mul < 0.0d0 )then
           work3d(i,j,ilev,n) = work3d(i,j,ilev,1)
         end if
       end do
@@ -533,35 +603,51 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
             end if
           end if
           ! update ensemble
+          if(sp_infl_rtps>0.0d0.and.var_update(nv3d+n)==1) then
+          !
+          ! Relaxation-to-prior-spread (Whitaker and Hamill 2012)
+          !
+          !  write(6,'(A)') '===== Relaxation to prior spread ====='
+          !  write(6,'(A,F10.4)') '  parameter:',sp_infl_rtps
+          !  write(6,'(A)') '======================================'
+            if(relax_spread_out) then
+            call trans_rtps(trans,pao,gues2d(i,j,:,n),transrlx,rtps2d(i,j,n))
+            else
+            call trans_rtps(trans,pao,gues2d(i,j,:,n),transrlx,tmpbeta)
+            end if
+            if(mean) then
+              do k=1,member
+                do m=1,member
+                  transrlx(k,m) = transrlx(k,m) + w(k,ij,ilev)*pscale
+                end do
+              end do
+            end if
+          end if
           do m=1,member
             anal2d(i,j,m,n) = anal2dc(i,j,n)
             if(var_update(nv3d+n)==1) then
               do k=1,member
                 anal2d(i,j,m,n) = anal2d(i,j,m,n) &
-                & + gues2d(i,j,k,n) * trans(k,m) / pscale
+                & + gues2d(i,j,k,n) * transrlx(k,m) / pscale
               end do
             else
               anal2d(i,j,m,n) = anal2d(i,j,m,n) + gues2d(i,j,m,n) / pscale
             end if
           end do
-          if(save_info) then
-            ! save ensemble weights
-            do m=1,member
-              work2de(i,j,m,n) = w(m,ij,ilev)
-            end do
+          ! copy adaptive inflation parameters
+          if(cov_infl_mul < 0.0d0) then
+            work2d(i,j,n) = work3d(i,j,ilev,1)
           end if
-          ! copy cost functions and adaptive inflation parameters
-          work2d(i,j,n) = work3d(i,j,ilev,1)
         end do
-      end if
+      end if !ilev==1
       if(exp(logpfm(ij,ilev)) .lt. q_update_top) then !no analysis for upper-level Q and CW
         anal3dc(i,j,ilev,iv3d_q) = gues3dc(i,j,ilev,iv3d_q)
         anal3dc(i,j,ilev,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw)
         do m=1,member
-          if(save_info) then
-            work3de(i,j,ilev,m,iv3d_q) = 0.0d0
-            work3de(i,j,ilev,m,iv3d_cw) = 0.0d0
-          end if
+!          if(save_info) then
+!            work3de(i,j,ilev,m,iv3d_q) = 0.0d0
+!            work3de(i,j,ilev,m,iv3d_cw) = 0.0d0
+!          end if
           anal3d(i,j,ilev,m,iv3d_q) = gues3dc(i,j,ilev,iv3d_q) &
                                  & + gues3d(i,j,ilev,m,iv3d_q) / pscale
           anal3d(i,j,ilev,m,iv3d_cw) = gues3dc(i,j,ilev,iv3d_cw) &
@@ -576,7 +662,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
                   anal3dc(i,j,ilev,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
-              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pp),qlim)
+              call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal3dc(i,j,ilev,iv3d_pn),qlim)
             else                       
               call calc_q2(anal3dc(i,j,ilev,iv3d_t),rh,anal2dc(i,j,iv2d_ps)*sig(ilev),qlim)
             end if
@@ -598,7 +684,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
                   anal3d(i,j,ilev,m,iv3d_t).lt.(t0+35.0d0)) then
             rh=1.0d0
             if(nonhyd.eq.1) then
-              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pp),qlim)
+              call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal3d(i,j,ilev,m,iv3d_pn),qlim)
             else                       
               call calc_q2(anal3d(i,j,ilev,m,iv3d_t),rh,anal2d(i,j,m,iv2d_ps)*sig(ilev),qlim)
             end if
@@ -612,35 +698,95 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !          end if
         end do
       end if ! q limit and/or super saturation (dry) adjustment
-    end do
-  end do
+    end do !ij=1,nij1
+  end do !ilev=1,nlev
+  ! (for non-hydrostatic) pn, tt and wn is replaced by hydrostatic 
+  if(nonhyd.eq.1) then
+    if(var_update(iv3d_pn)==0) then !pn
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_pn) = anal2dc(i,j,iv2d_ps) * sig(ilev)
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_pn) = anal2d(i,j,m,iv2d_ps) * sig(ilev)
+            end do
+          end do
+        end do
+      end do
+    end if !pn
+    if(var_update(iv3d_tt)==0) then !tt
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_tt) = anal3dc(i,j,ilev,iv3d_t)
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_tt) = anal3d(i,j,ilev,m,iv3d_t)
+            end do
+          end do
+        end do
+      end do
+    end if !tt
+    if(var_update(iv3d_wn)==0) then !wn
+      do ilev=1,nlev
+        do j=1,nj1
+          do i=1,ni1
+            anal3dc(i,j,ilev,iv3d_wn) = 0.0_dp
+            do m=1,member
+              anal3d(i,j,ilev,m,iv3d_wn) = 0.0_dp
+            end do
+          end do
+        end do
+      end do
+    end if !ww
+    if(var_update(nv3d+iv2d_wb)==0) then !wb
+      do j=1,nj1
+        do i=1,ni1
+          anal2dc(i,j,iv2d_wb) = 0.0_dp
+          do m=1,member
+            anal2d(i,j,m,iv2d_wb) = 0.0_dp
+          end do
+        end do
+      end do
+    end if !wb
+  end if
   sync all
   ! end optimization
-  deallocate( zxb,dep,trans,nobsl,nobs_use,rloc )
+  deallocate( zxb,dep,trans,transrlx,nobsl,nobs_use,rloc )
   deallocate( w,grad,gold,desc,dold,fval,flag )
 !  deallocate( gw,ggrad,ggold,gdesc,gdold )
   if(save_info) then
-    ! write out cost functions
-    call gather_grd(1,jwork3d,jwork2d,work3dg,work2dg)
-    if(myimage == 1) then
-      write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing.. ',info_out_basename
-      call write_restart(info_out_basename,work3dg,work2dg)
+    ! write out information
+    call gather_grd(print_img,jwork3d,jwork2d,work3dg,work2dg)
+    if(myimage == print_img) then
+      write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing a file ',trim(info_out_basename)
+      call write_restart(info_out_basename,work3dg,work2dg,convert=.false.)
     end if
     sync all
     deallocate(jwork3d,jwork2d)
     ! write out ensemble weights
-    call write_ens(ewgt_basename,work3de,work2de)
+    call write_ens(ewgt_basename,work3de,work2de,convert=.false.)
     sync all
     deallocate(work3de,work2de)
   end if
   ! write out adaptive inflation parameters
   if(cov_infl_mul < 0.0d0) then
-    call gather_grd(1,work3d,work2d,work3dg,work2dg)
-    if(myimage == 1) then
-      write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing.. ',infl_mul_out_basename
-      call write_restart(infl_mul_out_basename,work3dg,work2dg)
+    call gather_grd(print_img,work3d,work2d,work3dg,work2dg)
+    if(myimage == print_img) then
+      write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing a file ',trim(infl_mul_out_basename)
+      call write_restart(infl_mul_out_basename,work3dg,work2dg,convert=.false.)
     end if
-    deallocate(work3dg,work2dg,work3d,work2d)
+    sync all
+    deallocate(work3d,work2d)
+  end if
+  ! write out RTPS coefficients
+  if(relax_spread_out) then
+    call gather_grd(print_img,rtps3d,rtps2d,work3dg,work2dg)
+    if(myimage == print_img) then
+      write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing a file ',trim(relax_spread_out_basename)
+      call write_restart(relax_spread_out_basename,work3dg,work2dg,convert=.false.)
+    end if
+    sync all
+    deallocate(work3dg,work2dg,rtps3d,rtps2d)
   end if
   !
   ! Additive inflation
@@ -756,7 +902,9 @@ if(hfirst) then
     minlon = 0.0d0
     maxlon = 360.0d0
   end if
-  if(debug) write(6,*) 'minlon maxlon minlat maxlat ',minlon,maxlon,minlat,maxlat
+  if(debug) &
+          write(6,'(a,I6,2f10.2,a,4f10.2)') 'ij,rlon,rlat ',ij,myrlon(i),myrlat(j),&
+          ' minlon,maxlon,minlat,maxlat ',minlon,maxlon,minlat,maxlat
 
   do jmin=1,nlat-2
     if(minlat < rlat(jmin+1)) EXIT
@@ -1125,16 +1273,16 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     integer :: monit_nqc(nobstype,nqctype)
   
     allocate( tmphxf(obsdasort%nobs,0:member)[*] )
-    allocate( work3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
-    allocate( work2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
+    allocate( work3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
+    allocate( work2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
     allocate( work3de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
-    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d) )
-    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
+    allocate( work2de(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
+    allocate( p_full (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
     allocate( v3d(nlon,nlat,nlev,nv3d), v2d(nlon,nlat,nv2d) )
     allocate( v3dp(nlon,nlat,nlev,nv3d), v2dp(nlon,nlat,nv2d) )
     ! full pressure levels (identical to all members)
     if(nonhyd.eq.1) then !non-hydrostatic
-      p_full(:,:,:) = gues3dc(:,:,:,iv3d_pp)
+      p_full(:,:,:) = gues3dc(:,:,:,iv3d_pn)
     else
       call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,gues2dc(:,:,iv2d_ps),p_full)
     end if
@@ -1284,11 +1432,12 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       end do
       tmphxf(:,0) = tmphxf(:,0) / real(member,kind=dp)
     end if
-    if(myimage == 1) then
-      do k=2,nimages
+    if(myimage == print_img) then
+      do k=1,nimages
+        if(k.eq.myimage) cycle
         tmphxf(:,:)[myimage] = tmphxf(:,:)[myimage] + tmphxf(:,:)[k]
       end do
-      do k=2,nimages
+      do k=1,nimages
         tmphxf(:,:)[k] = tmphxf(:,:)[myimage]
       end do
     end if
@@ -1372,6 +1521,51 @@ subroutine obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
     if(jout) write(6,'(A,I4,A,ES12.5)') 'MYIMAGE ',myimage,' J(global)=',fglb
     return
   end subroutine global_cost
+!-----------------------------------------------------------------------
+! Relaxation via transform matrix - RTPP method
+!-----------------------------------------------------------------------
+  subroutine trans_rtpp(trans,transrlx)
+    implicit none
+    real(kind=dp),intent(in) :: trans(member,member)
+    real(kind=dp),intent(out):: transrlx(member,member)
+    integer :: m
+
+    transrlx = (1.0_dp - sp_infl_rtpp) * trans
+    do m=1,member
+      transrlx(m,m) = transrlx(m,m) + sp_infl_rtpp
+    end do
+    return
+  end subroutine trans_rtpp
+!-----------------------------------------------------------------------
+! Relaxation via transform matrix - RTPS method
+!-----------------------------------------------------------------------
+  subroutine trans_rtps(trans,pao,spf,transrlx,beta)
+    implicit none
+    real(kind=dp),intent(in) :: trans(member,member)
+    real(kind=dp),intent(in) :: pao(member,member)
+    real(kind=dp),intent(in) :: spf(member)
+    real(kind=dp),intent(out):: transrlx(member,member)
+    real(kind=dp),intent(out) :: beta
+    real(kind=dp) :: vf,va
+    integer :: k,m
+
+    vf = 0.0_dp
+    va = 0.0_dp
+    do m=1,member
+      vf = vf + spf(m)*spf(m)
+      do k=1,member
+        va = va + spf(k)*pao(k,m)*spf(m)
+      end do
+    end do
+    if (vf.gt.0.0_dp .and. va.gt.0.0_dp) then
+      beta = sp_infl_rtps * sqrt(vf / va) + 1.0_dp - sp_infl_rtps
+      transrlx = beta * trans
+    else
+      beta = 1.0_dp
+      transrlx = trans
+    end if
+    return
+  end subroutine trans_rtps
 !TVSsubroutine tvs_local_sub(imin,imax,jmin,jmax,nn,ntvs_prof,ntvs_inst,ntvs_slot)
 !TVS  integer,intent(in) :: imin,imax,jmin,jmax
 !TVS  integer,intent(inout) :: nn, ntvs_prof(ntvs), ntvs_inst(ntvs), ntvs_slot(ntvs)

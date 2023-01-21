@@ -43,6 +43,8 @@ fi
 eidate=$yearend$monthend$dayend$hourend
 end_hr=`$UTLDIR/nhour $eidate $CDATE$CHOUR`
 ENDHOUR=${ENDHOUR:-$end_hr}
+INCCYCLE=${INCCYCLE:-$ENDHOUR}
+EXTEND=${EXTEND}
 #
 #-----------------------------------------------
 # determine model run parameters
@@ -67,6 +69,7 @@ SSTLAG=${SSTLAG:-0}
 #
 FCSTSEC=`expr $INCHOUR \* 3600`
 PRNTSEC=`expr $PRTHOUR \* 3600`
+PRNTSEC=${PSEC:-$PRNTSEC}
 RSWRSEC=`expr $RSWRHOUR \* 3600`
 RLWRSEC=`expr $RLWRHOUR \* 3600`
 BASESEC=`expr $INCBASE \* 3600`
@@ -93,9 +96,16 @@ SDATE0=$SDATE
 while [ $CYCLE -le $CYCLEMAX ];do
   if [ $CYCLE -gt 1 ];then
     PCYCLE=`expr $CYCLE - 1`
-    inch=`expr $ENDHOUR \* $PCYCLE`
+    inch=`expr $INCCYCLE \* $PCYCLE`
     SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
     export SDATE
+    HZ=`echo $SDATE | cut -c9-10`
+    HZ=`expr $HZ`
+    if [ ! -z $EXTEND ] && [ $HZ -ne $EXTEND ]; then
+      export ENDHOUR=$INCCYCLE
+    fi
+  else
+    export ENDHOUR=$INCCYCLE
   fi
   if [ $CYCLE -lt $DASTART ];then
     BGM=yes
@@ -125,7 +135,7 @@ export RUNDIR BASEDIR BASESFCDIR
 mkdir -p $RUNDIR
 cd $RUNDIR || exit 1
 #### define fcst parameters ######
-echo "CYCLE $CYCLE (DA $CYCLEDA) / $CYCLEMAX" > cycle.txt
+echo "CYCLE $CYCLE (ENDHOUR $ENDHOUR) (DA $CYCLEDA) / $CYCLEMAX" > cycle.txt
 # rsm location first
 if [ -s $WORK/route ] ; then
   cp -f $WORK/route route
@@ -172,17 +182,97 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
+#  if [ -d ${head}000 ]; then
+#    echo 'DA already done'
+#  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
-#
-#   Regional mountain
-#
-if [ do$RUNRMTN = doyes ] ; then
-    $USHDIR/rmtn.sh $MTNRES || exit 3
-fi
+    #
+    #   Regional mountain
+    #
+    if [ do$RUNRMTN = doyes ] ; then
+      $USHDIR/rmtn.sh $MTNRES || exit 3
+    fi
+    #
+    #   First guess ensemble
+    #
+    if [ $CYCLE -eq $CYCLEDA ]&&[ $CYCLEDA -eq 1 ]; then
+      if [ $IRES -eq 27 ];then
+	echo 'First guess ensemble at the same resolution required for IRES='$IRES
+	exit 6
+      else
+    fh=${INCCYCLE}
+    PDATE=`${UTLDIR}/ndate -$fh ${SDATE}`
+    if [ $fh -lt 10 ];then fh=0$fh; fi
+    mem=0
+    while [ $mem -le $MEMBER ]; do
+	if [ $mem -gt 0 ];then
+        if [ $mem -lt 10 ]; then
+          mem=00$mem
+        else
+          mem=0$mem
+        fi
+	GBASEDIR=${BASEDIR0}/${PDATE}/${HEAD}${mem}
+	GBASESFCDIR=${GBASEDIR}
+        GUESDIR=${RUNDIR0}/${PDATE}/${HEAD}${mem}
+        else
+	GBASEDIR=${BASEDIR0}/${PDATE}
+	GBASESFCDIR=${GBASEDIR}
+        GUESDIR=${RUNDIR0}/${PDATE}
+	fi
+	mkdir -p $GUESDIR
+        cd ${GUESDIR}
+        ### copy namelists
+        cp ${RUNDIR}/rsmparm .
+        cp ${RUNDIR}/rsmlocation .
+        cp ${RUNDIR}/rfcstparm .
+        cp ${RUNDIR}/station.parm .
+        ### copy orography data
+        cp ${RUNDIR}/rmtn.parm .
+        cp ${RUNDIR}/rmtnoss .
+        cp ${RUNDIR}/rmtnslm .
+        cp ${RUNDIR}/rmtnvar .
+     if [ do$G2R = doyes ] ; then
+       ln -fs $GBASEDIR/sigf$fh rb_sigf$fh
+       ln -fs $GBASEDIR/sfcf$fh rb_sfcf$fh
+     fi
+     if [ do$P2R = doyes ] ; then
+       if [ do$CWBGFS = doyes ] ; then
+         ln -fs $GBASEDIR/otgb2_0$fh rb_pgbf$fh
+       else
+         ln -fs $GBASEDIR/pgbf$fh rb_pgbf$fh
+       fi
+     else
+       if [ do$C2R = doyes ] ; then
+         ln -fs $GBASEDIR/r_sig.f$fh rb_sigf$fh
+         ln -fs $GBASESFCDIR/r_sfc.f$fh rb_sfcf$fh
+       fi
+     fi
+     if [ do$NEWSST = do.TRUE. ] ; then
+       #ln -fs $BASEDIR/sstf$fh rb_sstf$fh
+       slag=`expr $fh + $SSTLAG`
+       cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
+       cyyyy=`echo ${cymdh} | cut -c1-4`
+       cymd=`echo ${cymdh} | cut -c1-8`
+       if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
+         exit 99
+       fi
+       ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
+     fi
+    $USHDIR/rinp.sh $NEST $fh || exit 4
+    cp r_sigi  r_sig.f$fh
+    cp r_sfci  r_sfc.f$fh
+    cd $RUNDIR
+    mem=`expr $mem + 1`
+done #while [ $mem -le $MEMBER ]
+      fi #IRES -eq 27
+    fi #CYCLE -eq CYCLEDA
+    #
+    #  DA
+    #
     $USHDIR/rensda.sh $CYCLE $CYCLEDA || exit 7
     if [ do$POSTTYPE = dosync ]; then
-        $USHDIR/rpgb_post.sh 00 || exit 5
-      mem=1
+#      $USHDIR/rpgb_post.sh 00 || exit 5
+      mem=0
       while [ $mem -le $MEMBER ];do
         if [ $mem -lt 10 ]; then
           mem=00$mem
@@ -195,6 +285,7 @@ fi
         mem=`expr $mem + 1`
       done
     fi
+#  fi # -d ${head}000
 else
 #
 # control
@@ -248,6 +339,7 @@ fi
      if [ do$NEWSST = do.TRUE. ] ; then
        #ln -fs $BASEDIR/sstf00 rb_sstf00
        slag=$SSTLAG
+       slag=`expr $hhr + $SSTLAG`
        cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
        cyyyy=`echo ${cymdh} | cut -c1-4`
        cymd=`echo ${cymdh} | cut -c1-8`
@@ -276,8 +368,8 @@ fi #restart
 if [ do$BGM = doyes ]; then
 mem=1
 while [ $mem -le $MEMBER ];do
-  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ]; then
-    cp $DISKUSR/exp/rsm2rsm27_da/pdate.txt pdate.txt
+  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
+    cp $DISKUSR/exp/$EXPN/pdate.txt pdate.txt
     PDATE=`cat pdate.txt | awk '{if(NR == '$mem'){print $1}}'`
     export PDATE
   fi
@@ -289,25 +381,89 @@ while [ $mem -le $MEMBER ];do
 if [ -s ${head}${mem}/r_sigi -a -s ${head}${mem}/r_sigitdt -a -s ${head}${mem}/r_sfci ] ; then
   echo 'Restart file exists'
 else
-  $USHDIR/raddprtb.sh $CYCLE $mem || exit 6
+  if [ $IRES -eq 27 ];then #rescaling
+    $USHDIR/raddprtb.sh $CYCLE $mem || exit 6
+  else #downscaling
+    GBASEDIR=${BASEDIR0}/${SDATE}/${head}${mem}
+    GBASESFCDIR=${GBASEDIR}
+    GUESDIR=${RUNDIR0}/${SDATE}/${head}${mem}
+    mkdir -p $GUESDIR
+    cd ${GUESDIR}
+    ### copy namelists
+    cp ${RUNDIR}/rsmparm .
+    cp ${RUNDIR}/rsmlocation .
+    cp ${RUNDIR}/rfcstparm .
+    cp ${RUNDIR}/station.parm .
+    ### copy orography data
+    cp ${RUNDIR}/rmtn.parm .
+    cp ${RUNDIR}/rmtnoss .
+    cp ${RUNDIR}/rmtnslm .
+    cp ${RUNDIR}/rmtnvar .
+    if [ do$G2R = doyes ] ; then
+      ln -fs $GBASEDIR/sigf00 rb_sigf00
+      ln -fs $GBASEDIR/sfcf00 rb_sfcf00
+    fi
+    if [ do$P2R = doyes ] ; then
+      if [ do$CWBGFS = doyes ] ; then
+        ln -fs $GBASEDIR/otgb2_000 rb_pgbf00
+      else
+        ln -fs $GBASEDIR/pgbf00 rb_pgbf00
+      fi
+    else
+      if [ do$C2R = doyes ] ; then
+        ln -fs $GBASEDIR/r_sig.f00 rb_sigf00
+        ln -fs $GBASESFCDIR/r_sfc.f00 rb_sfcf00
+      fi
+    fi
+    if [ do$NEWSST = do.TRUE. ] ; then
+      #ln -fs $BASEDIR/sstf00 rb_sstf00
+      slag=$SSTLAG
+      cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
+      cyyyy=`echo ${cymdh} | cut -c1-4`
+      cymd=`echo ${cymdh} | cut -c1-8`
+      if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
+        exit 99
+      fi
+      ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
+    fi
+    $USHDIR/rinp.sh $NEST 00 || exit 4
+    cp r_sigi  r_sig.f00
+    cp r_sfci  r_sfc.f00
+    cd $RUNDIR
+  fi #IRES -eq 27
   if [ do$POSTTYPE = dosync ]; then
     cd ${head}${mem}
     $USHDIR/rpgb_post.sh 00 || exit 5
     cd ..
   fi
-fi
+fi #restart
   mem=`expr $mem + 1`
-done
+done #while [ $mem -le $MEMBER ]
 fi #doBGM=doyes
 #
 fi #doDA=doyes
 #######################################
 # Ensemble Forecast loop
 ########################################
+if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+  # Base field perturbation
+  cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
+  NSAMPLE=`expr $MEMBER \* 2`
+  $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
+  $USHDIR/raddprtbbase.sh || exit 5
+fi
 mem=0
 while [ $mem -le $MEMBER ];do
   if [ $mem -eq 0 ]; then ## control
+    if [ do$DA = doyes ]; then
+    cd $RUNDIR/${head}000
+    else
     cd $RUNDIR
+    fi
+    if [ $IRES -lt 27 ];then
+    export BASEDIR=$base_dir
+    export BASESFCDIR=$BASEDIR
+    fi
   else ## member
     if [ $mem -lt 10 ]; then
       mem=00$mem
@@ -315,6 +471,14 @@ while [ $mem -le $MEMBER ];do
       mem=0$mem
     fi
     cd $RUNDIR/${head}${mem}
+    if [ do$BP = dowbp ]; then
+      export BASEDIR=${base_dir}/${mem}
+      export BASESFCDIR=$BASEDIR
+    fi
+    if [ $IRES -lt 27 ];then
+    export BASEDIR=${base_dir}/${HEAD}${mem}
+    export BASESFCDIR=$BASEDIR
+    fi
   fi
         rm fort.*
         ln -fs r_sigi fort.11
@@ -415,9 +579,15 @@ while [ $h -lt $FEND ]; do
     hr=`expr $h + $PRTHOUR`
     while [ $hr -lt $hx ];do
       if [ $hr -lt 10 ];then hr=0$hr;fi
+      if [ $IOUTNHR -eq 1 ]; then
       mv r_sigf$hr   r_sig.f$hr
       mv r_sfcf$hr   r_sfc.f$hr
       mv r_flxf$hr   r_flx.f$hr
+      else
+      mv r_sigf${hr}:00:00   r_sig.f$hr
+      mv r_sfcf${hr}:00:00   r_sfc.f$hr
+      mv r_flxf${hr}:00:00   r_flx.f$hr
+      fi
       hr=`expr $hr + $PRTHOUR`
     done
 #
@@ -445,9 +615,15 @@ while [ $h -lt $FEND ]; do
 #
       if [ $hx -eq $ENDHOUR ]; then
         if [ $hx -lt 10 ];then hx=0$hx;fi
+        if [ $IOUTNHR -eq 1 ]; then
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
+        else
+        mv r_sigf${hx}:00:00   r_sig.f$hx
+        mv r_sfcf${hx}:00:00   r_sfc.f$hx
+        mv r_flxf${hx}:00:00   r_flx.f$hx
+        fi
         $USHDIR/rpgb_post.sh $hx || exit 16
       fi
 

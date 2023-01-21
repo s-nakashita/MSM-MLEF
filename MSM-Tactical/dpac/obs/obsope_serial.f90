@@ -10,6 +10,7 @@ program obsope
   use obs_module, only : nobstype, nqctype, obstype, obstype2, &
    &  obsin_allocate, get_nobs, read_obs, monit_obsin
   use obsope_module, only: obsope_serial, monit_dep, monit_print
+  use lmlef_tools, only: init_das_lmlef
   implicit none
   type(obstype), allocatable :: obs(:)
   type(obstype2) :: obsout
@@ -32,11 +33,13 @@ program obsope
   call read_nml_lmlef
   call file_member_replace(0,fguess_basename,guesf)
   call set_rsmparm(guesf)
+  call init_das_lmlef
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 
 ! read observation
+call init_das_lmlef
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
     call get_nobs(obsin_name(iof),6,obs(iof)%nobs)

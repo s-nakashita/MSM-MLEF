@@ -20,16 +20,16 @@ program addprtb
   real(kind=dp) :: teref=0.0d0 !rescaled total energy [J/kg/m2]
   real(kind=dp) :: epsq=1.0d0   !weight for moist term (0.0=dry)
   logical       :: setnorm=.FALSE. !whether rescaling norm magnitude is given from namelist or not
+  real(kind=dp) :: alpha=0.0d0 !rescaled factor
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 !calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 !calculation region
   integer       :: ilonw,ilone,jlats,jlatn !calculation region
   integer       :: nlon,nlat
   logical       :: adjust_q=.false. !whether super saturation and super dry are removed or not
-  namelist /namlst_prtb/ setnorm,teref,epsq,lonw,lone,lats,latn,adjust_q
+  namelist /namlst_prtb/ setnorm,alpha,teref,epsq,lonw,lone,lats,latn,adjust_q
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: fact(:,:,:),theta(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
-  real(kind=dp) :: alpha !rescaled factor
   real(kind=dp) :: tecmp(4)
   real(kind=dp) :: area,te,coef
   real(kind=dp) :: t1,p1,q1,rh1,qlim,tulim,tllim !for q adjustment
@@ -250,49 +250,52 @@ program addprtb
   print*, 'ps(prtb)', maxval(ps),minval(ps)
   deallocate( dfld )
 
-  if(.not.setnorm) then
-  ! calculate reference energy
-  teref=0.0d0
-  area=0.0d0
-  do k=1,kmax
-    pscl=p0*sl(k)
-    tscl=thetascl*sl(k)**(1.0d0/ptheta)
-    tbase=tr
-    call calc_q2(tbase,rhscl,pscl,qbase)
-    tbase=tr+tscl
-    call calc_q2(tbase,rhscl,pscl,qscl)
-    qscl=qscl-qbase
-    print '(5(a,es11.4))', 'uscl ',uscl,' vscl ',vscl,' tscl ',tscl,' qscl ',qscl,' psscl ',psscl 
-    do j=1,nlat
-      coef=(si(k)-si(k+1))*cos(clat(j+jlats-1)*deg2rad)
-      do i=1,nlon
-        !KE
-        teref=teref+(uscl*uscl+vscl*vscl)*coef
-        !PE(T)
-        teref=teref+cp/tr*thetascl*thetascl*coef
-        !LE
-        teref=teref+epsq*lh**2/cp/tr*qscl*qscl*coef
+  if(alpha.eq.0.0d0) then
+  ! determining rescale factor based on perturbation energy
+    if(.not.setnorm) then
+    ! calculate reference energy
+    teref=0.0d0
+    area=0.0d0
+    do k=1,kmax
+      pscl=p0*sl(k)
+      tscl=thetascl*sl(k)**(1.0d0/ptheta)
+      tbase=tr
+      call calc_q2(tbase,rhscl,pscl,qbase)
+      tbase=tr+tscl
+      call calc_q2(tbase,rhscl,pscl,qscl)
+      qscl=qscl-qbase
+      print '(5(a,es11.4))', 'uscl ',uscl,' vscl ',vscl,' tscl ',tscl,' qscl ',qscl,' psscl ',psscl 
+      do j=1,nlat
+        coef=(si(k)-si(k+1))*cos(clat(j+jlats-1)*deg2rad)
+        do i=1,nlon
+          !KE
+          teref=teref+(uscl*uscl+vscl*vscl)*coef
+          !PE(T)
+          teref=teref+cp/tr*thetascl*thetascl*coef
+          !LE
+          teref=teref+epsq*lh**2/cp/tr*qscl*qscl*coef
+        end do
       end do
     end do
-  end do
-  do j=1,nlat
-    coef=cos(clat(j+jlats-1)*deg2rad)
-    do i=1,nlon
-      !PE(Ps)
-      teref=teref+rd*tr*psscl*psscl/pr/pr*coef
-      area=area+coef
+    do j=1,nlat
+      coef=cos(clat(j+jlats-1)*deg2rad)
+      do i=1,nlon
+        !PE(Ps)
+        teref=teref+rd*tr*psscl*psscl/pr/pr*coef
+        area=area+coef
+      end do
     end do
-  end do
-  teref=teref*0.5d0/area
-  end if
-  print*, 'normalized total energy = ', teref
-  ! calculate energy
-  call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
-  te=sum(tecmp)
-  print *, tecmp
-  print*, 'perturbation total energy = ', te
-  ! rescaling
-  alpha = sqrt(teref / te)
+    teref=teref*0.5d0/area
+    end if
+    print*, 'normalized total energy = ', teref
+    ! calculate energy
+    call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
+    te=sum(tecmp)
+    print *, tecmp
+    print*, 'perturbation total energy = ', te
+    ! rescaling
+    alpha = sqrt(teref / te)
+  end if ! alpha.eq.0.0d0
   print*, 'rescaling factor = ', alpha
   ! write output
   call read_header(nisigb,icld,label,idate,fhour,si,sl,ext,nfldsig)

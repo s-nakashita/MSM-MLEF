@@ -140,8 +140,8 @@ contains
       end if
     end do
     iminp=1
-    do i=2,nidom(myimage)
-      iminp=iminp+ni1node(imgdom(i-1,njdom(myimage)))
+    do j=2,nidom(myimage)
+      iminp=iminp+ni1node(imgdom(j-1,njdom(myimage)))
     end do
     imaxp=iminp+ni1-1
     iminp=max(iminp-ighost,1)
@@ -195,12 +195,12 @@ contains
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
 
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
-    if(myimage.eq.1) then
+    if(myimage.eq.print_img) then
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',trim(filename)
       call read_restart(filename,v3dg,v2dg)
     end if
     sync all
-    call scatter_grd(1,v3dg,v2dg,v3d,v2d)
+    call scatter_grd(print_img,v3dg,v2dg,v3d,v2d)
     return
   end subroutine read_cntl
 !
@@ -214,10 +214,10 @@ contains
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
 
     allocate( v3dg(nlon,nlat,nlev,nv3d), v2dg(nlon,nlat,nv2d) )
-    call gather_grd(1,v3d,v2d,v3dg,v2dg)
+    call gather_grd(print_img,v3d,v2d,v3dg,v2dg)
     sync all
 
-    if(myimage.eq.1) then
+    if(myimage.eq.print_img) then
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
@@ -226,11 +226,12 @@ contains
 !
 ! read ensemble data and distribute to processes
 !
-  subroutine read_ens(basename,v3d,v2d)
+  subroutine read_ens(basename,v3d,v2d,convert)
     implicit none
     character(filelenmax), intent(in) :: basename
     real(kind=dp), intent(out) :: v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*]
     real(kind=dp), intent(out) :: v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*]
+    logical, intent(in), optional :: convert
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
     real(kind=dp), allocatable :: work3d(:,:,:,:)[:], work2d(:,:,:)[:]
     character(filelenmax) :: filename
@@ -245,7 +246,11 @@ contains
       if(im.le.member) then
         call file_member_replace(im,basename,filename)
         write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is reading a file ',trim(filename)
+        if( present(convert) ) then
+        call read_restart(filename,v3dg,v2dg,convert=convert)
+        else
         call read_restart(filename,v3dg,v2dg)
+        end if
       end if
 
       do n=1,nimages
@@ -265,11 +270,12 @@ contains
 !
 ! write ensemble data after collecting data from processes
 !
-  subroutine write_ens(basename,v3d,v2d)
+  subroutine write_ens(basename,v3d,v2d,convert)
     implicit none
     character(filelenmax), intent(in) :: basename
     real(kind=dp), intent(in) :: v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*]
     real(kind=dp), intent(in) :: v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*]
+    logical, intent(in), optional :: convert
     real(kind=dp), allocatable :: v3dg(:,:,:,:), v2dg(:,:,:)
     real(kind=dp), allocatable :: work3d(:,:,:,:)[:], work2d(:,:,:)[:]
     character(filelenmax) :: filename
@@ -294,7 +300,11 @@ contains
       if(im.le.member) then
         call file_member_replace(im,basename,filename)
         write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
+        if( present(convert) ) then
+        call write_restart(filename,v3dg,v2dg,convert=convert)
+        else
         call write_restart(filename,v3dg,v2dg)
+        end if
       end if
     end do
     deallocate( v3dg,v2dg )
@@ -370,15 +380,15 @@ contains
 !$OMP END PARALLEL DO
     end do
 
-    call gather_grd(1,v3dm,v2dm,v3dg,v2dg)
-    if(myimage.eq.1) then
+    call gather_grd(print_img,v3dm,v2dm,v3dg,v2dg)
+    if(myimage.eq.print_img) then
       call file_member_replace(member+1,basename,filename)
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
     end if
     sync all
-    call gather_grd(1,v3ds,v2ds,v3dg,v2dg)
-    if(myimage.eq.1) then
+    call gather_grd(print_img,v3ds,v2ds,v3dg,v2dg)
+    if(myimage.eq.print_img) then
       call file_member_replace(member+2,basename,filename)
       write(6,'(a,i4.4,2a)') 'MYIMAGE ',myimage,' is writing a file ',trim(filename)
       call write_restart(filename,v3dg,v2dg)
@@ -402,6 +412,9 @@ contains
     allocate( buf(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nimages) )
     allocate( buf3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d,nimages) )
     allocate( buf2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d,nimages) )
+    buf=0.0d0
+    buf3d=0.0d0
+    buf2d=0.0d0
     if(myimage .eq. nrank) then
       do n=1,nv3d
         do k=1,nlev
@@ -444,6 +457,9 @@ contains
     allocate( buf(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nimages) )
     allocate( buf3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d,nimages) )
     allocate( buf2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d,nimages) )
+    buf=0.0d0
+    buf3d=0.0d0
+    buf2d=0.0d0
 
     if(myimage.eq.nrank) then
       do j=1,nimages
@@ -480,12 +496,16 @@ contains
     do m=1,nimages
       nslon=0
       nslat=0
-      do ii=2,nidom(m)
-        nslon=nslon+ni1node(imgdom(ii-1,njdom(m)))
-      end do
-      do ii=2,njdom(m)
-        nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
-      end do
+      if(nidom(m).gt.1) then
+        do ii=2,nidom(m)
+          nslon=nslon+ni1node(imgdom(ii-1,njdom(m)))
+        end do
+      end if
+      if(njdom(m).gt.1) then
+        do ii=2,njdom(m)
+          nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
+        end do
+      end if
 !!DEBUG      print '(3(a,i4))','grd_to_buf image ',m,' nslon ',nslon,' nslat ',nslat
       do j=1-jghost,nj1node(m)+jghost
         ilat=j+nslat
@@ -515,21 +535,21 @@ contains
     do m=1,nimages
       nslon=0
       nslat=0
-      do ii=2,nidom(m)
-        nslon=nslon+ni1node(imgdom(ii-1,njdom(m)))
-      end do
-      do ii=2,njdom(m)
-        nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
-      end do
+      if(nidom(m).gt.1) then
+        do ii=2,nidom(m)
+          nslon=nslon+ni1node(imgdom(ii-1,njdom(m)))
+        end do
+      end if
+      if(njdom(m).gt.1) then
+        do ii=2,njdom(m)
+          nslat=nslat+nj1node(imgdom(nidom(m),ii-1))
+        end do
+      end if
 !!DEBUG      print '(3(a,i4))', 'buf_to_grd image ',m,' nslon ',nslon,' nslat ',nslat
       do j=1,nj1node(m)
         ilat=j+nslat
-!        if(ilat.lt.1) cycle
-!        if(ilat.gt.nlat) cycle
         do i=1,ni1node(m)
           ilon=i+nslon
-!          if(ilon.lt.1) cycle
-!          if(ilat.gt.nlon) cycle
           grd(ilon,ilat) = buf(i,j,m)
         end do
       end do

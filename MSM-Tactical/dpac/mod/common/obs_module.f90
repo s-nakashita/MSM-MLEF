@@ -61,10 +61,10 @@ module obs_module
 !  real(kind=dp),parameter,public :: obserr_conv(nobstype_conv) = &
 !  & (/1.0d0,1.0d0,1.0d-3,1.0d-1/)
   ! surface
-  integer,parameter,public :: nobstype_surf=1 !Ps[,rain]
+  integer,parameter,public :: nobstype_synop=1 !Ps[,rain]
   integer,parameter,public :: id_ps_obs=14593
 !  integer,parameter,public :: id_rain_obs=19999
-!  real(kind=dp),parameter,public :: obserr_surf(nobstype_surf) = &
+!  real(kind=dp),parameter,public :: obserr_surf(nobstype_synop) = &
 !  & (/100.0d0/)
   ! dcdf upper
   integer,parameter,public :: nobstype_upper=4 !T,Td,Wd,Ws
@@ -79,13 +79,21 @@ module obs_module
   integer,parameter,public :: elem_id(nobstype)= &
   & (/id_u_obs,id_v_obs,id_t_obs,id_q_obs,id_rh_obs,id_ps_obs,&
   &   id_td_obs,id_wd_obs,id_ws_obs/)
+  integer,parameter,public :: nobstyperaw=5
+  integer,parameter,public :: elem_idraw(nobstyperaw)= &
+  & (/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs,id_ps_obs/)
+
   character(len=3),parameter,public :: obelmlist(nobstype) = &
   & (/'  U','  V','  T','  Q',' RH',' Ps',&
   &   ' Td',' Wd',' Ws'/)
   real(kind=dp),parameter,public :: obserr(nobstype) = &
   & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
   &   2.0d0,10.0d0,1.0d0/)
-
+  ! mandatory levels
+  real(kind=dp),parameter,public :: plevfix(25) = &
+  & (/1000.0d2,925.0d2,900.0d2,850.0d2,800.0d2,700.0d2,600.0d2,500.0d2,400.0d2,&
+  &            350.0d2,300.0d2,250.0d2,200.0d2,175.0d2,150.0d2,125.0d2,100.0d2,&
+  &             70.0d2, 50.0d2, 40.0d2, 30.0d2, 20.0d2, 15.0d2, 10.0d2,  5.0d2/)
 !
 ! QC flags
 !
@@ -112,7 +120,7 @@ module obs_module
   logical, parameter :: debug=.false.
 
   public :: obstype, obstype2, uid_obs, &
-   &  opendcdf, get_nobs_upper, read_upper, &
+   &  opendcdf, get_nobs_dcdf, read_upper, read_synop, &
    &  obsin_allocate, obsin_deallocate, obsout_allocate, obsout_deallocate, &
    &  get_nobs, read_obs, write_obs, read_obsout, write_obsout, &
    &  obs_preproc, monit_obsin
@@ -148,10 +156,11 @@ contains
     end select
   end function uid_obs
 !
-! get # of observation for upper dcdf
+! get # of observation for dcdf
 !
-  subroutine get_nobs_upper(cfile,atime,lmin,rmin,ndataall,nobs)
+  subroutine get_nobs_dcdf(dtypename,cfile,atime,lmin,rmin,ndataall,nobs)
     implicit none
+    character(len=5), intent(in) :: dtypename !upper,surf,tovs,misc
     character(len=*), intent(in) :: cfile
     integer, intent(in) :: atime(5) !year,month,day,hour,minutes
     integer, intent(in) :: lmin !observation time window (minutes)
@@ -232,6 +241,7 @@ contains
 !          print *, nrec1,nrec2,nrec3,nrec4,nrec5
 !          print *, data1
 !        end if
+      if(dtypename=='upper') then
         ! use only 3XXX data type
         if(did(i)/1000.eq.3) then
           ! read hour and minutes
@@ -259,6 +269,32 @@ contains
             nobs=nobs+nloop*nobstype_upper
           end if
         end if
+      else if(dtypename=='surf ') then
+        ! use all data type except METAR(18XX)
+        if(did(i)/100.ne.18) then
+          ! read hour and minutes
+          irec=ioffset+nrec1+5
+          read(iunit,rec=irec) ibuf2
+          imm=int(ibuf2,kind=4)/100
+          idd=int(ibuf2,kind=4)-imm*100
+          irec=irec+1
+          read(iunit,rec=irec) ibuf2
+          ihh=int(ibuf2,kind=4)/100
+          inn=int(ibuf2,kind=4)-ihh*100
+          otime(2)=imm; otime(3)=idd
+          otime(4)=ihh;otime(5)=inn
+          if (filetime(4).eq.0 .and. ihh.gt.20 ) then !00UTC=>21~20UTC
+            tmptime=otime
+            call ndate(tmptime,-24*60,otime) !a day before
+          end if
+          call nhour(atime,otime,imin)
+          if((imin.ge.lmin).and.(imin.lt.rmin)) then
+            if(debug) print *, 'obs time =',otime
+            if(debug) print *, 'difference(minutes) =',imin
+            nobs=nobs+nobstype_synop
+          end if
+        end if
+      end if
         ioffset=ioffset+nrecall
         ndataall=ndataall+1
       end do
@@ -267,7 +303,7 @@ contains
     close(iunit)
 
     return
-  end subroutine get_nobs_upper
+  end subroutine get_nobs_dcdf
 !
 ! get observation for upper dcdf
 !
@@ -487,6 +523,204 @@ contains
 
     return
   end subroutine read_upper
+!
+! get observation for synoptic dcdf
+!
+  subroutine read_synop(cfile,atime,lmin,rmin,ndataall,obs)
+    implicit none
+    character(len=*), intent(in) :: cfile
+    integer, intent(in) :: atime(5) !year,month,day,hour,minutes
+    integer, intent(in) :: lmin !observation time window (minutes)
+    integer, intent(in) :: rmin !(lmin<=otime-atime<=rmin)
+    integer, intent(in) :: ndataall
+    type(obstype), intent(inout) :: obs !input:obs%nobs=before time selecting
+                                        !output:obs%nobs=after time selecting
+    integer :: nobsuse
+    integer :: iunit
+    integer :: ioffset
+    integer :: idrec
+    integer :: data1(7)
+    integer :: dtype
+    type(obstype) :: tmpobs,tmpobs2
+    integer :: imin
+    integer :: otime(5),tmptime(5)
+    integer :: tmpelm !, tmphour, tmpminu
+    real(kind=dp) :: tmplon, tmplat
+    real(kind=dp) :: tmplev, tmpdat, tmperr
+    real(kind=dp) :: tmpdt
+    integer(2) :: ibuf2
+    integer :: lonb, latb
+    integer :: nsort, relelv
+    character(len=16) :: acc
+    integer :: n,nn,i,irec
+    
+    iunit=91
+    call opendcdf(iunit,cfile)
+    ioffset=nrec_time+nrec_info
+    print *, 'ioffset ',ioffset
+    ! set temporal obs arrays
+    tmpobs%nobs = obs%nobs
+    call obsin_allocate( tmpobs )
+    ! start reading data
+    nobsuse=0
+    nsort=0
+    latb=-32767
+    lonb=-32767
+    otime(1)=atime(1)
+    do n=1,ndataall
+      ! read part 1 and extract information
+      call read_part1(iunit,ioffset,idrec,data1)
+      nrec_data = nrecall
+      dtype = data1(1)
+      tmplat = real(data1(2),kind=dp)*0.01d0
+      tmplon = real(data1(3),kind=dp)*0.01d0
+      if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
+        tmplon=tmplon+360.0
+      end if
+      if(dtype.ne.1250.and.mod(dtype,100).eq.50) then !BUFR(deprecated)
+        ioffset=ioffset+nrec_data
+        cycle
+      end if
+      ! use all data type except for METAR(18XX)
+      if(dtype/100.ne.18) then
+        if(debug) then
+          print *, 'reading part 1 of record ',idrec
+          print *, '# of address', nrecall
+          print *, nrec1,nrec2,nrec3,nrec4,nrec5
+          print *, data1
+        end if
+        ! read hour and minutes
+        irec=ioffset+nrec1+5
+        read(iunit,rec=irec) ibuf2
+        otime(2)=int(ibuf2,kind=4)/100
+        otime(3)=int(ibuf2,kind=4)-otime(2)*100
+        irec=irec+1
+        read(iunit,rec=irec) ibuf2
+        otime(4)=int(ibuf2,kind=4)/100
+        otime(5)=int(ibuf2,kind=4)-otime(4)*100
+        if (filetime(4).eq.0 .and. otime(4).gt.20 ) then !00UTC=>21~20UTC
+          tmptime=otime
+          call ndate(tmptime,-24*60,otime) !a day before
+        end if
+        call nhour(atime,otime,imin)
+        if((imin.ge.lmin).and.(imin.lt.rmin)) then
+          if((data1(2).eq.latb).and.(data1(3).eq.lonb)) then !deprecated point
+            ioffset=ioffset+nrec_data
+            cycle
+          else
+            latb=data1(2); lonb=data1(3)
+          end if
+          if(debug) then
+            print *, 'obs time =',otime
+            print *, 'difference(minutes) =',imin
+          end if
+          tmpdt = real(imin,kind=dp)
+          if(debug) then
+            print *, 'dtype,lat,lon,dmin'
+            print *, dtype,tmplat,tmplon,tmpdt
+          end if
+          ! get elevation for SYNOP
+          if(dtype.lt.2000) then
+            irec=ioffset+nrec1+nrec2+7
+            read(iunit,rec=irec) ibuf2
+            tmplev=real(ibuf2,kind=dp) ![m]
+            if(tmplev.lt.0) then
+              ioffset=ioffset+nrec_data
+              cycle
+            end if
+            if(dtype.eq.1300) then !synop mobil
+              irec=ioffset+nrec1+nrec2+11
+              read(iunit,rec=irec) ibuf2
+              relelv=int(ibuf2)
+              if(relelv.gt.3) then !bad elevation
+                ioffset=ioffset+nrec_data
+                cycle
+              end if
+            end if
+          else
+            tmplev=0.0d0
+          end if
+          if(debug) print *, 'elev ',tmplev
+          ! accuracy check for BUOY
+          if(dtype.eq.2800) then
+            irec=ioffset+nrec1+nrec2+9
+            read(iunit,rec=irec) ibuf2
+            write(acc,'(b16.16)') ibuf2
+            if(debug) then
+              print *, 'accuracy'
+              print *, ibuf2
+              print *, acc
+            end if
+            if(acc(1:4)/='0000') then !pressure measurement is low quality
+              ioffset=ioffset+nrec_data
+              cycle
+            end if 
+            irec=irec+1
+            read(iunit,rec=irec) ibuf2
+            write(acc,'(b16.16)') ibuf2
+            if(debug) then
+              print *, 'accuracy'
+              print *, ibuf2
+              print *, acc
+            end if
+            if(acc(13:16)=='0010') then !buoy location is low quality
+              ioffset=ioffset+nrec_data
+              cycle
+            end if 
+            irec=irec+1
+            read(iunit,rec=irec) ibuf2
+            write(acc,'(b16.16)') ibuf2
+            if(debug) then
+              print *, 'accuracy'
+              print *, ibuf2
+              print *, acc
+            end if
+            if((acc(9:12)/='0000').and.(acc(9:12)/='0001')) then !buoy location is low quality
+              ioffset=ioffset+nrec_data
+              cycle
+            end if 
+            ! replace location
+            irec=irec+1
+            read(iunit,rec=irec) ibuf2
+            tmplat = real(ibuf2,kind=dp)*0.01d0
+            irec=irec+1
+            read(iunit,rec=irec) ibuf2
+            tmplon = real(ibuf2,kind=dp)*0.01d0
+            if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
+              tmplon=tmplon+360.0
+            end if
+          end if
+          irec=ioffset+nrec1+nrec2+nrec3+1
+          read(iunit,rec=irec) ibuf2
+          tmpelm=id_ps_obs
+          tmpdat=real(ibuf2,kind=dp)*10.0d0 ![Pa]
+          if(tmpdat.lt.0) then
+            ioffset=ioffset+nrec_data
+            cycle
+          end if
+          if(debug) print *, 'Ps ',tmpdat
+          nobsuse=nobsuse+1
+          call setobs(nobsuse,tmpobs,&
+          &  tmpelm,&
+          &  tmplat,tmplon,tmplev,&
+          &  tmpdat,tmpdt)
+        end if
+      end if
+      ioffset=ioffset+nrec_data
+    end do
+    ! output
+    obs%nobs = nobsuse
+    call obsin_allocate( obs )
+    obs%elem(:) = tmpobs%elem(1:nobsuse)
+    obs%lon (:) = tmpobs%lon (1:nobsuse)
+    obs%lat (:) = tmpobs%lat (1:nobsuse)
+    obs%lev (:) = tmpobs%lev (1:nobsuse)
+    obs%dat (:) = tmpobs%dat (1:nobsuse)
+    obs%dmin(:) = tmpobs%dmin(1:nobsuse)
+    close(iunit)
+
+    return
+  end subroutine read_synop
 
   subroutine read_part1(iunit,ioffset,idrec,data)
     implicit none
@@ -530,7 +764,6 @@ contains
     type(obstype), intent(inout) :: obs
     integer :: nobs1
     integer :: nelm(0:nobstype_upper), nelmsum(nobstype_upper)
-    integer, dimension(nobstype_upper) :: elemlist=(/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs/)
     type(obstype) :: tmpobs
     real(kind=dp), allocatable :: tmplev(:)
     real(kind=dp) :: clev
@@ -550,7 +783,7 @@ contains
     nelm(:)=0
     do j=1,nobstype_upper
       do n=1,nobs
-        if( obs%elem(n) /= elemlist(j) ) cycle
+        if( obs%elem(n) /= elem_idraw(j) ) cycle
         nelm(j)=nelm(j)+1
       end do
     end do
@@ -569,9 +802,10 @@ contains
     tmpobs%dat (1:nobs) = obs%dat (1:nobs)
     tmpobs%dmin(1:nobs) = obs%dmin(1:nobs)
     do j=1,nobstype_upper
+      if( nelm(j)==0 ) cycle
       nn=0
       do n=1,nobs
-        if( tmpobs%elem(n) /= elemlist(j) ) cycle
+        if( tmpobs%elem(n) /= elem_idraw(j) ) cycle
         nn=nn+1
 !        call copyobs(1,n,nn+nelmsum(j),tmpobs,obs)
 !        obs(nn+nelmsum(j)) = tmpobs(n)
@@ -908,11 +1142,10 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
       case(id_rh_obs)
         wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*100.0 !nondimensional -> %
+        wk(5)=wk(5)*0.01  !% -> nondimensional
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -948,11 +1181,10 @@ contains
       wk(6)=real(obs%dmin(n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(4)=wk(4)*0.01 !Pa->hPa
         wk(5)=wk(5)*0.01 !Pa->hPa
       case(id_rh_obs)
         wk(4)=wk(4)*0.01 !Pa->hPa
-        wk(5)=wk(5)*0.01 !%->nondimensional
+        wk(5)=wk(5)*100.0 !nondimensional->%
       case default
         wk(4)=wk(4)*0.01 !Pa->hPa
       end select
@@ -978,15 +1210,15 @@ contains
       read(iunit) wk
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(4)=wk(4)*100.0 !hPa -> Pa
+        !wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*100.0 !hPa -> Pa
         wk(6)=wk(6)*100.0 !hPa -> Pa
         wk(8)=wk(8)*100.0 !hPa -> Pa
       case(id_rh_obs)
         wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*100.0 !nondimensional -> %
-        wk(6)=wk(6)*100.0 !nondimensional -> %
-        wk(8)=wk(8)*100.0 !nondimensional -> %
+        wk(5)=wk(5)*0.01 !% -> nondimensional
+        wk(6)=wk(6)*0.01 !% -> nondimensional
+        wk(8)=wk(8)*0.01 !% -> nondimensional
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -1037,15 +1269,15 @@ contains
       wk(9)=real(obs%qc  (n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
-        wk(4) = wk(4) * 0.01 !Pa->hPa
+        !wk(4) = wk(4) * 0.01 !Pa->hPa
         wk(5) = wk(5) * 0.01 !Pa->hPa
         wk(6) = wk(6) * 0.01 !Pa->hPa
         wk(8) = wk(8) * 0.01 !Pa->hPa
       case(id_rh_obs)
         wk(4) = wk(4) * 0.01 !Pa->hPa
-        wk(5) = wk(5) * 0.01 !%->nondimensional
-        wk(6) = wk(6) * 0.01 !%->nondimensional
-        wk(8) = wk(8) * 0.01 !%->nondimensional
+        wk(5) = wk(5) * 100.0 !nondimensional->%
+        wk(6) = wk(6) * 100.0 !nondimensional->%
+        wk(8) = wk(8) * 100.0 !nondimensional->%
       case default
         wk(4) = wk(4) * 0.01 !Pa->hPa
       end select

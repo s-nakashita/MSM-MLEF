@@ -12,6 +12,7 @@ program obsope
   use obs_module, only : nobstype, nqctype, obstype, obstype2, &
    &  obsin_allocate, get_nobs, read_obs, monit_obsin
   use obsope_module, only: obsope_parallel, monit_dep, monit_print
+  use lmlef_tools, only: init_das_lmlef
   implicit none
   type(obstype), allocatable :: obs(:)
   type(obstype2) :: obsout
@@ -49,14 +50,13 @@ program obsope
   call file_member_replace(0,fguess_basename,guesf)
   call set_rsmparm(guesf)
   call set_corsm
+  call init_das_lmlef
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 
-  allocate(gues3dc(0:ni1max+1,0:nj1max+1,nlev,nv3d)[*])
-  allocate(gues2dc(0:ni1max+1,0:nj1max+1,     nv2d)[*])
-  allocate(gues3d(0:ni1max+1,0:nj1max+1,nlev,member,nv3d)[*])
-  allocate(gues2d(0:ni1max+1,0:nj1max+1,     member,nv2d)[*])
+  allocate(gues3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*])
+  allocate(gues2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
 ! read first guess
   if(.not.mean) THEN
     call file_member_replace(0,gues_in_basename,guesf)
@@ -66,7 +66,11 @@ program obsope
     gues3dc = 0.0d0
     gues2dc = 0.0d0
   end if
+  if(member.gt.0) then
+  allocate(gues3d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,member,nv3d)[*])
+  allocate(gues2d (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     member,nv2d)[*])
   call read_ens(gues_in_basename,gues3d,gues2d)
+  end if
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(READ_GUES):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
@@ -84,7 +88,11 @@ program obsope
   rtimer00=rtimer
 
 ! observation operator
+  if(member.gt.0) then
   call obsope_parallel(obs,obsout,gues3dc,gues2dc,gues3d,gues2d)
+  else
+  call obsope_parallel(obs,obsout,gues3dc,gues2dc)
+  end if
 !  write(6,'(a,i8)') 'obsope #',obsout%nobs
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(OBSOPE):',rtimer,rtimer-rtimer00
