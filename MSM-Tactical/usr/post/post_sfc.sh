@@ -18,7 +18,11 @@ if [ do$MEM = do ]; then
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
 else
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$MEM/$SDATE
+if [ $MEM = "000" ]; then
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE
+else
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$MEM/$SDATE
+fi
 fi
 elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE

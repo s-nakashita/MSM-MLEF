@@ -272,7 +272,7 @@ module func_module
     real(kind=dp),intent(in)    :: q !original level
     real(kind=dp) :: tv
 
-    if(dz.gt.0.0) then
+    if(dz.ne.0.0) then
       tv = t * (1.0_dp + fvirt*q)
       p = p * ((1.0_dp - lapse/tv*dz)**(grav/rd/lapse))
     end if

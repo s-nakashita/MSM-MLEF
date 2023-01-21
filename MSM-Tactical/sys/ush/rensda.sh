@@ -140,6 +140,7 @@ else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
 obsf=upper${prep}.${sdate}-${edate}
+obsf2=surf.${sdate}-${edate}
 $USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
 ### namelist
 cat <<EOF >lmlef.nml
@@ -154,8 +155,8 @@ cat <<EOF >lmlef.nml
  member=${member},
 &end
 &param_obsope
- obsin_num=1,
- obsin_name='${obsf}',
+ obsin_num=2,
+ obsin_name='${obsf}','${obsf2}',
  obs_out=F,
  obsout_basename=,
  fguess_basename=,
@@ -212,8 +213,9 @@ EOF
 #cat lmlef.nml
 
 ## prepare input files
-rm -f ${obsf}.dat
+rm -f ${obsf}.dat ${obsf2}.dat
 ln -s ${obsdir}/${adate}/${obsf}.dat .
+ln -s ${obsdir}/${adate}/${obsf2}.dat .
 rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
 if [ $cycleda -eq 1 ];then
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.sig.grd

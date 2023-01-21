@@ -63,7 +63,7 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=2
+export CYCLESTART=1
 export CYCLEMAX=7
 export DASTART=2
 export INCCYCLE=6 # cycle interval
@@ -89,9 +89,9 @@ export MEMBER=10
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=
+export BP=wbp
 export SCLBASE=
-head=bv${TETYPE}${SCL}${BP}
+head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #if [ do$QADJ = doyes ];then #q adjustment
 #  head=${head}_qadj
 #fi #q adjustment
@@ -123,7 +123,7 @@ export RTPS=90 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
-head2=da${PREP}
+head2=da${BP}${PREP}
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi
@@ -147,7 +147,7 @@ if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
-head2=${head2}tn.
+#head2=${head2}tn.
 export HEAD2=$head2
 
 #### rsmlocation

@@ -4,9 +4,10 @@ export MEMBER=10
 export IDATE=2022082900
 export BV_H=6
 export TETYPE=dry
-export SCL=
+export SCL=10
 export QADJ=yes
-export BP=wbp
+export BP=
+export SCLBASE=
 #export GLOBAL=GFS
 #export IDATE=2022061400
 #export BV_H=12
@@ -18,7 +19,7 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
-for CYCLE in $(seq 5 5);do
+for CYCLE in $(seq 1 5);do
 export CYCLE
 ### control
 cd $EXPDIR
@@ -32,7 +33,7 @@ cd $POSTDIR
 cd -
 fi
 
-MEM=8
+MEM=1
 while [ $MEM -le $MEMBER ]; do
 if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
 cd $EXPDIR

@@ -17,6 +17,7 @@ MEM=${MEM:-003}
 BV=${BV:-yes}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
+SCLBASE=${SCLBASE}
 MEM=${1:-$MEM}
 CYCLE=${2:-$CYCLE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
@@ -70,9 +71,9 @@ if [ $IRES -eq 27 ]; then
 fi
 if [ $BV = yes ];then
   if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then
-    WDIR=bv${TETYPE}${SCL}${BV_H}h${MEM}${BP}
+    WDIR=bv${TETYPE}${SCL}${BV_H}h${MEM}${BP}${SCLBASE}
   else
-    WDIR=bv${TETYPE}${SCL}${MEM}${BP}
+    WDIR=bv${TETYPE}${SCL}${MEM}${BP}${SCLBASE}
   fi
   if [ do$QADJ = doyes ];then
     WDIR=${WDIR}_qadj

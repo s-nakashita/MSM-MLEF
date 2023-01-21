@@ -20,9 +20,9 @@ DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
 else
 #DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE/$MEM
 if [ "$MEM" = "000" ]; then
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE
 else
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/$MEM
+DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE/$MEM
 fi
 #DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
 fi

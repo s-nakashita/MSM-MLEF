@@ -63,7 +63,7 @@ sys.path.append('${DISK}/rda-apps-clients/')
 import rdams_client as rc
 import time
 # Checks if q request is ready.
-def check_ready(rqst_id, wait_interval=120):
+def check_ready(rqst_id, wait_interval=60):
     for i in range(100):
         res = rc.get_status(rqst_id)
         request_status = res['result']['status']

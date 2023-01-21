@@ -15,6 +15,7 @@ TETYPE=${TETYPE}
 SCL=${SCL}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
+SCLBASE=${SCLBASE}
 CYCLE=${1:-$CYCLE}
 #IDATE=${1}
 #IRES=${2}
@@ -60,12 +61,6 @@ if [ $CYCLE -gt 1 ]; then
   echo "forecast hour=${fh}"
   IDATE=`date -j -f "%Y%m%d%H" -v+${fh}H +"%Y%m%d%H" "${IDATE}"` #a
 fi
-# restart check
-PMEM=`printf '%0.3d' $MEMBER`
-if [ -d ${BASEDIR}/${PMEM} ];then
-  echo "Base perturbation already done"
-  exit 1
-fi
 
 BASEDIR=${BASE0}/${IDATE}
 if [ ! -d $BASEDIR ];then
@@ -74,6 +69,12 @@ if [ ! -d $BASEDIR ];then
     echo 'base data not exist'
     exit 99
   fi
+fi
+# restart check
+PMEM=`printf '%0.3d' $MEMBER`
+if [ -d ${BASEDIR}/${SCLBASE}${PMEM} ];then
+  echo "Base perturbation already done"
+  exit 1
 fi
 echo $BASEDIR
 rm -rf $BASEDIR/tmp
@@ -105,7 +106,7 @@ irow=`expr $irow + 1`
 PDATE2=`cat pdatebase.txt | awk '{if(NR == '$irow') {print $1}}'`
 echo $PDATE1 $PDATE2
 PMEM=`printf '%0.3d' $MEM` #prtb member
-OUTDIR=$BASEDIR/${PMEM}
+OUTDIR=$BASEDIR/${SCLBASE}${PMEM}
 if [ $h -eq 0 ];then
 rm -rf $OUTDIR
 mkdir -p $OUTDIR

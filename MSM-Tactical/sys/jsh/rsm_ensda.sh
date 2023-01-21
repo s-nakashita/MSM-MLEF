@@ -182,9 +182,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-  if [ -d ${head}000 ]; then
-    echo 'DA already done'
-  else
+#  if [ -d ${head}000 ]; then
+#    echo 'DA already done'
+#  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -285,7 +285,7 @@ done #while [ $mem -le $MEMBER ]
         mem=`expr $mem + 1`
       done
     fi
-  fi # -d ${head}000
+#  fi # -d ${head}000
 else
 #
 # control
@@ -366,13 +366,6 @@ fi #restart
 # BGM rescaling (ensemble)
 #
 if [ do$BGM = doyes ]; then
-if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
-  # Base field perturbation
-  cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
-  NSAMPLE=`expr $MEMBER \* 2`
-  $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
-  $USHDIR/raddprtbbase.sh || exit 5
-fi
 mem=1
 while [ $mem -le $MEMBER ];do
   if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
@@ -452,6 +445,13 @@ fi #doDA=doyes
 #######################################
 # Ensemble Forecast loop
 ########################################
+if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+  # Base field perturbation
+  cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
+  NSAMPLE=`expr $MEMBER \* 2`
+  $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
+  $USHDIR/raddprtbbase.sh || exit 5
+fi
 mem=0
 while [ $mem -le $MEMBER ];do
   if [ $mem -eq 0 ]; then ## control

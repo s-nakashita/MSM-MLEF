@@ -140,6 +140,11 @@ contains
               if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
                 iwk2d(im,nobsout)=iqc_otype
               else
+                if(debug_obs) then
+                  if(obsin(iof)%elem(n)==id_ps_obs) then
+                    print *, 'zobs   ',rk,' psobs ',obsin(iof)%dat(n)
+                  end if
+                end if
                 call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
                  &  v3d,v2d,p_full,wk2d(im,nobsout))
 !!debug
@@ -651,6 +656,7 @@ contains
 ! model variables => observation
 !
   subroutine trans_xtoy(elm,ri,rj,rk,v3d,v2d,p_full,yobs)
+    use phconst_module, only: grav,rd,lapse,fvirt
     implicit none
     integer, intent(in) :: elm
     real(kind=dp), intent(in) :: ri,rj,rk
@@ -660,6 +666,7 @@ contains
     real(kind=dp), intent(out):: yobs
     
     real(kind=dp) :: t,q,p,gz
+    real(kind=dp) :: fact, dtmp, z1
     real(kind=dp) :: u,v
     
     integer :: i,j,k
@@ -701,11 +708,20 @@ contains
     case(id_ps_obs) !Surface pressure
       call itpl_2d(v2d(:,:,iv2d_ps),ri,rj,yobs)
       call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,gz) !surface elevation
-      !call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
-      call itpl_2d(v2d(:,:,iv2d_tsfc),ri,rj,t)
+      if(debug_obs) print *, 'zmodel ', gz,' psmodel ', yobs !debug
+      call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
       call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
       call prsadj(yobs,rk-gz,t,q)
-      print *, rk, gz, yobs !debug
+      if(debug_obs) then
+        print *, 'zmodel ', gz,' psadj   ', yobs !debug
+        fact=(1.0-(0.995)**(rd*lapse/grav))/lapse
+        call itpl_2d(v2d(:,:,nv2d_sig+iv2d_tsfc),ri,rj,t)
+        !call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,dtmp)
+        !dtmp = dtmp - t !t1 - ts
+        t = t*(1.0+fvirt*q) !tv
+        z1 = gz + t * fact
+        print *, 'z1     ',z1 !debug
+      end if
     end select
     return
 

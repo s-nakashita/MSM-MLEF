@@ -34,7 +34,7 @@ else #BGM
   if [ $CYCLE -gt 1 ] && [ $BV_H -gt 6 ];then #scaling interval
     head=${head}${BV_H}h
   fi #scaling interval
-  head=${head}${MEM}${BP}
+  head=${head}${MEM}${BP}${SCLBASE}
   if [ do$QADJ = doyes ];then #q adjustment
     head=${head}_qadj
   fi #q adjustment
@@ -43,8 +43,8 @@ else #BGM
   if [ do$BP = dowbp ];then #base perturbation by global ensemble
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
     if [ $GLOBAL = GFS ];then #deterministic
-      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${MEM}
-      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${MEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${SCLBASE}${MEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${SCLBASE}${MEM}
     fi #deterministic
   else #no base perturbation
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP

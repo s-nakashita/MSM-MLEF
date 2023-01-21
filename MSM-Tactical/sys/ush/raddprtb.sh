@@ -152,7 +152,11 @@ if [ do$QADJ = doyes ];then
 fi
 SPINUP=`expr 24 / $BV_H + 1`
 if [ do$SCL != do ];then
-  teref=${SCL}.0d0
+  teref=${SCL}
+  if echo "$SCL" | grep -q "^[0-9]\+$";then
+    # SCL is integer
+    teref=${SCL}.0d0
+  fi
 else
   teref=3.0d0
 fi

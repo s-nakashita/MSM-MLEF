@@ -12,7 +12,6 @@ QADJ=${QADJ:-no} #super saturation and dry adjustment
 BP=${BP} #with boundary perturbation
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
-head=${HEAD:-bv$TETYPE}
 DATADIR=${RUNDIR:-/zdata/grmsm/work/dpac/rsm27/$SDATE}
 BASE0=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
 BASE1=${BASEDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
@@ -41,6 +40,15 @@ if [ ! -d $BASEDIR ];then
   fi
 fi
 echo $BASEDIR
+#restart check
+MEM=$MEMBER
+PMEM=`printf '%0.3d' $MEM` #prtb member
+OUTDIR=$BASEDIR/${PMEM}
+if [ -d $OUTDIR ]; then
+  echo 'base perturbation already done.'
+  exit
+fi
+
 rm -rf tmp
 mkdir -p tmp
 cd tmp
