@@ -14,7 +14,7 @@ module read_module
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
   integer, parameter, public :: lsoil=2, nfldsfc=26
   integer, parameter, public :: nfldflx=56
-  logical, parameter, public :: verbose=.false.
+  logical, parameter, public :: verbose=.true.
 
   public :: read_header, read_sig, read_sfc, read_flx
 contains
@@ -161,9 +161,16 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   read(iunit) (sfld(i),i=1,nwf)
   do j=1,jgrd1
     do i=1,igrd1
-      dfld(i,j,ips) = EXP(real(sfld(i+(j-1)*igrd1),kind=dp))*1000.0 !kPa=>Pa
+      dfld(i,j,ips) = real(sfld(i+(j-1)*igrd1),kind=dp)
     end do
   end do 
+  if(convert_) then
+    do j=1,jgrd1
+      do i=1,igrd1
+        dfld(i,j,ips) = EXP(dfld(i,j,ips))*1000.0 !kPa=>Pa
+      end do
+    end do 
+  end if
   if(verbose) print *,ips, 'read ps ', dfld(1,1,ips), maxval(dfld(:,:,ips)), minval(dfld(:,:,ips))
   ! Tv
   it=ips+1
@@ -253,12 +260,19 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
     read(iunit) (sfld(i),i=1,nwf)
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ipn+k-1) = EXP(real(sfld(i+(j-1)*igrd1),kind=dp))*1000.0 !kPa=>Pa
+        dfld(i,j,ipn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
       end do
     end do
+    if(convert_) then
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,ipn+k-1) = EXP(dfld(i,j,ipn+k-1))*1000.0 !kPa=>Pa
+        end do
+      end do
+    end if
   if(verbose) print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
 &  maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
   end do
@@ -296,7 +310,11 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-        dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
+        if(convert_) then
+          dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
+        else
+          dfld(i,j,ipn+k-1) = dfld(i,j,ips) + log(sl(k))
+        end if
       end do
     end do
   if(verbose) print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
@@ -310,7 +328,6 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
       end do
     end do
   if(verbose) print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
-  itn=itn+1
   end do  
   ! w=0
   iwn=itn+levs
