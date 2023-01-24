@@ -59,7 +59,8 @@ program test_spectral
   call cstogd(coef(:,k),grid2(:,k),1)
   do k=1,km+2
     print *, "k ",k," grid ", maxval(grid(:,k)), minval(grid(:,k))
-    print *, "k ",k," coef ", maxval(coef(:,k)), minval(coef(:,k))
+    print *, "k ",k," coef ", maxval(coef(:,k))," at ", maxloc(coef(:,k)),&
+            minval(coef(:,k))," at ",minloc(coef(:,k))
     print *, "k ",k," grid ", maxval(grid2(:,k)), minval(grid2(:,k))
     l2norm=0.0d0
     do i=1,lngrd

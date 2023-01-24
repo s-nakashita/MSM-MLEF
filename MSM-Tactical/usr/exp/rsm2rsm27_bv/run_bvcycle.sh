@@ -4,9 +4,9 @@ export MEMBER=10
 export IDATE=2022082900
 export BV_H=6
 export TETYPE=dry
-export SCL=7.5
+export SCL=
 export QADJ=yes
-export BP=
+export BP=wbpnps
 export SCLBASE=
 #export GLOBAL=GFS
 #export IDATE=2022061400
@@ -27,7 +27,7 @@ export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
-if [ do$BP = dowbp ];then
+if [ do$BP != do ];then
 cd $POSTDIR
 ./run_addprtbbase.sh
 cd -
@@ -85,6 +85,7 @@ export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
+./run_spectra.sh || exit 5 #1>out.log 2>out.err
 MEM=`expr $MEM + 1`
 done
 done

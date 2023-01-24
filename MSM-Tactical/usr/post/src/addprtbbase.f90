@@ -106,7 +106,8 @@ program addprtbbase
     allocate( dfld(igrd1,jgrd1,nfldsig) )
     dfld = dfldp(:,:,:,im)
     dfld = dfld - dfldm
-    dfld = dfldb + dfld * alpha
+    dfld(:,:,:2) = dfldb(:,:,:2) !gz,ps
+    dfld(:,:,3:) = dfldb(:,:,3:) + dfld(:,:,3:) * alpha !others
     if(adjust_q) then
       ! super saturation(dry) adjustment
       tllim = t0 - 30.0_dp

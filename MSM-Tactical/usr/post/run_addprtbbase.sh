@@ -72,6 +72,7 @@ if [ ! -d $BASEDIR ];then
 fi
 # restart check
 PMEM=`printf '%0.3d' $MEMBER`
+PMEM=${PMEM}nps ##debug
 if [ -d ${BASEDIR}/${SCLBASE}${PMEM} ];then
   echo "Base perturbation already done"
   exit 1
@@ -106,6 +107,7 @@ irow=`expr $irow + 1`
 PDATE2=`cat pdatebase.txt | awk '{if(NR == '$irow') {print $1}}'`
 echo $PDATE1 $PDATE2
 PMEM=`printf '%0.3d' $MEM` #prtb member
+PMEM=${PMEM}nps ##debug
 OUTDIR=$BASEDIR/${SCLBASE}${PMEM}
 if [ $h -eq 0 ];then
 rm -rf $OUTDIR

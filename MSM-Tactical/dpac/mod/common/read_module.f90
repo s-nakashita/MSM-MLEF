@@ -14,7 +14,7 @@ module read_module
   integer, parameter, public :: levmax=100, nwext=512-(6+2*levmax)
   integer, parameter, public :: lsoil=2, nfldsfc=26
   integer, parameter, public :: nfldflx=56
-  logical, parameter, public :: verbose=.true.
+  logical, parameter, public :: verbose=.false.
 
   public :: read_header, read_sig, read_sfc, read_flx
 contains

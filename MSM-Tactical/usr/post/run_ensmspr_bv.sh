@@ -13,7 +13,7 @@ IRES=${2}
 #export SDATE IRES
 TETYPE=${3:-dry}
 TESIZE=${4}
-BP=${5}
+BP=${5:-wbpnps}
 SCLBASE=${6}
 QADJ=${7:-yes}
 BV_H=${8:-6}
