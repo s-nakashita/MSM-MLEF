@@ -7,6 +7,7 @@ program test_spectral
   character(len=4), parameter :: sigf='init'
   character(len=12) :: cfile
   integer :: nsig
+  integer :: ntrunc
   real(kind=sp) :: ext(nwext) 
   real(kind=dp) :: si(levmax+1), sl(levmax)
   real(kind=dp), allocatable :: dfld(:,:,:),clat(:),clon(:),map(:,:,:)
@@ -16,7 +17,8 @@ program test_spectral
   integer :: i,j,k,km,ilev
 
   call set_rsmparm(sigf)
-  call spectral_init
+  ntrunc=100
+  call spectral_init(ntrunc=ntrunc)
   nsig=11
   cfile=sigf//'.sig.grd'
   open(nsig,file=cfile,form='unformatted',access='sequential',action='read')
@@ -101,6 +103,31 @@ program test_spectral
   close(nsig)
   nsig=61
   open(nsig,file=sigf//'.new.ctl')
+  call genctl(nsig,cfile)
+  close(nsig)
+
+  !! truncation
+  !cos-cos
+  call spectral_trunc(grid2(:,1:km),km,"cc")
+  !sin-cos(u)
+  k=km+1
+  call spectral_trunc(grid2(:,k),1,"sc")
+  !cos-sin(v)
+  k=km+2
+  call spectral_trunc(grid2(:,k),1,"cs")
+
+  nsig=51
+  cfile=sigf//'.trc.bin'
+  open(nsig,file=cfile,form='unformatted',access='direct',recl=4*lngrd)
+  i=0
+  do k=1,km+2
+    buf4 = real(grid2(:,k),kind=sp)
+    i=i+1
+    write(nsig,rec=i) buf4
+  end do
+  close(nsig)
+  nsig=61
+  open(nsig,file=sigf//'.trc.ctl')
   call genctl(nsig,cfile)
   close(nsig)
 

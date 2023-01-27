@@ -32,6 +32,12 @@ FIGDIR=/zdata/grmsm/fig/rsm2msm9_ens/$SDATE
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 FIGDIR=/zdata/grmsm/fig/msm2msm3_jpn/$SDATE
+elif [ $IRES -gt 27 ]; then ##debug for base perturbation
+if [ do$MEM = do ] || [ "$MEM" = "000" ]; then
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE
+else
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE/$MEM
+fi
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2

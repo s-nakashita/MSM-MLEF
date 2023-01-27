@@ -13,10 +13,11 @@ IRES=${2}
 ENDHOUR=${3}
 MEM=${4}
 if [ $IRES -eq 27 ]; then
-ICLD=0 !hydrostatic
+ICLD=0 #hydrostatic
 if [ do$MEM = do ]; then
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm27_t2m/$SDATE
 else
 #DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE/$MEM
 if [ "$MEM" = "000" ]; then
@@ -27,14 +28,21 @@ fi
 #DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
 fi
 elif [ $IRES -eq 9 ]; then
-ICLD=1 !nonhydrostatic
+ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE/bvc1
 #DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
 elif [ $IRES -eq 3 ]; then
-ICLD=1 !nonhydrostatic
+ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
+elif [ $IRES -gt 27 ]; then ##debug for base perturbation
+ICLD=0 #hydrostatic
+if [ do$MEM = do ] || [ "$MEM" = "000" ]; then
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE
 else
-echo "Invalid resolution. Specify 9 or 3."
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE/$MEM
+fi
+else
+echo "Invalid resolution. Specify 27, 9 or 3."
 exit 2
 fi
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
@@ -67,7 +75,7 @@ rm $ctl
 ln -s $in fort.11
 ln -s $out fort.51
 ln -s $ctl fort.61
-./${EXEC} 1>>${EXEC}.log 2>&1
+./${EXEC} < read_sig.nml 1>>${EXEC}.log 2>&1
 sed -i -e 's/DATAFILE/'$out'/g' $ctl
 rm ${ctl}-e
 rm fort.*

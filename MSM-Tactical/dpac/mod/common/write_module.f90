@@ -87,7 +87,10 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
   ips=igz+1
   do j=1,jgrd1
     do i=1,igrd1
-       sfld(i+(j-1)*igrd1) = LOG(real(dfld(i,j,ips),kind=sp)/1000.0) !Pa=>kPa
+       sfld(i+(j-1)*igrd1) = real(dfld(i,j,ips),kind=sp)
+       if(convert_) then
+         sfld(i+(j-1)*igrd1) = LOG(sfld(i+(j-1)*igrd1)/1000.0) !Pa=>kPa
+       end if
     end do
   end do 
   write(ounit) (sfld(i),i=1,nwf)
@@ -175,13 +178,18 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
     if(verbose) print *,icw+k-1, 'write CW at lev=',k, sfld(1),&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
+  ipn=icw+levs
+  itn=ipn+levs
+  iwn=itn+levs
   if (nonhyd.eq.1) then
   ! pn
-  ipn=icw+levs
   do k=1,levs
     do j=1,jgrd1
       do i=1,igrd1
-         sfld(i+(j-1)*igrd1) = LOG(real(dfld(i,j,ipn+k-1),kind=sp)/1000.0) !Pa=>kPa
+        sfld(i+(j-1)*igrd1) = real(dfld(i,j,ipn+k-1),kind=sp)
+        if(convert_) then
+          sfld(i+(j-1)*igrd1) = LOG(sfld(i+(j-1)*igrd1)/1000.0) !Pa=>kPa
+        end if
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
@@ -192,7 +200,6 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &    maxval(sfld(:)), minval(sfld(:))
   end do
   ! tn
-  itn=ipn+levs
   if (convert_) then
   ! temperature => virtual temperature
   call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),1)
@@ -208,7 +215,6 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &    maxval(sfld(:)), minval(sfld(:))
   end do  
   ! wn
-  iwn=itn+levs
   do k=1,levs+1
     do j=1,jgrd1
       do i=1,igrd1
@@ -265,6 +271,8 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 ! (icld==1 & fhour > 0) 3D physics (f_ice f_rain f_rimef)
   if((icld.eq.1).and.(fhour > 0.0)) then
   iphys3d(1)=iwn+levs+1
+  iphys3d(2)=iphys3d(1)+levs
+  iphys3d(3)=iphys3d(3)+levs
   do m=1,3
     do k=1,levs
       do j=1,jgrd1
@@ -277,9 +285,6 @@ subroutine write_sig(ounit,label,idate,fhour,si,sl,ext,&
 &      sfld(1),&
 &      maxval(sfld(:)), minval(sfld(:))
     end do
-    if(m<3) then
-      iphys3d(m+1)=iphys3d(m)+levs
-    end if
   end do
   end if
   return

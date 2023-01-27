@@ -22,7 +22,8 @@ CYCLE=${1:-$CYCLE}
 #IDATE=${1}
 #IRES=${2}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/usr/post
+#SRCDIR=${MSMDIR}/usr/post
+SRCDIR=${MSMDIR}/dpac/builddev/post
 if [ $IRES -eq 27 ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
     BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
@@ -31,6 +32,7 @@ if [ $IRES -eq 27 ]; then
     BASE=/zdata/grmsm/work/gefs2rsm27_nomad
   fi
   DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
+  DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
   EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
   BASE=/zdata/grmsm/work/gfsp2rsm27_nomad
@@ -45,12 +47,15 @@ else
   echo "Invalid resolution. Specify 9 or 3."
   exit 2
 fi
-if [ ! -d $DATADIR ]; then
-  echo "No such directory : $DATADIR"
-  exit 3
-fi
 if [ ! -d $EXPDIR ]; then
   echo "No such directory : $EXPDIR"
+  exit 3
+fi
+cd $EXPDIR
+. ./configure
+DATADIR=$TEMP
+if [ ! -d $DATADIR ]; then
+  echo "No such directory : $DATADIR"
   exit 3
 fi
 EXEC=addprtb

@@ -17,7 +17,7 @@ module obs_module
     integer,allocatable  :: elem(:)
     real(kind=dp),allocatable :: lon(:)
     real(kind=dp),allocatable :: lat(:)
-    real(kind=dp),allocatable :: lev(:) !pressure[hPa]
+    real(kind=dp),allocatable :: lev(:) !pressure[hPa] or elevation[m]
     real(kind=dp),allocatable :: dat(:)
     real(kind=dp),allocatable :: dmin(:) ! observation time relative to analysis time (minutes)
   end type obstype 
@@ -29,12 +29,13 @@ module obs_module
     integer,allocatable  :: elem(:)
     real(kind=dp),allocatable :: lon(:)
     real(kind=dp),allocatable :: lat(:)
-    real(kind=dp),allocatable :: lev(:) !pressure[hPa]
+    real(kind=dp),allocatable :: lev(:) !pressure[hPa] or elevation[m]
     real(kind=dp),allocatable :: dat(:)
     real(kind=dp),allocatable :: err(:)
     real(kind=dp),allocatable :: dmin(:) ! observation time relative to analysis time (minutes)
     real(kind=dp),allocatable :: hxf(:)   ! h(x) control
     real(kind=dp),allocatable :: hxe(:,:)   ! h(x) ensemble
+    real(kind=dp),allocatable :: corr(:) ! (for ps and t2m) bias correction
     integer,allocatable       :: qc(:)    ! QC flag
     integer,allocatable       :: img(:)   ! image number whose domain includes obs location
   end type obstype2
@@ -61,8 +62,9 @@ module obs_module
 !  real(kind=dp),parameter,public :: obserr_conv(nobstype_conv) = &
 !  & (/1.0d0,1.0d0,1.0d-3,1.0d-1/)
   ! surface
-  integer,parameter,public :: nobstype_synop=1 !Ps[,rain]
+  integer,parameter,public :: nobstype_synop=2 !Ps,T2m[,rain]
   integer,parameter,public :: id_ps_obs=14593
+  integer,parameter,public :: id_t2m_obs=10167
 !  integer,parameter,public :: id_rain_obs=19999
 !  real(kind=dp),parameter,public :: obserr_surf(nobstype_synop) = &
 !  & (/100.0d0/)
@@ -75,20 +77,20 @@ module obs_module
 !  real(kind=dp),parameter,public :: obserr_upper(nobstype_upper) = &
 !  & (/1.0d0,2.0d0,10.0d0,1.0d0/)
   ! all
-  integer,parameter,public :: nobstype=9
+  integer,parameter,public :: nobstype=10
   integer,parameter,public :: elem_id(nobstype)= &
   & (/id_u_obs,id_v_obs,id_t_obs,id_q_obs,id_rh_obs,id_ps_obs,&
-  &   id_td_obs,id_wd_obs,id_ws_obs/)
-  integer,parameter,public :: nobstyperaw=5
+  &   id_t2m_obs,id_td_obs,id_wd_obs,id_ws_obs/)
+  integer,parameter,public :: nobstyperaw=6
   integer,parameter,public :: elem_idraw(nobstyperaw)= &
-  & (/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs,id_ps_obs/)
+  & (/id_t_obs,id_td_obs,id_wd_obs,id_ws_obs,id_ps_obs,id_t2m_obs/)
 
   character(len=3),parameter,public :: obelmlist(nobstype) = &
   & (/'  U','  V','  T','  Q',' RH',' Ps',&
-  &   ' Td',' Wd',' Ws'/)
+  &   'T2m',' Td',' Wd',' Ws'/)
   real(kind=dp),parameter,public :: obserr(nobstype) = &
   & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
-  &   2.0d0,10.0d0,1.0d0/)
+  &   1.0d0,2.0d0,10.0d0,1.0d0/)
   ! mandatory levels
   real(kind=dp),parameter,public :: plevfix(25) = &
   & (/1000.0d2,925.0d2,900.0d2,850.0d2,800.0d2,700.0d2,600.0d2,500.0d2,400.0d2,&
@@ -145,12 +147,14 @@ contains
       uid_obs=5
     case(id_ps_obs)
       uid_obs=6
-    case(id_td_obs)
+    case(id_t2m_obs)
       uid_obs=7
-    case(id_wd_obs)
+    case(id_td_obs)
       uid_obs=8
-    case(id_ws_obs)
+    case(id_wd_obs)
       uid_obs=9
+    case(id_ws_obs)
+      uid_obs=10
     case default
       uid_obs=-1
     end select
@@ -694,16 +698,26 @@ contains
           read(iunit,rec=irec) ibuf2
           tmpelm=id_ps_obs
           tmpdat=real(ibuf2,kind=dp)*10.0d0 ![Pa]
-          if(tmpdat.lt.0) then
-            ioffset=ioffset+nrec_data
-            cycle
+          if(tmpdat.gt.0) then
+            if(debug) print *, 'Ps ',tmpdat
+            nobsuse=nobsuse+1
+            call setobs(nobsuse,tmpobs,&
+            &  tmpelm,&
+            &  tmplat,tmplon,tmplev,&
+            &  tmpdat,tmpdt)
           end if
-          if(debug) print *, 'Ps ',tmpdat
-          nobsuse=nobsuse+1
-          call setobs(nobsuse,tmpobs,&
-          &  tmpelm,&
-          &  tmplat,tmplon,tmplev,&
-          &  tmpdat,tmpdt)
+          irec=irec+6
+          read(iunit,rec=irec) ibuf2
+          tmpelm=id_t2m_obs
+          tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+          if(tmpdat.gt.0) then
+            if(debug) print *, 'T2m ',tmpdat
+            nobsuse=nobsuse+1
+            call setobs(nobsuse,tmpobs,&
+            &  tmpelm,&
+            &  tmplat,tmplon,tmplev,&
+            &  tmpdat,tmpdt)
+          end if
         end if
       end if
       ioffset=ioffset+nrec_data
@@ -1060,6 +1074,7 @@ contains
     allocate( obs%err (obs%nobs) )
     allocate( obs%dmin(obs%nobs) )
     allocate( obs%hxf (obs%nobs) )
+    allocate( obs%corr(obs%nobs) )
     allocate( obs%qc  (obs%nobs) )
     allocate( obs%img (obs%nobs) )
 
@@ -1071,6 +1086,7 @@ contains
     obs%err  = 0.0_dp
     obs%dmin = 0.0_dp
     obs%hxf  = 0.0_dp
+    obs%corr = 0.0_dp
     obs%qc   = 0
     obs%img  = 0
 
@@ -1094,6 +1110,7 @@ contains
     if(allocated(obs%err))  deallocate(obs%err)
     if(allocated(obs%dmin)) deallocate(obs%dmin)
     if(allocated(obs%hxf)) deallocate(obs%hxf)
+    if(allocated(obs%corr)) deallocate(obs%corr)
     if(allocated(obs%hxe)) deallocate(obs%hxe)
     if(allocated(obs%qc)) deallocate(obs%qc)
     if(allocated(obs%img)) deallocate(obs%img)
@@ -1201,7 +1218,7 @@ contains
     character(len=*), intent(in) :: cfile
     type(obstype2), intent(inout) :: obs
     integer, intent(in) :: mem
-    real(kind=sp) :: wk(9)
+    real(kind=sp) :: wk(10)
     integer :: n, iunit
 
     iunit=91
@@ -1209,18 +1226,21 @@ contains
     do n=1,obs%nobs
       read(iunit) wk
       select case(nint(wk(1)))
+      case(id_t2m_obs)
       case(id_ps_obs)
-        !wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*100.0 !hPa -> Pa
-        wk(6)=wk(6)*100.0 !hPa -> Pa
-        wk(8)=wk(8)*100.0 !hPa -> Pa
+        !wk(4)=wk(4)*100.0 !hPa -> Pa lev
+        wk(5)=wk(5)*100.0 !hPa -> Pa dat
+        wk(6)=wk(6)*100.0 !hPa -> Pa err
+        wk(8)=wk(8)*100.0 !hPa -> Pa hxf
+        wk(9)=wk(9)*100.0 !hPa -> Pa corr
       case(id_rh_obs)
-        wk(4)=wk(4)*100.0 !hPa -> Pa
-        wk(5)=wk(5)*0.01 !% -> nondimensional
-        wk(6)=wk(6)*0.01 !% -> nondimensional
-        wk(8)=wk(8)*0.01 !% -> nondimensional
+        wk(4)=wk(4)*100.0 !hPa -> Pa lev
+        wk(5)=wk(5)*0.01 !% -> nondimensional dat
+        wk(6)=wk(6)*0.01 !% -> nondimensional err
+        wk(8)=wk(8)*0.01 !% -> nondimensional hxf
+        wk(9)=wk(9)*0.01 !% -> nondimensional corr
       case default
-        wk(4)=wk(4)*100.0 !hPa -> Pa
+        wk(4)=wk(4)*100.0 !hPa -> Pa lev
       end select
       if(debug) print *, wk
       obs%elem(n) = nint(wk(1))
@@ -1235,7 +1255,8 @@ contains
       else
       obs%hxe(mem,n) = real(wk(8),kind=dp)
       end if
-      obs%qc  (n) = nint(wk(9))
+      obs%corr(n) = real(wk(9),kind=dp)
+      obs%qc  (n) = nint(wk(10))
     end do
     close(iunit)
 
@@ -1247,7 +1268,7 @@ contains
     character(len=*), intent(in) :: cfile
     type(obstype2), intent(in) :: obs
     integer, intent(in) :: mem
-    real(kind=sp) :: wk(9)
+    real(kind=sp) :: wk(10)
     integer :: n, iunit
 
     iunit=92
@@ -1266,20 +1287,24 @@ contains
       else
       wk(8)=real(obs%hxe(mem,n),kind=sp)
       end if
-      wk(9)=real(obs%qc  (n),kind=sp)
+      wk(9)=real(obs%corr(n),kind=sp)
+      wk(10)=real(obs%qc  (n),kind=sp)
       select case(nint(wk(1)))
+      case(id_t2m_obs)
       case(id_ps_obs)
-        !wk(4) = wk(4) * 0.01 !Pa->hPa
-        wk(5) = wk(5) * 0.01 !Pa->hPa
-        wk(6) = wk(6) * 0.01 !Pa->hPa
-        wk(8) = wk(8) * 0.01 !Pa->hPa
+        !wk(4) = wk(4) * 0.01 !Pa->hPa lev
+        wk(5) = wk(5) * 0.01 !Pa->hPa dat
+        wk(6) = wk(6) * 0.01 !Pa->hPa err
+        wk(8) = wk(8) * 0.01 !Pa->hPa hxf
+        wk(9) = wk(9) * 0.01 !Pa->hPa corr
       case(id_rh_obs)
-        wk(4) = wk(4) * 0.01 !Pa->hPa
-        wk(5) = wk(5) * 100.0 !nondimensional->%
-        wk(6) = wk(6) * 100.0 !nondimensional->%
-        wk(8) = wk(8) * 100.0 !nondimensional->%
+        wk(4) = wk(4) * 0.01 !Pa->hPa lev
+        wk(5) = wk(5) * 100.0 !nondimensional->% dat
+        wk(6) = wk(6) * 100.0 !nondimensional->% err
+        wk(8) = wk(8) * 100.0 !nondimensional->% hxf
+        wk(9) = wk(9) * 100.0 !nondimensional->% corr
       case default
-        wk(4) = wk(4) * 0.01 !Pa->hPa
+        wk(4) = wk(4) * 0.01 !Pa->hPa lev
       end select
       if(debug) print *, wk
       write(iunit) wk

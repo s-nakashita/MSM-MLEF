@@ -6,8 +6,12 @@ export BV_H=6
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=wbpnps
+export BP=
 export SCLBASE=
+export NTRUNC=
+if [ do$NTRUNC != do ]; then
+export BP=${BP}ntrunc${NTRUNC}
+fi
 #export GLOBAL=GFS
 #export IDATE=2022061400
 #export BV_H=12
@@ -32,6 +36,7 @@ cd $POSTDIR
 ./run_addprtbbase.sh
 cd -
 fi
+#exit
 
 MEM=1
 while [ $MEM -le $MEMBER ]; do
@@ -76,11 +81,11 @@ if [ $CYCLE -gt 1 ]; then
    export SDATE
 fi
 . ./configure
-if [ ! -d $RUNDIR ]; then
+#if [ ! -d $RUNDIR ]; then
 cd $POSTDIR
 ./run_addprtb.sh || exit 3 #1>out.log 2>out.err
 cd $EXPDIR
-fi
+#fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR

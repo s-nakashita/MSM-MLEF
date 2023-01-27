@@ -13,14 +13,15 @@ IRES=${2}
 #export SDATE IRES
 TETYPE=${3:-dry}
 TESIZE=${4}
-BP=${5:-wbpnps}
+BP=${5}
 SCLBASE=${6}
 QADJ=${7:-yes}
 BV_H=${8:-6}
 EDATE=${9:-$SDATE}
 MEMBER=10
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/usr/post
+#SRCDIR=${MSMDIR}/usr/post
+SRCDIR=${MSMDIR}/dpac/builddev/post
 SDATE0=2022082900
 ut0=`date -j -f "%Y%m%d%H" +"%s" "${SDATE0}"`
 echo $SDATE0 $ut0
@@ -49,10 +50,6 @@ else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
 fi
-if [ ! -d $DATADIR ]; then
-echo "No such directory : $DATADIR"
-exit 3
-fi
 if [ ! -d $EXPDIR ]; then
 echo "No such directory : $EXPDIR"
 exit 3
@@ -60,10 +57,15 @@ fi
 cd $EXPDIR
 . ./configure
 echo $IGRD $JGRD
+DATADIR=$TEMP/$SDATE
+if [ ! -d $DATADIR ]; then
+echo "No such directory : $DATADIR"
+exit 3
+fi
 #exit
 EXEC=ensmspr
 cd $SRCDIR
-gmake ${EXEC}
+gmake ${EXEC} || exit 5
 if [ $BV_H -eq 6 ]; then
 HEAD=bv${TETYPE}${TESIZE}
 else
@@ -84,6 +86,9 @@ ln -s ${SRCDIR}/${EXEC} ${EXEC}
 fh=0
 end_hour=$ENDHOUR
 inc_h=$PRTHOUR
+if [ $IRES -eq 27 ] && [ $icyc -lt 5 ]; then
+  end_hour=$BV_H
+fi
 rm -f r_sig.* r_sfc.* r_flx.*
 while [ $fh -le $end_hour ]; do
 if [ $fh -lt 10 ]; then
@@ -130,7 +135,7 @@ cat <<EOF > ensmspr.nml
  nens=$MEMBER,
 &end
 EOF
-./${EXEC} < ensmspr.nml #1>>${EXEC}.log 2>&1
+./${EXEC} < ensmspr.nml || exit 10 #1>>${EXEC}.log 2>&1
 mv r_sigm.f$fh $DATADIR/${HEAD}mean${SUF}/r_sig.f$fh
 mv r_sfcm.f$fh $DATADIR/${HEAD}mean${SUF}/r_sfc.f$fh
 mv r_flxm.f$fh $DATADIR/${HEAD}mean${SUF}/r_flx.f$fh

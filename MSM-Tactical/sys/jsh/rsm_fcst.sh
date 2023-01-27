@@ -77,6 +77,7 @@ SSTLAG=${SSTLAG:-0}
 #
 FCSTSEC=`expr $INCHOUR \* 3600`
 PRNTSEC=`expr $PRTHOUR \* 3600`
+PRNTSEC=${PSEC:-$PRNTSEC}
 RSWRSEC=`expr $RSWRHOUR \* 3600`
 RLWRSEC=`expr $RLWRHOUR \* 3600`
 BASESEC=`expr $INCBASE \* 3600`
@@ -327,9 +328,15 @@ while [ $h -lt $FEND ]; do
 #
       if [ $hx -eq $ENDHOUR ]; then
         if [ $hx -lt 10 ];then hx=0$hx;fi
+        if [ $IOUTNHR -eq 1 ]; then
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
+        else
+        mv r_sigf${hx}:00:00   r_sig.f$hx
+        mv r_sfcf${hx}:00:00   r_sfc.f$hx
+        mv r_flxf${hx}:00:00   r_flx.f$hx
+        fi
         $USHDIR/rpgb_post.sh $hx || exit 16
       fi
 

@@ -315,7 +315,8 @@ program addprtb
   fhour=0.0
   print *, idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
   !! add perturbations
-  dfld = dfldb + dfldp * alpha
+  dfld(:,:,1) = dfldb(:,:,1) !surface elevation
+  dfld(:,:,2:) = dfldb(:,:,2:) + dfldp(:,:,2:) * alpha
   if(adjust_q) then
   ! super saturation(dry) adjustment
   tllim = t0 - 30.0_dp

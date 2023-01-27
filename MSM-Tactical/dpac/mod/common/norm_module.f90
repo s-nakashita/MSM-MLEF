@@ -10,7 +10,7 @@ module norm_module
   use read_module
   use write_module
 
-  public :: calc_te, calc_tegrd
+  public :: calc_te, calcte2, calc_tegrd
   contains
 !======================================================================
 ! calculate moist total energy
@@ -60,6 +60,54 @@ subroutine calc_te(u,v,t,q,ps,epsq,clat,si,nlon,nlat,te)
   return
 end subroutine calc_te
 
+!======================================================================
+! calculate moist total energy from 2 different perturbations
+!======================================================================
+subroutine calc_te2(u1,u2,v1,v2,t1,t2,q1,q2,ps1,ps2,epsq,clat,si,nlon,nlat,te)
+  implicit none
+  integer, intent(in) :: nlon, nlat ! boundaries
+  real(kind=dp), intent(in) :: u1(:,:,:),v1(:,:,:),t1(:,:,:),q1(:,:,:)
+  real(kind=dp), intent(in) :: u2(:,:,:),v2(:,:,:),t2(:,:,:),q2(:,:,:)
+  real(kind=dp), intent(in) :: ps1(:,:),ps2(:,:)
+  real(kind=dp), intent(in) :: epsq ! weight for moist term
+  real(kind=dp), intent(in) :: clat(:),si(:)
+  real(kind=dp), intent(out):: te(4)
+  ! for energy calculation
+  integer, parameter :: kmax=21
+  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
+  real(kind=dp) :: area,coef
+  integer :: igrd1, jgrd1
+  integer :: n,i,j,k
+
+  ! calculate energy
+  te=0.0d0
+  area=0.0d0
+  do k=1,kmax
+    do j=1,nlat
+      coef=(si(k)-si(k+1))*cos(clat(j)*deg2rad)
+      do i=1,nlon
+        !KE
+        te(1)=te(1)+(u1(i,j,k)*u2(i,j,k)+v1(i,j,k)*v2(i,j,k))*coef
+        !PE(T)
+        te(2)=te(2)+cp/tr*t1(i,j,k)*t2(i,j,k)*coef
+        !LE
+        te(3)=te(3)+epsq*lh**2/cp/tr*q1(i,j,k)*q2(i,j,k)*coef
+      end do
+    end do
+  end do
+  do j=1,nlat
+    coef=cos(clat(j)*deg2rad)
+    do i=1,nlon
+      !PE(Ps)
+      te(4)=te(4)+rd*tr*ps1(i,j)*ps2(i,j)/pr/pr*coef
+      area=area+coef
+    end do
+  end do
+  do i=1,4
+    te(i)=te(i)*0.5d0/area
+  end do
+  return
+end subroutine calc_te2
 !======================================================================
 ! calculate moist total energy for each grids
 !======================================================================

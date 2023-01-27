@@ -22,23 +22,33 @@ module spectral_module
   real(kind=dp), save, allocatable :: trigx(:,:),trigy(:,:)
 !  common /comrffti/ifax(20),jfax(20)
 !  common /comrfft/trigx(igrd2,2),trigy(jgrd2,2)
+  ! truncation
+  integer, save :: ntrunc_
 
   public :: spectral_init, spectral_clean&
           , gdtocc, cctogd&
           , gdtosc, sctogd&
-          , gdtocs, cstogd
+          , gdtocs, cstogd&
+          , spectral_trunc
   contains
 !======================================================================
 ! initialize & clean
 !  include plnini.F and rftini.F contents
 !======================================================================
-subroutine spectral_init()
+subroutine spectral_init(ntrunc)
   implicit none
+  integer, intent(in), optional :: ntrunc
 
   igrd2 = (igrd1-1)*2
   jgrd2 = (jgrd1-1)*2
   call plnini
   call rftini
+
+  ntrunc_=0
+  if(present(ntrunc)) ntrunc_=ntrunc
+  if(ntrunc_.gt.0) then
+    write(6,*) 'truncation number =',ntrunc_
+  end if
   return
 end subroutine spectral_init
 !
@@ -259,6 +269,54 @@ subroutine cstogd(coef,grid,km)
 
   return
 end subroutine cstogd
+!
+!======================================================================
+! truncation
+! in-output : grid(lngrd,km) - grid field
+! input : km - the second dimension of grid and ff
+!         (optional) stype - FFT type cc(default) or sc or cs
+!======================================================================
+subroutine spectral_trunc(grid,km,stype)
+  implicit none
+  real(kind=dp), intent(inout) :: grid(lngrd,km)
+  integer, intent(in) :: km
+  character(len=2), intent(in), optional :: stype
+  real(kind=dp), allocatable :: coef(:,:)
+  real(kind=dp), allocatable :: grid3d(:,:,:)
+  character(len=2) :: stype_
+  integer :: i,j,k,ij,jlat
+
+  stype_="cc"
+  if(present(stype)) stype_=stype
+  allocate( coef(lnwav,km) )
+
+  if(stype_.eq."sc") then
+    call gdtosc(grid,coef,km)
+  else if(stype_.eq."cs") then
+    call gdtocs(grid,coef,km)
+  else
+    call gdtocc(grid,coef,km)
+  end if
+
+  do i=1,iwav1
+    do j=1,jwav1
+      ij=(i-1)*jwav1+j
+      k=(i-1)+(j-1)
+      if(k.gt.ntrunc_) then
+        coef(ij,:) = 0.0d0
+      end if
+    end do
+  end do
+
+  if(stype_.eq."sc") then
+    call sctogd(coef,grid,km)
+  else if(stype_.eq."cs") then
+    call cstogd(coef,grid,km)
+  else
+    call cctogd(coef,grid,km)
+  end if
+  return
+end subroutine spectral_trunc
 !
 !======================================================================
 ! private subroutines

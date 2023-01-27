@@ -14,6 +14,7 @@ module obsope_module
   use obs_module
   implicit none
   private
+  integer, parameter :: stnout=7 ! debug
 
   public :: obsope_serial, obsope_parallel, obsope_update, monit_dep, monit_print
 contains
@@ -56,6 +57,7 @@ contains
       return
     end if
 
+    if(debug_obs) open(stnout,file='station_synop.txt')
     allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
     allocate( v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d) )
     allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
@@ -143,10 +145,13 @@ contains
                 if(debug_obs) then
                   if(obsin(iof)%elem(n)==id_ps_obs) then
                     print *, 'zobs   ',rk,' psobs ',obsin(iof)%dat(n)
+                  else if(obsin(iof)%elem(n)==id_t2m_obs) then
+                    print *, 'zobs   ',rk,' tobs ',obsin(iof)%dat(n)
                   end if
                 end if
                 call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
-                 &  v3d,v2d,p_full,wk2d(im,nobsout))
+                 &  v3d,v2d,p_full,wk2d(im,nobsout)&
+                 &  ,obsout%corr(nobsout))
 !!debug
 !              if(debug_obs) then
 !                dep = obsin(iof)%dat(n) - wk2d(im,nobsout)
@@ -276,6 +281,7 @@ contains
 !    if(debug_obs) write(6,*) 'obs%img=',obsout%img(1:nobsout)
     deallocate( v3d,v2d )
     deallocate( wk2d,iwk2d )
+    if(debug_obs) close(stnout)
     return
   end subroutine obsope_parallel
 !
@@ -655,7 +661,7 @@ contains
 !
 ! model variables => observation
 !
-  subroutine trans_xtoy(elm,ri,rj,rk,v3d,v2d,p_full,yobs)
+  subroutine trans_xtoy(elm,ri,rj,rk,v3d,v2d,p_full,yobs,corr)
     use phconst_module, only: grav,rd,lapse,fvirt
     implicit none
     integer, intent(in) :: elm
@@ -664,6 +670,7 @@ contains
     real(kind=dp), intent(in) :: v2d(:,:,:)   !(nlon,nlat,nv2d) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)
     real(kind=dp), intent(in) :: p_full(:,:,:) !(nlon,nlat,nlev) or (1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev)
     real(kind=dp), intent(out):: yobs
+    real(kind=dp), optional, intent(out) :: corr !bias correction
     
     real(kind=dp) :: t,q,p,gz
     real(kind=dp) :: fact, dtmp, z1
@@ -671,6 +678,10 @@ contains
     
     integer :: i,j,k
     integer :: is,ie,js,je,ks,ke
+
+    if(present(corr)) then
+      corr=0.0d0
+    end if
 
     ie = ceiling( ri )
     is = ie - 1
@@ -709,11 +720,15 @@ contains
       call itpl_2d(v2d(:,:,iv2d_ps),ri,rj,yobs)
       call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,gz) !surface elevation
       if(debug_obs) print *, 'zmodel ', gz,' psmodel ', yobs !debug
-      !call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
-      !call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
-      call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m),ri,rj,t)
-      call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m),ri,rj,q)
+      call itpl_2d(v3d(:,:,1,iv3d_t),ri,rj,t)
+      call itpl_2d(v3d(:,:,1,iv3d_q),ri,rj,q)
+      !call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m),ri,rj,t)
+      !call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m),ri,rj,q)
+      if(present(corr)) corr=yobs
       call prsadj(yobs,rk-gz,t,q)
+      if(present(corr)) then
+        corr=yobs-corr
+      end if
       if(debug_obs) then
         print *, 'zmodel ', gz,' psadj   ', yobs !debug
         fact=(1.0-(0.995)**(rd*lapse/grav))/lapse
@@ -723,6 +738,20 @@ contains
         t = t*(1.0+fvirt*q) !tv
         z1 = gz + t * fact
         print *, 'z1     ',z1 !debug
+        write(stnout,'(i5,4f9.3)') elm,ri,rj,rk,gz
+      end if
+    case(id_t2m_obs) !Surface temparature
+      call itpl_2d(v2d(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m),ri,rj,yobs)
+      call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,gz) !surface elevation
+      if(debug_obs) print *, 'zmodel ', gz,' tmodel ', yobs !debug
+      if(present(corr)) corr=yobs
+      yobs = yobs - lapse*(rk-gz)
+      if(debug_obs) then
+        print *, 'zmodel ', gz,' tadj ', yobs !debug
+        write(stnout,'(i5,4f9.3)') elm,ri,rj,rk,gz
+      end if
+      if(present(corr)) then
+        corr=yobs-corr
       end if
     end select
     return

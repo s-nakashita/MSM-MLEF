@@ -43,7 +43,7 @@ calcte:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o 
 addprtb:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o norm_module.o rsmcom_module.o addprtb.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-addprtbbase:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o addprtbbase.o
+addprtbbase:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o spectral_module.o rfftmlt.o addprtbbase.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 spectra:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o spectral_module.o rfftmlt.o spectra.o

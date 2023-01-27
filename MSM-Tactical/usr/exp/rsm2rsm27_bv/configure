@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
+#   export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
 fi
 GLOBAL=${GLOBAL:-GEFS}
 if [ "$MEM" = "000" ];then #control
@@ -40,11 +40,14 @@ else #BGM
   fi #q adjustment
   export RUNDIR=$TEMP/$SDATE/${head}_c${CYCLE}
   # basedir
+  BMEM=${SCLBASE}${MEM}
+  #BMEM=${BMEM}nps
+  #BMEM=${BMEM}ntrunc100
   if [ do$BP != do ];then #base perturbation by global ensemble
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
     if [ $GLOBAL = GFS ];then #deterministic
-      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${SCLBASE}${MEM}nps
-      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${SCLBASE}${MEM}nps
+      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${BMEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${BMEM}
     fi #deterministic
   else #no base perturbation
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
@@ -107,7 +110,7 @@ export INCBASE=3
 export INCHOUR=3
 export TIMESTEP=90
 export IMDLPHY=1
-export NEWMTN=.FALSE.
+#export NEWMTN=.FALSE.
 export CLIM=0
 export RSFC_MERGE=yes
 export POSTTYPE=sync

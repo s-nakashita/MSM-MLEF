@@ -6,7 +6,7 @@ program ensmspr
   integer, parameter :: icld=1
   ! ensemble size
   integer :: nens=10
-  character(len=10) :: file_basename='r_LEV.@@@@'
+  character(len=10),parameter :: file_basename='r_LEV.@@@@'
   character(len=10) :: filename
   logical :: lflx=.true. !whether write flux file or not
   namelist /namlst_ensmspr/ nens, lflx
@@ -82,6 +82,7 @@ program ensmspr
   dfldm = dfldm / nens
   dflds = sqrt( dflds/nens - dfldm**2 )
   ! write output
+  print *,icld, nfldsig, size(dfldm,1), size(dfldm,2), size(dfldm,3)
   call write_sig(nmsig,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldm,mapf,clat,clon)
   call write_sig(nssig,label,idate,fhour,si,sl,ext,&

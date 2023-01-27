@@ -242,103 +242,92 @@ subroutine read_sig(iunit,igrd1,jgrd1,levs,nflds,nonhyd,icld,fhour,sl,&
 &  maxval(dfld(:,:,icw+k-1)), minval(dfld(:,:,icw+k-1))
   end do
   if(convert_) then
-  ! modify the virtual temperature into temperature
-  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),0)
-!  do k=1,levs
-!    do j=1,jgrd1
-!      do i=1,igrd1
-!        factor(i,j,k) = 1.0+fvirt*dfld(i,j,iq+k-1)
-!        !dfld(i,j,it+k-1) = dfld(i,j,it+k-1)/factor(i,j,k) !Tv=>T
-!      end do
-!    end do
-!  end do
+    ! modify the virtual temperature into temperature
+    call conv_temp(igrd1,jgrd1,levs,dfld(:,:,it:it+levs-1),dfld(:,:,iq:iq+levs-1),0)
   end if
-  if (nonhyd.eq.1) then
-  ! pn
   ipn=icw+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,ipn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
+  itn=ipn+levs
+  iwn=itn+levs
+  if (nonhyd.eq.1) then
+    ! pn
+    do k=1,levs
+      read(iunit) (sfld(i),i=1,nwf)
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,ipn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
 !        if (k.eq.1) then
 !          dfld(i,j,ips) = dfld(i,j,ipn)/sl(1)
 !        end if
-      end do
-    end do
-    if(convert_) then
-      do j=1,jgrd1
-        do i=1,igrd1
-          dfld(i,j,ipn+k-1) = EXP(dfld(i,j,ipn+k-1))*1000.0 !kPa=>Pa
         end do
       end do
+      if(convert_) then
+        do j=1,jgrd1
+          do i=1,igrd1
+            dfld(i,j,ipn+k-1) = EXP(dfld(i,j,ipn+k-1))*1000.0 !kPa=>Pa
+          end do
+        end do
+      end if
+      if(verbose) print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
+    &  maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
+    end do
+    ! tn
+    do k=1,levs
+      read(iunit) (sfld(i),i=1,nwf)
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,itn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
+          !dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k) !Tv=>T
+        end do
+      end do
+      if(verbose) print *,itn+k-1, 'read TvN at lev=',k, dfld(1,1,itn+k-1),&
+    &  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
+    end do  
+    if(convert_) then
+      call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),0)
     end if
-  if(verbose) print *,ipn+k-1, 'read PN at lev=',k, dfld(1,1,ipn+k-1),&
-&  maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
-  end do
-  ! tn
-  itn=ipn+levs
-  do k=1,levs
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,itn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
-        !dfld(i,j,itn+k-1) = dfld(i,j,itn+k-1)/factor(i,j,k) !Tv=>T
+    ! wn
+    do k=1,levs+1
+      read(iunit) (sfld(i),i=1,nwf)
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,iwn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
+        end do
       end do
+    if(verbose) print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
+  &  maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
     end do
-  if(verbose) print *,itn+k-1, 'read TvN at lev=',k, dfld(1,1,itn+k-1),&
-&  maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
-  end do  
-  if(convert_) then
-  call conv_temp(igrd1,jgrd1,levs,dfld(:,:,itn:itn+levs-1),dfld(:,:,iq:iq+levs-1),0)
-  end if
-  ! wn
-  iwn=itn+levs
-  do k=1,levs+1
-    read(iunit) (sfld(i),i=1,nwf)
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,iwn+k-1) = real(sfld(i+(j-1)*igrd1),kind=dp)
-      end do
-    end do
-  if(verbose) print *,iwn+k-1, 'read WN at lev=',k, dfld(1,1,iwn+k-1),&
-&  maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
-  end do
   else
-  ! hydro p
-  ipn=icw+levs
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        if(convert_) then
-          dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
-        else
-          dfld(i,j,ipn+k-1) = dfld(i,j,ips) + log(sl(k))
-        end if
+    ! hydro p
+    do k=1,levs
+      do j=1,jgrd1
+        do i=1,igrd1
+          if(convert_) then
+            dfld(i,j,ipn+k-1) = dfld(i,j,ips) * sl(k)
+          else
+            dfld(i,j,ipn+k-1) = dfld(i,j,ips) + log(sl(k))
+          end if
+        end do
       end do
+      if(verbose) print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
     end do
-  if(verbose) print *, 'calc P at lev=',k, maxval(dfld(:,:,ipn+k-1)), minval(dfld(:,:,ipn+k-1))
-  end do
-  ! hydro t
-  itn=ipn+levs
-  do k=1,levs
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)
+    ! hydro t
+    do k=1,levs
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,itn+k-1) = dfld(i,j,it+k-1)
+        end do
       end do
-    end do
-  if(verbose) print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
-  end do  
-  ! w=0
-  iwn=itn+levs
-  do k=1,levs+1
-    do j=1,jgrd1
-      do i=1,igrd1
-        dfld(i,j,iwn+k-1) = 0.0
+      if(verbose) print *, 'calc T at lev=',k, maxval(dfld(:,:,itn+k-1)), minval(dfld(:,:,itn+k-1))
+    end do  
+    ! w=0
+    do k=1,levs+1
+      do j=1,jgrd1
+        do i=1,igrd1
+          dfld(i,j,iwn+k-1) = 0.0
+        end do
       end do
+      if(verbose) print *, 'zero W at lev=',k, maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
     end do
-  if(verbose) print *, 'zero W at lev=',k, maxval(dfld(:,:,iwn+k-1)), minval(dfld(:,:,iwn+k-1))
-  end do
   end if
 ! map factor**2
   im2=iwn+levs+1
@@ -789,7 +778,8 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   integer, intent(out)      :: ids(255)
   integer, intent(out)      :: iparam(nfldflx)
   real(kind=sp), intent(out) :: fhour, zhour
-  integer, optional, intent(out) :: ind_t2m,ind_q2m,ind_u10m,ind_v10m
+  integer, intent(inout), optional :: ind_t2m,ind_q2m,ind_u10m,ind_v10m
+  logical :: lt2m, lq2m, lu10m, lv10m
   integer, parameter :: iprs=1, itemp=11, iznlw=33, imerw=34, isphum=51, ipwat=54, &
   &                     ipcpr=59, isnowd=65, icldf=71, iccldf=72, islmsk=81, izorl=83, &
   &                     ialbdo=84, isoilm=144, icemsk=91, ilhflx=121, ishflx=122, izws=124, &
@@ -826,6 +816,24 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   real(kind=sp), allocatable :: sfld(:)
   real(kind=sp), parameter :: rd=2.8705e2, rv=4.6150e2, fvirt=rv/rd-1.0
   real(kind=sp), parameter :: pi=3.141592, rad2deg=180.0/pi
+
+  lt2m=.false.
+  lq2m=.false.
+  lu10m=.false.
+  lv10m=.false.
+  if(present(ind_t2m)) then
+    lt2m=.true.
+  end if
+  if(present(ind_q2m)) then
+    lq2m=.true.
+  end if
+  if(present(ind_u10m)) then
+    lu10m=.true.
+  end if
+  if(present(ind_v10m)) then
+    lv10m=.true.
+  end if
+  if(verbose) print *, lt2m, lq2m, lu10m, lv10m
   
   nwf = igrd1*jgrd1
   print *, 'nwf', nwf
@@ -1521,7 +1529,9 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   if(verbose) print *,l,'read cemsk ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! u10
   l=l+1
-  if(present(ind_u10m)) ind_u10m=l
+  if(lu10m) then
+    ind_u10m=l
+  end if
   if(verbose) print *, 'itype ',iznlw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1553,7 +1563,9 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   if(verbose) print *,l,'read u10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! v10
   l=l+1
-  if(present(ind_v10m)) ind_v10m=l
+  if(lv10m) then
+    ind_v10m=l
+  end if
   if(verbose) print *, 'itype ',imerw,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1585,7 +1597,9 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   if(verbose) print *,l,'read v10 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! t2
   l=l+1
-  if(present(ind_t2m)) ind_t2m=l
+  if(lt2m) then
+    ind_t2m=l
+  end if
   if(verbose) print *, 'itype ',itemp,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&
@@ -1617,7 +1631,9 @@ subroutine read_flx(iunit,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour&
   if(verbose) print *,l,'read t2 ', dfld(1,1,l), maxval(dfld(:,:,l)), minval(dfld(:,:,l))
   ! q2
   l=l+1
-  if(present(ind_q2m)) ind_q2m=l
+  if(lq2m) then
+    ind_q2m=l
+  end if
   if(verbose) print *, 'itype ',isphum,' ilev ',ielev
   read(iunit) sfld,lbm,idrt,igrd2,jgrd2,maxbit,colat, &
   &           ilpds,iptv,icen,igen,&

@@ -201,6 +201,7 @@ module rsmcom_module
     varnames(nv3d+nv2d_sig+1:nv3d+nv2d_sig+nv2d_sfc) = varnames_sfc
     varnames(nv3d+nv2d_sig+nv2d_sfc+1:) = (/'   T2m','   Q2m'/)
     nlevall=nv3d*nlev+nv2d
+!    nskip=2+(nlevall-nv2d_sfc)!+3
     nskip=2+(nlevall-nv2d_sfc-nv2d_flx)!+3
     allocate( sfld(lngrd) )
     rewind(nsig)
