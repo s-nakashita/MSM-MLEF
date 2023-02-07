@@ -14,6 +14,8 @@ fhour=${INCCYCLE:-0}
 # model resolution
 ires=${IRES:-27}
 # observation settings
+osse=${OSSE:-F}
+tmem=${TMEM:-0}
 single=${SINGLEOBS:-F}
 lats=${DA_SINGLE_LATS}
 latn=${DA_SINGLE_LATN}
@@ -69,8 +71,10 @@ fi
 ## data directories
 guesdir=${RUNDIR0:-/zdata/grmsm/work/rsm2rsm27_da}
 analdir=${RUNDIR0:-$guesdir}
-obsdir=/zdata/grmsm/work/dpac/obs
-bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
+obsdir=${RUNDIR0}/obs
+export obsdir
+#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -139,9 +143,14 @@ edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
 else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
+if [ $osse = T ];then
+obsf=upper${prep}.siml.${sdate}-${edate}
+obsf2=surf.siml.${sdate}-${edate}
+else
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
 $USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
+fi
 ### namelist
 cat <<EOF >lmlef.nml
 &namlst_commlef
@@ -208,6 +217,7 @@ cat <<EOF >lmlef.nml
  oma_monit=T,
  obsgues_output=T,
  obsanal_output=T,
+ debug_time=T,
 &end
 EOF
 #cat lmlef.nml
@@ -220,9 +230,11 @@ rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
 if [ $cycleda -eq 1 ];then
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${pdate}/r_flx.f$fh gues.0000.flx.grd
 else
 ln -s ${guesdir}/${pdate}/${head}000/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/${head}000/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}000/r_flx.f$fh gues.0000.flx.grd
 fi
 if [ $obsda_in = T ];then
 ln -s ${obsdir}/${pdate}/${obsextf}.0000.dat .
@@ -230,13 +242,24 @@ fi
 if [ -f ${guesdir}/${pdate}/infl.grd ];then
   ln -s ${guesdir}/${pdate}/infl.grd .
 fi
+gmem=$member
+if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $tmem -le $member ]; then
+  gmem=`expr $member + 1`
+fi
 m=1
-while [ $m -le $member ];do
+em=1
+while [ $m -le $gmem ];do
 mem=`printf '%0.3d' $m`
-ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem}.sig.grd
-ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem}.sfc.grd
+if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
+else
+mem2=`printf '%0.3d' $em`
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
 if [ $obsda_in = T ];then
-ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat .
+ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat ${obsextf}.0${mem2}.dat
+fi
+em=`expr $em + 1`
 fi
 m=`expr $m + 1`
 done
@@ -253,6 +276,14 @@ else
 mv NOUT-001 ${logf}txt
 fi
 rm -f NOUT-*
+n=1
+while [ $n -le $NODE ];do
+img=`printf '%0.3d' $n`
+if [ -f debug_time-${img}.txt ];then
+  mv debug_time-${img}.txt debug_time-${img}.${head_da}txt
+fi
+n=`expr $n + 1`
+done
 #fi # ! -f ${logf}_n${NODE}.txt
 
 ## post process

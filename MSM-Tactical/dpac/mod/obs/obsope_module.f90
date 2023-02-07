@@ -16,7 +16,8 @@ module obsope_module
   private
   integer, parameter :: stnout=7 ! debug
 
-  public :: obsope_serial, obsope_parallel, obsope_update, monit_dep, monit_print
+  public :: obsope_serial, obsope_parallel, obsope_update, monit_dep, monit_print, &
+          & obsmake_cal
 contains
 !
 ! (parallel) main routine for observation operator
@@ -499,6 +500,132 @@ contains
     return
   end subroutine obsope_update
 !
+! (serial) create observations from reference state
+!
+  subroutine obsmake_cal(obsin,v3d,v2d)
+    use random_module, only: random_init, random_normal
+    implicit none
+    type(obstype), intent(inout) :: obsin(obsin_num)
+    real(kind=dp), intent(in) :: v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)
+    real(kind=dp), intent(in) :: v2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)
+    integer :: nobsin,nobsout
+    integer :: iof
+    real(kind=dp), allocatable :: p_full(:,:,:)
+    real(kind=dp) :: ri,rj,rk
+    integer :: im, n, nn, img
+    integer :: tmpqc
+    real(kind=dp), allocatable :: rand(:)
+    real(kind=dp) :: tmplev, tmperr
+    real(kind=dp), allocatable :: wk(:,:)[:]
+    integer :: is,ie,js,je
+!!! for single point observation
+    real(kind=dp) :: lonb,latb
+    real(kind=dp) :: hxf,dep
+
+    call random_init
+
+    nobsin=0
+    do iof=1,obsin_num
+      nobsin=nobsin+obsin(iof)%nobs
+    end do
+    if(nobsin.le.0) then
+      write(6,'(a)') 'no observation to be assimilated'
+      return
+    end if
+    allocate( rand(nobsin) )
+    call random_normal(rand)
+   
+    allocate( p_full(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev) )
+    allocate( wk(nobsin,2)[*] ) !level,dat
+    is=1
+    ie=ni1+ighost
+    if(nidom(myimage)==nisep) ie=ni1
+    js=1
+    je=nj1+jghost
+    if(njdom(myimage)==njsep) je=nj1
+    if(nonhyd.eq.1) then !non-hydrostatic
+      p_full = v3d(:,:,:,iv3d_pn)
+    else
+      call calc_pfull(ni1max+2*ighost,nj1max+2*jghost,nlev,sig,v2d(:,:,iv2d_ps),p_full)
+    end if
+    write(6,'(a,2f10.2)') 'p_full=',maxval(p_full(1:ni1,1:nj1,:)),minval(p_full(1:ni1,1:nj1,:))
+
+    nn=0
+    do iof=1,obsin_num
+      print *, obsin(iof)%nobs
+      wk=0.0d0
+      do n=1,obsin(iof)%nobs
+        ! horizontal domain check
+        if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
+           .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
+          if(myimage.eq.print_img) &
+          write(0,'(a,2(a,f8.2))') &
+          & 'warning: observation is outside of the horizontal domain ', &
+          & 'lon=',obsin(iof)%lon(n),' lat=',obsin(iof)%lat(n)
+          tmpqc=iqc_out_h
+          cycle
+        end if
+        nn=nn+1
+        ! search which image contains observation
+        if(    obsin(iof)%lon(n).lt.myrlon(is)&
+           .or.obsin(iof)%lon(n).ge.myrlon(ie)&
+           .or.obsin(iof)%lat(n).lt.myrlat(js)&
+           .or.obsin(iof)%lat(n).ge.myrlat(je)) then
+        else !myimage
+          tmperr  = obserr(uid_obs(obsin(iof)%elem(n)))
+          tmplev  = 500.0d2 !Pa, dummy
+          call phys2ijk(p_full,obsin(iof)%elem(n),&
+           &  obsin(iof)%lon(n),obsin(iof)%lat(n),tmplev, &
+           &  ri,rj,rk,tmpqc,.true.)
+          ! determine obs level
+          if(obsin(iof)%elem(n).lt.10000) then !upper
+            rk=obsin(iof)%lev(n)
+            call itpl_2d(p_full(:,:,nint(rk)),ri,rj,wk(n,1))
+          else !synop
+            call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,wk(n,1))
+            rk=wk(n,1)
+          end if
+          if(tmpqc.eq.iqc_good) then
+            if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
+              wk(n,2)=undef
+            else
+              call trans_xtoy(obsin(iof)%elem(n),ri,rj,rk,&
+                 &  v3d,v2d,p_full,wk(n,2))
+              ! add error
+              wk(n,2) = wk(n,2) + tmperr * rand(nn)
+              if(obsin(iof)%elem(n)==id_rh_obs) then
+                if(wk(n,2)<0.0) wk(n,2)=0.0
+                if(wk(n,2)>1.0) wk(n,2)=1.0
+              else if(obsin(iof)%elem(n)==id_q_obs) then
+                if(wk(n,2)<0.0) wk(n,2)=0.0
+              end if
+            end if !luseobs
+          end if !iqc_good
+        end if !myimage
+      end do ! n=1,obsin(iof)%nobs
+      sync all
+      ! broadcast wk
+      if(myimage.eq.print_img) then
+        do img=1,nimages
+          if(myimage.eq.img) cycle
+          do n=1,obsin(iof)%nobs
+            wk(n,:)[myimage]=wk(n,:)[myimage]+wk(n,:)[img]
+          end do
+        end do
+        do img=1,nimages
+          wk(:,:)[img] = wk(:,:)[myimage]
+        end do
+      end if
+      sync all
+      do n=1,obsin(iof)%nobs
+        obsin(iof)%lev(n)=wk(n,1)
+        obsin(iof)%dat(n)=wk(n,2)
+      end do
+    end do ! iof=1,obsin_num
+    deallocate( p_full,wk )
+    return
+  end subroutine obsmake_cal
+!
 !
 ! coordinate conversion
 !
@@ -587,8 +714,9 @@ contains
         qc=iqc_out_h
         return
       end if
-!!DEBUG      write(6,'(6(a,f8.2))') &
-!!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
+!!DEBUG
+      write(6,'(6(a,f8.2))') &
+        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
     ! rlev1 -> rk
     if(elm.gt.9999) then !surface observation : rlev = height [m]

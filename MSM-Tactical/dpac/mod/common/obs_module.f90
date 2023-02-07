@@ -264,7 +264,8 @@ contains
             call ndate(tmptime,-24*60,otime) !a day before
           end if
           call nhour(atime,otime,imin)
-          if((imin.ge.lmin).and.(imin.lt.rmin)) then
+          if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
+                  .or.(imin.eq.lmin))then
             if(debug) print *, 'obs time =',otime
             if(debug) print *, 'difference(minutes) =',imin
             irec=ioffset+nrec1+nrec2+nrec3+2
@@ -292,7 +293,8 @@ contains
             call ndate(tmptime,-24*60,otime) !a day before
           end if
           call nhour(atime,otime,imin)
-          if((imin.ge.lmin).and.(imin.lt.rmin)) then
+          if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
+                  .or.(imin.eq.lmin))then
             if(debug) print *, 'obs time =',otime
             if(debug) print *, 'difference(minutes) =',imin
             nobs=nobs+nobstype_synop
@@ -411,7 +413,8 @@ contains
           call ndate(tmptime,-24*60,otime) !a day before
         end if
         call nhour(atime,otime,imin)
-        if((imin.ge.lmin).and.(imin.lt.rmin)) then
+        if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
+                .or.(imin.eq.lmin))then
           if(debug) print *, 'obs time =',otime
           if(debug) print *, 'difference(minutes) =',imin
           tmpdt = real(imin,kind=dp)
@@ -607,7 +610,8 @@ contains
           call ndate(tmptime,-24*60,otime) !a day before
         end if
         call nhour(atime,otime,imin)
-        if((imin.ge.lmin).and.(imin.lt.rmin)) then
+        if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
+                .or.(imin.eq.lmin))then
           if((data1(2).eq.latb).and.(data1(3).eq.lonb)) then !deprecated point
             ioffset=ioffset+nrec_data
             cycle

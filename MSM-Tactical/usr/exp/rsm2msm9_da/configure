@@ -63,12 +63,13 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=7
+export CYCLESTART=2
+export CYCLEMAX=2
 export DASTART=2
 export INCCYCLE=6 # cycle interval
 export ENDHOUR=6 # forecast length
 export PRTHOUR=1
+export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
@@ -81,15 +82,16 @@ export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-#export RUNFCST=no # debug
+export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=40
+export MEMBER=5
 # BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=wbp
+export BP=
 export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #if [ do$QADJ = doyes ];then #q adjustment
@@ -97,26 +99,28 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #fi #q adjustment
 export HEAD=$head
 # DA option
+export OSSE=T
+export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
 export DA_FIXED_LEVEL=F
-export NISEP=5
-export NJSEP=2
+export NISEP=6
+export NJSEP=4
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=-60
-export ROBSMIN=60
+export LOBSMIN=0
+export ROBSMIN=0
 export SELOBS=all
 export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
-export HLOC=300 #km
-export VLOC=3   #*0.1ln p
+export HLOC=500 #km
+export VLOC=2   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
 export RTPS=90 #%
@@ -124,6 +128,9 @@ export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${BP}${PREP}
+if [ $OSSE = T ];then
+  head2=${head2}.siml${MEMBER}
+fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi

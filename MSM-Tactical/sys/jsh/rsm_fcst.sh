@@ -216,10 +216,12 @@ h=$FH
 while [ $h -lt $FEND ]; do
   hx=`expr $h + $INCHOUR`
   if [ $hx -gt $FEND ]; then  hx=$FEND; fi
-  hh=$hx
+  hxb=`expr $h + $INCBASE`
+  if [ $hx -gt $hxb ]; then  hxb=$hx; fi
+  hh=$hxb
   if [ $hx -lt 10 ];then hx=0$hx;fi
   hhr=`expr $h + 0`
-  while [ $hhr -le $hx ]; do
+  while [ $hhr -le $hxb ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
        if [ do$G2R = doyes ] ; then

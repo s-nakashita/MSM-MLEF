@@ -24,7 +24,7 @@ MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 if [ $IRES -eq 27 ]; then
   DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
-  DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
+#  DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
   EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
   DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs

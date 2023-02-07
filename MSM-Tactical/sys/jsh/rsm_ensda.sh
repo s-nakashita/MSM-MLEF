@@ -44,7 +44,7 @@ eidate=$yearend$monthend$dayend$hourend
 end_hr=`$UTLDIR/nhour $eidate $CDATE$CHOUR`
 ENDHOUR=${ENDHOUR:-$end_hr}
 INCCYCLE=${INCCYCLE:-$ENDHOUR}
-EXTEND=${EXTEND}
+EXTEND=${EXTEND:-0}
 #
 #-----------------------------------------------
 # determine model run parameters
@@ -101,11 +101,13 @@ while [ $CYCLE -le $CYCLEMAX ];do
     export SDATE
     HZ=`echo $SDATE | cut -c9-10`
     HZ=`expr $HZ`
-    if [ ! -z $EXTEND ] && [ $HZ -ne $EXTEND ]; then
-      export ENDHOUR=$INCCYCLE
-    fi
-  else
-    export ENDHOUR=$INCCYCLE
+#    if [ $EXTEND -eq 1 ];then
+#      if [ $HZ -ne 0 ] && [ $HZ -ne 12 ]; then
+#        export ENDHOUR=$INCCYCLE
+#      fi
+#    fi
+#  else
+#    export ENDHOUR=$INCCYCLE
   fi
   if [ $CYCLE -lt $DASTART ];then
     BGM=yes
@@ -366,12 +368,20 @@ fi #restart
 # BGM rescaling (ensemble)
 #
 if [ do$BGM = doyes ]; then
+  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
+    cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
+    NSAMPLE=`expr $MEMBER \* 2`
+    $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdate.txt || exit 6
+  fi
 mem=1
 while [ $mem -le $MEMBER ];do
   if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
-    cp $DISKUSR/exp/$EXPN/pdate.txt pdate.txt
-    PDATE=`cat pdate.txt | awk '{if(NR == '$mem'){print $1}}'`
-    export PDATE
+    #cp $DISKUSR/exp/$EXPN/pdate.txt pdate.txt
+    irow=`expr 2 \* $mem - 1`
+    PDATE1=`cat pdate.txt | awk '{if(NR == '$irow'){print $1}}'`
+    irow=`expr $irow + 1`
+    PDATE2=`cat pdate.txt | awk '{if(NR == '$irow'){print $1}}'`
+    export PDATE1 PDATE2
   fi
   if [ $mem -lt 10 ]; then
     mem=00$mem
@@ -382,7 +392,7 @@ if [ -s ${head}${mem}/r_sigi -a -s ${head}${mem}/r_sigitdt -a -s ${head}${mem}/r
   echo 'Restart file exists'
 else
   if [ $IRES -eq 27 ];then #rescaling
-    $USHDIR/raddprtb.sh $CYCLE $mem || exit 6
+    $USHDIR/raddprtb.sh $CYCLE $mem || exit 7
   else #downscaling
     GBASEDIR=${BASEDIR0}/${SDATE}/${head}${mem}
     GBASESFCDIR=${GBASEDIR}

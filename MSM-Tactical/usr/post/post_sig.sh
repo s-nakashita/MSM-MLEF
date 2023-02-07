@@ -17,7 +17,8 @@ ICLD=0 #hydrostatic
 if [ do$MEM = do ]; then
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2rsm27_t2m/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm27/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm27_t02tv1/$SDATE
 else
 #DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE/$MEM
 if [ "$MEM" = "000" ]; then

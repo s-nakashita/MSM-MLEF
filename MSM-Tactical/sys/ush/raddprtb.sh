@@ -10,7 +10,8 @@ set -ex
 CYCLE=${1:-$CYCLE}
 PMEM=${2:-001} #prtb member
 IDATE=${SDATE:-2022083000} #base
-PDATE=${PDATE:-2022061112} #prtb base
+PDATE1=${PDATE1:-2022061112} #prtb base
+PDATE2=${PDATE2:-2022061012} #prtb base
 IRES=${IRES:-27}
 BV_H=${INCCYCLE:-6}
 TETYPE=${TETYPE}
@@ -21,13 +22,10 @@ head=${HEAD:-bv$TETYPE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 DATADIR=${RUNDIR0:-/zdata/grmsm/work/dpac/rsm27}
-BASE=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_rda}
+BASE0=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
+BASE1=${BASEDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
 if [ ! -d $DATADIR ]; then
   echo "No such directory : $DATADIR"
-  exit 3
-fi
-if [ ! -d $BASE ]; then
-  echo "No such directory : $BASE"
   exit 3
 fi
 EXEC=addprtb
@@ -59,6 +57,15 @@ ln -s $DATADIR/$IDATE/r_sfc.f00 fort.14 #analysis
 # perturbation base
 if [ $CYCLE -eq 1 ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
+    BASE=$BASE0
+    PDATE=$PDATE1
+    if [ ! -d $BASE0/$PDATE ]; then
+      BASE=$BASE1
+    fi
+    if [ ! -d $BASE/$PDATE ]; then
+      echo "No such directory : $BASE/$PDATE"
+      exit 3
+    fi
     mkdir -p $PDATE
     cd $PDATE
     hhr=12
@@ -87,10 +94,19 @@ if [ $CYCLE -eq 1 ]; then
     $USHDIR/rinp.sh $NEST $hhr || exit 10
     cp r_sigi ../fort.12
     cd ..
-    PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
+    #PDATE=`date -j -f "%Y%m%d%H" -v-24H +"%Y%m%d%H" "${PDATE}"`
+    BASE=$BASE0
+    PDATE=$PDATE2
+    if [ ! -d $BASE0/$PDATE ]; then
+      BASE=$BASE1
+    fi
+    if [ ! -d $BASE/$PDATE ]; then
+      echo "No such directory : $BASE/$PDATE"
+      exit 3
+    fi
     mkdir -p $PDATE
     cd $PDATE
-    hhr=24
+    #hhr=24
     cp $DATADIR/$IDATE/rsmlocation .
     ln -s $DATADIR/$IDATE/rmtn.parm .
     ln -s $DATADIR/$IDATE/rmtnoss .

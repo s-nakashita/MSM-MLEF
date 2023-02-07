@@ -24,7 +24,7 @@ if [ do$BV = doyes ];then #BGM
   if [ $BV_H -gt 6 ]; then #scaling interval
     head=${head}${BV_H}h
   fi
-  head=${head}${MEM}${BP}
+  head=${head}${MEM}${BP}${SCLBASE}
   if [ do$QADJ = doyes ];then #q adjustment
     head=${head}_qadj
   fi

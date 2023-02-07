@@ -225,7 +225,8 @@ contains
     character(len=3) mon(12)
     data mon/'JAN','FEB','MAR','APR','MAY','JUN',&
 &            'JUL','AUG','SEP','OCT','NOV','DEC'/
-    character(len=4),allocatable :: cmem(:) 
+    integer :: ncmem
+    character(len=256) :: cmem 
 
     write(nctl,'(a)') 'dset ^DATAFILE'
     if(emem) then
@@ -277,12 +278,12 @@ contains
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
     if(emem) then
-    allocate( cmem(member) )
+    ncmem=4*member
     do i=1,member
-      write(cmem(i),'(I4.3)') i
+      write(cmem(4*(i-1)+1:4*i),'(I4.3)') i
     end do
-    write(nctl,115) member,cmem
- 115 format('edef ',I2,' names ',10A4)
+    write(nctl,115) member,cmem(1:ncmem)
+ 115 format('edef ',I2,' names ',A)
     write(nctl,'(a)') 'vars 2'
     write(nctl,'(a,i2,a)') 'ewgt ',levs,' 99 ensemble weights'
     write(nctl,'(a,i2,a)') 'eval ',levs,' 99 eigenvalues'

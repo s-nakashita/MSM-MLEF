@@ -70,18 +70,19 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=9
-export CYCLEMAX=10
-export DASTART=11
+export CYCLESTART=8
+export CYCLEMAX=11
+export DASTART=12
 export INCCYCLE=6 # cycle interval
-export ENDHOUR=24 # forecast length
-export EXTEND=0 # forecast extends to $ENDHOUR at $EXTEND UTC
+export ENDHOUR=6 # forecast length
+export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
+                # 0:forecast stops at $INCCYCLE hour
 export PRTHOUR=1
 export INCBASE=3
 export INCHOUR=3
 export TIMESTEP=120
 export IMDLPHY=1
-export NEWMTN=.FALSE.
+#export NEWMTN=.FALSE.
 export CLIM=0
 export RSFC_MERGE=yes
 export POSTTYPE=sync
@@ -91,7 +92,7 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=40
 # BGM option
 export TETYPE=dry
 export SCL=

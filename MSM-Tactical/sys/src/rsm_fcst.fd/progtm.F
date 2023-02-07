@@ -142,7 +142,8 @@
 !
 !     estimate sigma ** k at 2 m
 !
-      sig2k = 1. - 4. * g * 2. / (cp * 280.)
+!      sig2k = 1. - 4. * g * 2. / (cp * 280.) !original
+      sig2k = exp( g * 2. / (cp * 280.) ) ! modified by SN on 1 Feb 2023 
 !
 !  initialize variables. all units are supposedly m.k.s. unless specifie
 !  psurf is in pascals
