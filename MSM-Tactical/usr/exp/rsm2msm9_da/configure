@@ -82,11 +82,11 @@ export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-export RUNFCST=no # debug
+#export RUNFCST=no # debug
 
 # Ensemble size
 export MEMBER=40
-export MEMBER=5
+export MEMBER=20
 # BGM option for base
 export TETYPE=dry
 export SCL=
@@ -119,8 +119,8 @@ export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
-export HLOC=500 #km
-export VLOC=2   #*0.1ln p
+export HLOC=300 #km
+export VLOC=3   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
 export RTPS=90 #%
@@ -129,7 +129,7 @@ export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${BP}${PREP}
 if [ $OSSE = T ];then
-  head2=${head2}.siml${MEMBER}
+  head2=${head2}.siml${MEMBER}.replbase
 fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single

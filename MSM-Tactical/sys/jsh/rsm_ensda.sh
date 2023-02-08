@@ -93,6 +93,7 @@ if [ $CYCLEDA -lt 0 ];then
   CYCLEDA=0
 fi
 SDATE0=$SDATE
+export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   if [ $CYCLE -gt 1 ];then
     PCYCLE=`expr $CYCLE - 1`
@@ -184,9 +185,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}000 ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -287,7 +288,7 @@ done #while [ $mem -le $MEMBER ]
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}000
+  fi # -d ${head}000
 else
 #
 # control
@@ -462,6 +463,9 @@ if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
   $USHDIR/raddprtbbase.sh || exit 5
 fi
+if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
+  $USHDIR/rprepbase.sh || exit 6
+fi
 mem=0
 while [ $mem -le $MEMBER ];do
   if [ $mem -eq 0 ]; then ## control
@@ -506,6 +510,7 @@ while [ $h -lt $FEND ]; do
   hh=$hx
   if [ $hx -lt 10 ];then hx=0$hx;fi
   hhr=`expr $h + 0`
+  if [ $OSSE = F ]; then
   while [ $hhr -le $hx ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
@@ -539,6 +544,7 @@ while [ $h -lt $FEND ]; do
        fi
        hhr=`expr $hhr + $INCBASE`
   done
+  fi
 #
 # rinp for g2c and l2c
   if [ do$RUNRINP2 = doyes ] ; then

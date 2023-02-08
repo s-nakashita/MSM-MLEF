@@ -32,8 +32,9 @@ program calcte
   real(kind=dp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
   character(len=8) :: label(4)
   integer :: idate(4), nfldsig
+  integer :: idate2(4), iymdh, iymdh2
   real(kind=sp) :: fhour, ext(nwext) 
-  real(kind=sp) :: zhour
+  real(kind=sp) :: fhour2
   real(kind=dp) :: si(levmax+1), sl(levmax)
   real(kind=dp) :: rdelx, rdely, rtruth, rorient, rproj
   integer :: ids(255), iparam(nfldflx)
@@ -50,8 +51,9 @@ program calcte
   print*, label
   print*, idate
   print*, fhour
+  iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)+fhour
   !print*, ext(1:16)
-  print*, nfldsig
+!  print*, nfldsig
   igrd1 = int(ext(3))
   jgrd1 = int(ext(4))
   print*, igrd1, jgrd1
@@ -62,8 +64,8 @@ program calcte
   rdelx=ext(14); rdely=ext(15)
   nonhyd=int(ext(16))
   print*, nonhyd
-  print*, si(1:levs+1)
-  print*, sl(1:levs)
+!  print*, si(1:levs+1)
+!  print*, sl(1:levs)
   allocate( dfld(igrd1,jgrd1,nfldsig) )
   allocate( mapf(igrd1,jgrd1,3) )
   allocate( clat(jgrd1), clon(igrd1) )
@@ -177,6 +179,13 @@ program calcte
   if(lprtb) then
   ! 12h forecast
   nsig=nisig+1
+  !! consistency check
+  call read_header(nsig,icld,label,idate2,fhour2,si,sl,ext,nfldsig)
+  iymdh2 = idate2(4)*1000000+idate2(2)*10000+idate2(3)*100+idate2(1)+nint(fhour2)
+  if (iymdh.ne.iymdh2) then
+    print *, 'valid dates are different, ',iymdh,' ',iymdh2
+    stop 99
+  end if
 !  call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,fhour,sl,dfld,mapf,clat,clon)
   call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,0.0,sl,dfld,mapf,clat,clon)
   do j=1,nlat
@@ -228,9 +237,9 @@ program calcte
   print *, 'ps(prtb,max)', maxval(ps(:,:)),maxloc(ps(:,:))
   print *, 'ps(prtb,min)', minval(ps(:,:)),minloc(ps(:,:))
   end if
-  do k=1,10
-    print *, u(:,67,k)
-  end do
+!  do k=1,10
+!    print *, u(:,67,k)
+!  end do
   ! calculate energy
   call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,te)
   open(55,file=ofile)

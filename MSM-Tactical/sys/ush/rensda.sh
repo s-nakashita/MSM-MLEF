@@ -268,6 +268,7 @@ ln -s lmlef.nml STDIN
 ln -s ${bindir}/lmlef .
 ## start calculation
 rm -f ${obsoutf}.*.dat anal.*.grd
+export OMP_NUM_THREADS=1
 mpiexec -n $NODE ./lmlef 2>${logf}err || exit 11
 if [ ! -z ${print_img} ];then
 img=`printf '%0.3d' $print_img`
@@ -451,15 +452,19 @@ cd $wdir
 m=`expr $m + 1`
 done
 for emem in mean sprd;do
-mkdir -p ${guesdir}/${pdate}/${head}${emem}
-mv gues.${emem}.sig.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
-mv gues.${emem}.sfc.grd ${guesdir}/${pdate}/${head}${emem}/r_sfc.f$fh
-mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
-mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
+#mkdir -p ${guesdir}/${pdate}/${head}${emem}
+#mv gues.${emem}.sig.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
+#mv gues.${emem}.sfc.grd ${guesdir}/${pdate}/${head}${emem}/r_sfc.f$fh
+#mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
+#mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
 if [ -d ${head_da}${emem} ];then
   rm -rf ${head_da}${emem}
 fi
 mkdir -p ${head_da}${emem}
+mv gues.${emem}.sig.grd ${head_da}${emem}/r_sig.f$fh
+mv gues.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f$fh
+mv gues.${emem}.bin ${head_da}${emem}/
+mv gues.${emem}.ctl ${head_da}${emem}/
 mv anal.${emem}.sig.grd ${head_da}${emem}/r_sig.f00
 mv anal.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f00
 mv anal.${emem}.bin ${head_da}${emem}/
