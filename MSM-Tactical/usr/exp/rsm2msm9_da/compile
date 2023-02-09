@@ -1,6 +1,7 @@
 #!/bin/sh
 
 set -x 
+ulimit -s unlimited
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
 

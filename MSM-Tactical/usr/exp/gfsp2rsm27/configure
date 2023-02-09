@@ -6,8 +6,7 @@ export USERID=` whoami `
 export DISK=$HOME/Development/grmsm/MSM-Tactical   #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
-#export WORKUSR=$DISK/usr/work
-export WORKUSR=/zdata/grmsm/work
+export WORKUSR=$DISK/usr/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
@@ -30,7 +29,7 @@ fi
 # ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
 # linux_pgi, linux_intel, linux_gfortran
 
-export MACHINE=freebsd_gfortran
+export MACHINE=mac_gfortran
 
 # machine dependent cpp
 export IBMSP=no

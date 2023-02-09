@@ -1,8 +1,8 @@
-LIBS=	-L/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/usr/lib/
+LIBS=	
 W3LB=	-L../../lib -lbacio_4 -lw3_4 
 FORT=	gfortran
 OPTx=	-O3   -fconvert=big-endian
-OPTN=	-O3   -fconvert=big-endian
+OPTN=	-O3   -fconvert=big-endian -fallow-argument-mismatch
 SRCS=	rpgbnawips.f ismaxmin.f
 OBJS=	rpgbnawips.o ismaxmin.o
 EXEC=	../../utl/rpgbnawips.x

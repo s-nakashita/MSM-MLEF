@@ -1,6 +1,6 @@
 # ------------- INTEL FORTRAN ------
 FORT=	gfortran
-OPTN=	-fconvert=big-endian
+OPTN=	-fconvert=big-endian -fallow-argument-mismatch
 
 SRCS=	rsmmap.f
 OBJS=	rsmmap.o

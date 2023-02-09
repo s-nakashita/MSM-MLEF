@@ -28,7 +28,9 @@ echo $DSYS
 cd $DSYS/lib    && pwd && echo "Clean lib*.s etc " && rm -f lib* && ls && echo " " &&\
 #cd incmod && pwd && echo "Clean incmod " && rm -rf * && ls && echo " " && \
 cd $DSYS/lib/src && pwd && echo "Configure and compile lib ...." && \
-./compile.sh 1>compile.log 2>>compile.log && cd .. && pwd && ls && \
+#./compile.sh 1>compile.log 2>>compile.log && cd .. && pwd && ls && \
+./compile.sh  || exit 2 #1>compile.log 2>>compile.log
+cd .. && pwd && ls && \
 echo "Libraries are all built .... "  && cd .. && echo " "
 
 if [ $MACHINE = linux_intel ] ; then

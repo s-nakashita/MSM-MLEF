@@ -7,6 +7,7 @@ export DISK=` cd ../../.. ; pwd `                 #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
 export WORKUSR=$DISK/usr/work
+export WORKBASE=$HOME/mnt/methane/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
@@ -17,13 +18,13 @@ else
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
-#export BASEDIR0=$WORKUSR/DATA/gefs
+export BASEDIR0=$WORKBASE/gefs2rsm27_nomad
+#export BASEDIR0=$WORKBASE/DATA/gefs
 if [ $GLOBAL = GFS ];then #deterministic
-  export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad
-  export BASEDIR1=$WORKUSR/gfsp2rsm27_rda
-#  export BASEDIR0=$WORKUSR/DATA/gfs
-#  export BASEDIR1=$WORKUSR/DATA/gfs/rda
+  export BASEDIR0=$WORKBASE/gfsp2rsm27_nomad
+  export BASEDIR1=$WORKBASE/gfsp2rsm27_rda
+#  export BASEDIR0=$WORKBASE/DATA/gfs
+#  export BASEDIR1=$WORKBASE/DATA/gfs/rda
 fi #deterministic
 export IRES=27
 
@@ -31,7 +32,7 @@ export IRES=27
 # machine dependent
 # compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
 # linux_pgi, linux_intel, linux_gfortran
-export MACHINE=freebsd_gfortran
+export MACHINE=mac_gfortran
 export IBMSP=no 
 export DCRFT=no
 export FFT99M=no
@@ -42,9 +43,9 @@ export MARCH=mpi
 export LAMMPI=no
 export MPICH=yes
 export KINDMPI=4
-export NCOL=6
-export NROW=4
-export NODES=32   
+export NCOL=4
+export NROW=2
+export NODES=8   
 export MP=yes
 export THREAD=no 
 
@@ -70,11 +71,11 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=9
-export CYCLEMAX=10
+export CYCLESTART=1
+export CYCLEMAX=1
 export DASTART=11
 export INCCYCLE=6 # cycle interval
-export ENDHOUR=24 # forecast length
+export ENDHOUR=6 # forecast length
 export EXTEND=0 # forecast extends to $ENDHOUR at $EXTEND UTC
 export PRTHOUR=1
 export INCBASE=3
@@ -91,7 +92,7 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=0
 # BGM option
 export TETYPE=dry
 export SCL=

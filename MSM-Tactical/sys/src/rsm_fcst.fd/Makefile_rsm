@@ -105,6 +105,10 @@ clean:
 	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
 	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
 
+#.F.o : *.h
+#	cp $*.F $*.$(F_SUBF)
+#	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF) 
+
 .$(F_SUBF).o : *.h
 	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
 

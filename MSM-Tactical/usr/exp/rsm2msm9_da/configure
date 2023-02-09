@@ -24,7 +24,7 @@ export IRES=9
 # machine dependent
 # compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
 # linux_pgi, linux_intel, linux_gfortran
-export MACHINE=freebsd_gfortran
+export MACHINE=mac_gfortran
 export IBMSP=no 
 export DCRFT=no
 export FFT99M=no
@@ -35,9 +35,9 @@ export MARCH=mpi
 export LAMMPI=no
 export MPICH=yes
 export KINDMPI=4
-export NCOL=6
-export NROW=4
-export NODES=32   
+export NCOL=4
+export NROW=2
+export NODES=8   
 export MP=yes
 export THREAD=no 
 
@@ -64,7 +64,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=1
-export CYCLEMAX=7
+export CYCLEMAX=1
 export DASTART=2
 export INCCYCLE=6 # cycle interval
 export ENDHOUR=6 # forecast length
@@ -153,18 +153,18 @@ export HEAD2=$head2
 #### rsmlocation
 
 # d02 domain 110E-150E 16N-46N
-export  IGRD=384
-export  JGRD=324
+export  IGRD=216
+export  JGRD=192
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=140.0
 export  RDELX=9000.
 export  RDELY=9300.
-export  RCENLAT=35.0
-export  RCENLON=130.0
-export  RLFTGRD=183.0
-export  RBTMGRD=190.0
+export  RCENLAT=29.0
+export  RCENLON=120.0
+export  RLFTGRD=45.0
+export  RBTMGRD=53.0
 # d01 domain 70E-170W 22S-65N
 export  CIGRD=324
 export  CJGRD=288
