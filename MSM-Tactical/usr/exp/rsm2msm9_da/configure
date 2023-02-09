@@ -82,7 +82,7 @@ export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-#export RUNFCST=no # debug
+export RUNFCST=no # debug
 
 # Ensemble size
 export MEMBER=40

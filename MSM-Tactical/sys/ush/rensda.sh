@@ -73,8 +73,8 @@ guesdir=${RUNDIR0:-/zdata/grmsm/work/rsm2rsm27_da}
 analdir=${RUNDIR0:-$guesdir}
 obsdir=${RUNDIR0}/obs
 export obsdir
-#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
-bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/lmlef
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
+#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`

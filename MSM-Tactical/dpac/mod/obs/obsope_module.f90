@@ -572,6 +572,7 @@ contains
            .or.obsin(iof)%lat(n).lt.myrlat(js)&
            .or.obsin(iof)%lat(n).ge.myrlat(je)) then
         else !myimage
+          print '(I5,3F10.2)', obsin(iof)%elem(n), obsin(iof)%lon(n), obsin(iof)%lat(n), obsin(iof)%lev(n)
           tmperr  = obserr(uid_obs(obsin(iof)%elem(n)))
           tmplev  = 500.0d2 !Pa, dummy
           call phys2ijk(p_full,obsin(iof)%elem(n),&
@@ -585,7 +586,10 @@ contains
             call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,wk(n,1))
             rk=wk(n,1)
           end if
-          if(tmpqc.eq.iqc_good) then
+          print '(I5,3F10.2)', obsin(iof)%elem(n), ri,rj,rk
+          if(tmpqc.ne.iqc_good) then
+            wk(n,2)=undef
+          else
             if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
               wk(n,2)=undef
             else

@@ -70,9 +70,9 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=8
-export CYCLEMAX=11
-export DASTART=12
+export CYCLESTART=2
+export CYCLEMAX=4
+export DASTART=1
 export INCCYCLE=6 # cycle interval
 export ENDHOUR=6 # forecast length
 export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
@@ -93,6 +93,7 @@ export RUNFCST=yes
 
 # Ensemble size
 export MEMBER=40
+export MEMBER=20
 # BGM option
 export TETYPE=dry
 export SCL=
@@ -105,18 +106,20 @@ head=bv${TETYPE}${SCL}${BP}
 #fi #q adjustment
 export HEAD=$head
 # DA option
+export OSSE=T
+export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
 export DA_FIXED_LEVEL=F
-export NISEP=5
-export NJSEP=2
+export NISEP=6
+export NJSEP=4
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=-60
-export ROBSMIN=60
+export LOBSMIN=0
+export ROBSMIN=0
 export SELOBS=all
 export PREP=_preprh
 export DA_MEAN=F
@@ -132,6 +135,9 @@ export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${PREP}
+if [ $OSSE = T ];then
+  head2=${head2}.siml${MEMBER}.replbase
+fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi

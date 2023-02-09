@@ -1,8 +1,10 @@
 #!/bin/sh
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-datadir=/zdata/grmsm/work/rsm2msm9_da
-obsdir=/zdata/grmsm/work/rsm2msm9_da/obs
+#wdir=rsm2msm9_da
+wdir=rsm2rsm27_da
+datadir=/zdata/grmsm/work/$wdir
+obsdir=/zdata/grmsm/work/$wdir/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=40
 truth=25
@@ -11,16 +13,16 @@ idate=2022061812
 lmin=0
 rmin=0
 prep=_preprh
-nisep=2
-njsep=5
-ighost=1
-jghost=1
+nisep=1
+njsep=1
+ighost=0
+jghost=0
 NODE=`expr $nisep \* $njsep`
 RUNENV="mpiexec -n ${NODE} "
 echo $RUNENV
 
 #fhour=6
-for fhour in $(seq 6 6 24);do
+for fhour in $(seq 0 6 24);do
 adate=`date -j -f "%Y%m%d%H" -v+${fhour}H +"%Y%m%d%H" "${idate}"`
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -88,7 +90,7 @@ cat <<EOF >obsmake.nml
 &end
 &param_lmlef
  mean=,
- debug_obs=T,
+ debug_obs=,
 &end
 &param_obsmake
  atime=${yyyy},${imm},${idd},${ihh},0
@@ -116,8 +118,7 @@ ln -s ${bindir}/obsmake obsmake
 ${RUNENV} ./obsmake #2>${logf}.err | tee ${logf}.log
 mv upper.siml.${sdate}-${edate}.dat upper${prep}.siml.${sdate}-${edate}.dat
 mv NOUT-001 ${logf}.log
-rm NOUT-*
-rm gues.* STDIN
+rm -f NOUT-*
 
 done
 echo "END"

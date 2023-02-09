@@ -41,7 +41,7 @@ program obsmake
   real(kind=dp),allocatable :: gues2dc(:,:,:)[:]    !control
   real(kind=dp) :: dist_obs,clon1,clat1,dist1
   integer :: ilon,ilat,ielm,ilev,iof
-  integer :: nobsmake,nelm,nlayer
+  integer :: nobsmake,nelm,nlayer,n0,n1
   integer,dimension(nobstype) :: elemiduse
 ! timer
   real(kind=dp) :: rtimer, rtimer00
@@ -162,16 +162,15 @@ program obsmake
     nobsmake=0
     do ielm=1,nelm
       do ilev=1,nlayer
-        clon1=-999.
-        clat1=-999.
+        n0=nobsmake
         do ilat=1+jbuf,nlat-jbuf
-          if(clat1/=-999.) then
+          if(nobsmake.gt.n0) then
             call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
             if(dist1.lt.dist_obs) cycle
           endif
           clat1=rlat(ilat)
           do ilon=1+ibuf,nlon-ibuf
-            if(clon1/=-999.) then
+            if(ilon.gt.1+ibuf) then
               call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
               if(dist1.lt.dist_obs) cycle
             end if
@@ -184,6 +183,9 @@ program obsmake
             obs(iof)%lev(nobsmake)=real((ilev-1)*kint+1,kind=dp)
           end do ![ilon]
         end do ![ilat]
+!        print *, 'obslon=',obs(iof)%lon(n0+1:nobsmake)
+!        print *, 'obslat=',obs(iof)%lat(n0+1:nobsmake)
+!        print *, 'obslev=',obs(iof)%lev(n0+1:nobsmake)
       end do ![ilev=1,nlayer]
     end do ![ielm=1,nelm]
   end do ![iof=1,obsin_num]

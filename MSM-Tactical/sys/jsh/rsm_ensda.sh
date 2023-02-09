@@ -95,6 +95,7 @@ fi
 SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
+  export CYCLE
   if [ $CYCLE -gt 1 ];then
     PCYCLE=`expr $CYCLE - 1`
     inch=`expr $INCCYCLE \* $PCYCLE`
@@ -185,9 +186,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-  if [ -d ${head}000 ]; then
-    echo 'DA already done'
-  else
+#  if [ -d ${head}000 ]; then
+#    echo 'DA already done'
+#  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -195,80 +196,6 @@ if [ do$DA = doyes ]; then
     if [ do$RUNRMTN = doyes ] ; then
       $USHDIR/rmtn.sh $MTNRES || exit 3
     fi
-    #
-    #   First guess ensemble
-    #
-    if [ $CYCLE -eq $CYCLEDA ]&&[ $CYCLEDA -eq 1 ]; then
-      if [ $IRES -eq 27 ];then
-	echo 'First guess ensemble at the same resolution required for IRES='$IRES
-	exit 6
-      else
-    fh=${INCCYCLE}
-    PDATE=`${UTLDIR}/ndate -$fh ${SDATE}`
-    if [ $fh -lt 10 ];then fh=0$fh; fi
-    mem=0
-    while [ $mem -le $MEMBER ]; do
-	if [ $mem -gt 0 ];then
-        if [ $mem -lt 10 ]; then
-          mem=00$mem
-        else
-          mem=0$mem
-        fi
-	GBASEDIR=${BASEDIR0}/${PDATE}/${HEAD}${mem}
-	GBASESFCDIR=${GBASEDIR}
-        GUESDIR=${RUNDIR0}/${PDATE}/${HEAD}${mem}
-        else
-	GBASEDIR=${BASEDIR0}/${PDATE}
-	GBASESFCDIR=${GBASEDIR}
-        GUESDIR=${RUNDIR0}/${PDATE}
-	fi
-	mkdir -p $GUESDIR
-        cd ${GUESDIR}
-        ### copy namelists
-        cp ${RUNDIR}/rsmparm .
-        cp ${RUNDIR}/rsmlocation .
-        cp ${RUNDIR}/rfcstparm .
-        cp ${RUNDIR}/station.parm .
-        ### copy orography data
-        cp ${RUNDIR}/rmtn.parm .
-        cp ${RUNDIR}/rmtnoss .
-        cp ${RUNDIR}/rmtnslm .
-        cp ${RUNDIR}/rmtnvar .
-     if [ do$G2R = doyes ] ; then
-       ln -fs $GBASEDIR/sigf$fh rb_sigf$fh
-       ln -fs $GBASEDIR/sfcf$fh rb_sfcf$fh
-     fi
-     if [ do$P2R = doyes ] ; then
-       if [ do$CWBGFS = doyes ] ; then
-         ln -fs $GBASEDIR/otgb2_0$fh rb_pgbf$fh
-       else
-         ln -fs $GBASEDIR/pgbf$fh rb_pgbf$fh
-       fi
-     else
-       if [ do$C2R = doyes ] ; then
-         ln -fs $GBASEDIR/r_sig.f$fh rb_sigf$fh
-         ln -fs $GBASESFCDIR/r_sfc.f$fh rb_sfcf$fh
-       fi
-     fi
-     if [ do$NEWSST = do.TRUE. ] ; then
-       #ln -fs $BASEDIR/sstf$fh rb_sstf$fh
-       slag=`expr $fh + $SSTLAG`
-       cymdh=`${UTLDIR}/ndate $slag ${SDATE}`
-       cyyyy=`echo ${cymdh} | cut -c1-4`
-       cymd=`echo ${cymdh} | cut -c1-8`
-       if [ ! -f ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt ] ; then
-         exit 99
-       fi
-       ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
-     fi
-    $USHDIR/rinp.sh $NEST $fh || exit 4
-    cp r_sigi  r_sig.f$fh
-    cp r_sfci  r_sfc.f$fh
-    cd $RUNDIR
-    mem=`expr $mem + 1`
-done #while [ $mem -le $MEMBER ]
-      fi #IRES -eq 27
-    fi #CYCLE -eq CYCLEDA
     #
     #  DA
     #
@@ -288,7 +215,7 @@ done #while [ $mem -le $MEMBER ]
         mem=`expr $mem + 1`
       done
     fi
-  fi # -d ${head}000
+#  fi # -d ${head}000
 else
 #
 # control
@@ -464,7 +391,7 @@ if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   $USHDIR/raddprtbbase.sh || exit 5
 fi
 if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
-  $USHDIR/rprepbase.sh || exit 6
+  $USHDIR/rprepbase.sh $CYCLEDA || exit 6
 fi
 mem=0
 while [ $mem -le $MEMBER ];do
