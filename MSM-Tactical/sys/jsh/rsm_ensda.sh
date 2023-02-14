@@ -186,9 +186,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}000 ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -202,7 +202,11 @@ if [ do$DA = doyes ]; then
     $USHDIR/rensda.sh $CYCLE $CYCLEDA || exit 7
     if [ do$POSTTYPE = dosync ]; then
 #      $USHDIR/rpgb_post.sh 00 || exit 5
+      if [ $DA_MEAN = T ]; then
+      mem=1
+      else
       mem=0
+      fi
       while [ $mem -le $MEMBER ];do
         if [ $mem -lt 10 ]; then
           mem=00$mem
@@ -215,7 +219,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}000
+  fi # -d ${head}mean
 else
 #
 # control
@@ -391,9 +395,13 @@ if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   $USHDIR/raddprtbbase.sh || exit 5
 fi
 if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
-  $USHDIR/rprepbase.sh $CYCLEDA || exit 6
+  $USHDIR/rprepbase.sh $CYCLE $DA_MEAN || exit 6
 fi
+if [ $DA_MEAN = T ]; then
+mem=1
+else
 mem=0
+fi
 while [ $mem -le $MEMBER ];do
   if [ $mem -eq 0 ]; then ## control
     if [ do$DA = doyes ]; then

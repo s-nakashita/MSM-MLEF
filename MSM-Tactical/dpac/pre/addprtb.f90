@@ -10,7 +10,6 @@ program addprtb
   use func_module, only: ndate, calc_rh, calc_q2 !=> calc_q
   implicit none
   ! for energy calculation
-  integer, parameter :: kmax=21
   !real(kind=dp), parameter :: teref=5.6d0 !rescaled total energy [J/kg/m2]
   real(kind=dp), parameter :: uscl=1.0d0,vscl=1.0d0&
                            &,thetascl=0.4d0,rhscl=5.0d-2,psscl=3.5d1
@@ -25,8 +24,9 @@ program addprtb
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 !calculation region
   integer       :: ilonw,ilone,jlats,jlatn !calculation region
   integer       :: nlon,nlat
+  integer       :: kmax=21
   logical       :: adjust_q=.false. !whether super saturation and super dry are removed or not
-  namelist /namlst_prtb/ setnorm,alpha,teref,epsq,lonw,lone,lats,latn,adjust_q
+  namelist /namlst_prtb/ setnorm,alpha,teref,epsq,lonw,lone,lats,latn,kmax,adjust_q
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: fact(:,:,:),theta(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
@@ -86,8 +86,12 @@ program addprtb
   allocate( clat(jgrd1), clon(igrd1) )
   
   ips=2
-  it=3
-  iu=it+levs
+  if(nonhyd.eq.1) then
+    it=2+7*levs
+  else
+    it=3
+  end if
+  iu=3+levs
   iv=iu+levs
   iq=iv+levs
 !  icw=iq+2*levs
@@ -193,7 +197,8 @@ program addprtb
   end do
   print*, 'u(full)', maxval(u),minval(u)
   print*, 'v(full)', maxval(v),minval(v)
-  print*, 'theta(full)', maxval(theta),minval(theta)
+  print*, 't(full)', maxval(t),minval(t)
+!  print*, 'theta(full)', maxval(theta),minval(theta)
   print*, 'q(full)', maxval(q),minval(q)
   print*, 'ps(full)', maxval(ps),minval(ps)
   ! perturbation
@@ -212,9 +217,9 @@ program addprtb
   do k=1,kmax
     do j=1,nlat
       do i=1,nlon
-        !t(i,j,k) = t(i,j,k)-real(dfld(i+ilonw-1,j+jlats-1,it+k-1),kind=dp)/fact(i,j,k)
-        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
-        theta(i,j,k) = theta(i,j,k) - t(i,j,k) * (p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
+        t(i,j,k) = t(i,j,k)-dfld(i+ilonw-1,j+jlats-1,it+k-1)
+!        t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+!        theta(i,j,k) = theta(i,j,k) - t(i,j,k) * (p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
 !    dfldp(:,:,it+k-1)=dfldp(:,:,it+k-1)-dfld(:,:,it+k-1)
       end do
     end do
@@ -245,7 +250,8 @@ program addprtb
   end do
   print*, 'u(prtb)', maxval(u),minval(u)
   print*, 'v(prtb)', maxval(v),minval(v)
-  print*, 'theta(prtb)', maxval(theta),minval(theta)
+  print*, 't(prtb)', maxval(t),minval(t)
+!  print*, 'theta(prtb)', maxval(theta),minval(theta)
   print*, 'q(prtb)', maxval(q),minval(q)
   print*, 'ps(prtb)', maxval(ps),minval(ps)
   deallocate( dfld )
@@ -289,7 +295,8 @@ program addprtb
     end if
     print*, 'normalized total energy = ', teref
     ! calculate energy
-    call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
+    !call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
+    call calc_te(u,v,t,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,tecmp)
     te=sum(tecmp)
     print *, tecmp
     print*, 'perturbation total energy = ', te

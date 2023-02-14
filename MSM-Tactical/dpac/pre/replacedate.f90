@@ -11,7 +11,8 @@ program replacedate
   implicit none
   real(kind=sp) :: newfhour=0.0 !new forecast hours
   integer       :: member=10 !ensemble size
-  namelist /namlst_replace/ newfhour,member
+  logical       :: mean=.false.
+  namelist /namlst_replace/ newfhour,member,mean
   ! input files' units (base, prtb)
   character(len=15) :: file_basename='r_.@@@@.LEV.grd'
   character(len=15) :: filename
@@ -40,8 +41,13 @@ program replacedate
 
 !!! get parameters
   filename=file_basename
+  if(mean) then
+    im=1
+  else
+    im=0
+  end if
   write(filename(1:2),'(a2)') 'ri'
-  write(filename(4:7),'(i4.4)') 0
+  write(filename(4:7),'(i4.4)') im
   write(filename(9:11),'(a3)') 'sig'
   call set_rsmparm(filename(1:7))
 !  icld=1
@@ -84,7 +90,7 @@ program replacedate
   print *,'after ', idate(4),idate(2),idate(3),idate(1),'+',nint(newfhour)
 
   ! member
-  do im=0,member
+  do while( im<=member )
     filename=file_basename
     write(filename(1:2),'(a2)') 'ri'
     write(filename(4:7),'(i4.4)') im
@@ -103,11 +109,17 @@ program replacedate
     call write_sig(nosig,label,idate,newfhour,sigh,sig,ext,&
 &                igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfld,mapf,rlat,rlon)
     close(nosig)
+    im=im+1
   end do !im=1,member   
   deallocate( dfld )
   !! surface
   allocate( dfld(igrd1,jgrd1,nfldsfc) )
-  do im=0,member
+  if(mean) then
+    im=1
+  else
+    im=0
+  end if
+  do while (im<=member)
     filename=file_basename
     write(filename(1:2),'(a2)') 'ri'
     write(filename(4:7),'(i4.4)') im
@@ -124,6 +136,7 @@ program replacedate
     open(nosfc,file=filename,form='unformatted',access='sequential',action='write')
     call write_sfc(nosfc,igrd1,jgrd1,dfld,label,idate,newfhour)
     close(nosfc)
+    im=im+1
   end do
   deallocate( dfld )
 end program

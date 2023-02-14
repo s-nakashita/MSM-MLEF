@@ -158,7 +158,7 @@
       !tmps = tmps * 10 !cm->mm
       !tmps = tmps * 0.1 !mm->cm
       !tmps = tmps * 0.01 !mm->m
-      tmps = tmps * 0.0 !no snow
+      !tmps = tmps * 0.0 !no snow
 #ifdef MP
       call sgl2ful(tmps,spec, lngrd)
       endif

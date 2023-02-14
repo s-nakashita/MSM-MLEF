@@ -1,4 +1,4 @@
-program calcte
+program calctegrd
 !
 ! calculate full or perturbation moist total energy
 !
@@ -6,7 +6,7 @@ program calcte
   use phconst_module
   use read_module
   use write_module
-  use norm_module, only: calc_te
+  use norm_module, only: calc_tegrd, calc_teprof
   use func_module, only: ndate
   implicit none
   logical :: lprtb=.true. ! False=>calculate for full field
@@ -14,7 +14,8 @@ program calcte
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 ! calculation region
   integer :: kmax=21 ! upper limit for energy calculation
-  namelist /namlst_prtb/ lprtb, epsq, lonw, lone, lats, latn, kmax
+  logical :: wprof=.true. ! whether write out total energy profile or not
+  namelist /namlst_prtb/ lprtb, epsq, lonw, lone, lats, latn, kmax, wprof
   integer :: ilonw, ilone, jlats, jlatn ! calculation region indexes
   integer :: nlon, nlat
   ! for energy calculation
@@ -22,9 +23,14 @@ program calcte
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: theta(:,:,:),fact(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
-  real(kind=dp) :: area,te(4),coef
+  real(kind=dp) :: area,coef
+  real(kind=dp), allocatable :: tegrd(:,:,:,:)
+  real(kind=dp), allocatable :: vwgt(:), teprof(:,:)
+  real(kind=sp), allocatable :: buf4(:,:)
+  integer :: irec
   integer :: ips,it,iu,iv,iq
-  character(len=6) :: ofile='te.dat'
+  character(len=10) :: ofile='teprof.dat'
+  character(len=6) :: ogfile='te.grd'
   ! input files' units (initial, plus 1 for 12h forecast)
   integer, parameter :: nisig=11, nisfc=21, niflx=31
   integer            :: nsig,     nsfc,     nflx
@@ -272,12 +278,51 @@ program calcte
 !  do k=1,10
 !    print *, u(:,67,k)
 !  end do
-  ! calculate energy
-  !call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te)
-  call calc_te(u,v,t,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te)
-  open(55,file=ofile)
-  write(55,'(A1,A12,4A13)') '#','ke','pe(t)','lh','pe(ps)','sum'
-  write(55,'(5F13.5)') te(1),te(2),te(3),te(4),sum(te)
+  ! calculate energy for each grid
+  allocate( tegrd(nlon,nlat,kmax,4) )
+!  call calc_tegrd(u,v,theta,q,ps,epsq,clat(jlats:jlatn),&
+  call calc_tegrd(u,v,t,q,ps,epsq,clat(jlats:jlatn),&
+          si,nlon,nlat,kmax,tegrd)
+  allocate( buf4(nlon,nlat) )
+  open(55,file=ogfile,form='unformatted',access='direct',recl=4*nlon*nlat)
+  irec=1
+  !pe(ps)
+  buf4 = real(tegrd(:,:,1,4),kind=sp)
+  write(55,rec=irec) buf4
+  irec=irec+1
+  !ke
+  do k=1,kmax
+    buf4 = real(tegrd(:,:,k,1),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
+  end do
+  !pe(t)
+  do k=1,kmax
+    buf4 = real(tegrd(:,:,k,2),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
+  end do
+  !lh
+  do k=1,kmax
+    buf4 = real(tegrd(:,:,k,3),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
+  end do
   close(55)
+  if(wprof) then
+    open(55,file=ofile)
+    allocate( vwgt(kmax), teprof(kmax,4) )
+    teprof(:,:) = 0.0d0
+!    call calc_teprof(u,v,theta,q,ps,epsq,clat(jlats:jlatn),&
+    call calc_teprof(u,v,t,q,ps,epsq,clat(jlats:jlatn),&
+            si,nlon,nlat,kmax,vwgt,teprof)
+    write(55,'(A1,A12,5A13)') '#','vwgt','ke','pe(t)','lh','pe(ps)','sum'
+    do k=1,kmax
+      write(55,'(6F13.5)') vwgt(k),&
+        teprof(k,1),teprof(k,2),teprof(k,3),teprof(k,4),sum(teprof(k,:))
+    end do
+    close(55)
+    deallocate( vwgt, teprof )
+  end if
   deallocate( dfld,u,v,t,q,ps,theta,fact ) 
 end program

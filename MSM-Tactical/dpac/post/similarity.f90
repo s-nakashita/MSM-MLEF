@@ -13,16 +13,15 @@ program similarity
   real(kind=dp) :: epsq=1.0d0 ! weight for moist term
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 ! calculation region
+  integer :: kmax=21 ! upper limit for energy calculation
   logical :: lmonit=.false.
-  namelist /namlst_siml/ nens, epsq, lonw, lone, lats, latn, lmonit
+  namelist /namlst_siml/ nens, epsq, lonw, lone, lats, latn, kmax, lmonit
   integer :: ilonw, ilone, jlats, jlatn ! calculation region indexes
   integer :: nlon, nlat
   character(len=10),parameter :: file_basename='r_sig.@@@@'
   character(len=10) :: filename
   ! for energy calculation
   integer :: m1, m2 !member index
-  integer, parameter :: kmax=21
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp), parameter :: p0=1000.0d2, ptheta=rd/cp ! potential temperature
   real(kind=dp), allocatable :: u1(:,:,:),v1(:,:,:),t1(:,:,:),q1(:,:,:)
   real(kind=dp), allocatable :: theta1(:,:,:)
@@ -208,7 +207,8 @@ program similarity
     if(lmonit) call monitor(u1,v1,theta1,q1,ps1)
 
     ! calculate energy
-    call calc_te2(u1,u1,v1,v1,theta1,theta1,q1,q1,ps1,ps1,epsq,clat(jlats:jlatn),si,nlon,nlat,te1)
+    call calc_te2(u1,u1,v1,v1,theta1,theta1,q1,q1,ps1,ps1,&
+            epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te1)
     print *, m1, 'te ', sum(te1)
     do m2=m1,nens
       te2(:)=0.0d0
@@ -259,13 +259,15 @@ program similarity
       if(lmonit) call monitor(u2,v2,theta2,q2,ps2)
 
       ! calculate energy
-      call calc_te2(u2,u2,v2,v2,theta2,theta2,q2,q2,ps2,ps2,epsq,clat(jlats:jlatn),si,nlon,nlat,te2)
+      call calc_te2(u2,u2,v2,v2,theta2,theta2,q2,q2,ps2,ps2,&
+              epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te2)
       print *, m2, 'te ', sum(te2)
 
       ! cross
       te12(:)=0.0d0
       ! calculate energy
-      call calc_te2(u1,u2,v1,v2,theta1,theta2,q1,q2,ps1,ps2,epsq,clat(jlats:jlatn),si,nlon,nlat,te12)
+      call calc_te2(u1,u2,v1,v2,theta1,theta2,q1,q2,ps1,ps2,&
+              epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te12)
       print *, m1, m2, 'te ', sum(te12)
       simli(m1,m2) = sum(te12)/sqrt(sum(te1))/sqrt(sum(te2))
     end do !m2

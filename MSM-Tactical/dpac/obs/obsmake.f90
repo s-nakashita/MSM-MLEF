@@ -32,15 +32,18 @@ program obsmake
   integer :: kint=1 ! level interval
   real(kind=dp) :: dist_obs_upper=300.0d3 ! distance between 2 upper stations
   real(kind=dp) :: dist_obs_synop=60.0d3 ! distance between 2 synop stations
+  logical :: stationin=.false. ! whether locations of observation are given by station_fname or not
+  character(filelenmax) :: station_fname(nobsfilemax) = 'sta'
   namelist /param_obsmake/ atime, lmin, rmin, &
-          ibuf, jbuf, kint, dist_obs_upper, dist_obs_synop
+          ibuf, jbuf, kint, dist_obs_upper, dist_obs_synop, &
+          stationin, station_fname
 
   type(obstype), allocatable :: obs(:)
   character(len=filelenmax) :: guesf
   real(kind=dp),allocatable :: gues3dc(:,:,:,:)[:]  !control
   real(kind=dp),allocatable :: gues2dc(:,:,:)[:]    !control
   real(kind=dp) :: dist_obs,clon1,clat1,dist1
-  integer :: ilon,ilat,ielm,ilev,iof
+  integer :: ilon,ilat,ielm,ilev,iof,ios,ij
   integer :: nobsmake,nelm,nlayer,n0,n1
   integer,dimension(nobstype) :: elemiduse
 ! timer
@@ -137,57 +140,91 @@ program obsmake
     end if
     if(nelm==0) cycle
     print *, trim(datatype(iof)),' elem ',elemiduse(1:nelm)
-    nobsmake=0
-    do ilat=1+jbuf,nlat-jbuf
-      if(nobsmake>0) then
-        call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
-        if(dist1.lt.dist_obs) cycle
-      endif
-      clat1=rlat(ilat)
-      do ilon=1+ibuf,nlon-ibuf
-        if(ilon.gt.1+ibuf) then
-          call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
-          if(dist1.lt.dist_obs) cycle
-        end if
+    if(stationin) then
+      open(10,file=trim(station_fname(iof)))
+      nobsmake=0
+      do
+        read(10,'(2f6.2)',iostat=ios) clon1,clat1
+        if(ios/=0) exit
         nobsmake=nobsmake+1
-        clon1=rlon(ilon)
-        clat1=rlat(ilat)
       end do
-    end do
-    print *, trim(datatype(iof))//' #obs ',nobsmake*nelm*nlayer
-    obs(iof)%nobs = nobsmake*nelm*nlayer
-    call obsin_allocate(obs(iof))
-
-    !! set stations and elemend ID
-    nobsmake=0
-    do ielm=1,nelm
-      do ilev=1,nlayer
-        n0=nobsmake
-        do ilat=1+jbuf,nlat-jbuf
-          if(nobsmake.gt.n0) then
-            call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
-            if(dist1.lt.dist_obs) cycle
-          endif
-          clat1=rlat(ilat)
-          do ilon=1+ibuf,nlon-ibuf
-            if(ilon.gt.1+ibuf) then
-              call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
-              if(dist1.lt.dist_obs) cycle
-            end if
+      print *, trim(datatype(iof))//' #obs ',nobsmake*nelm*nlayer
+      obs(iof)%nobs = nobsmake*nelm*nlayer
+      call obsin_allocate(obs(iof))
+      !! set stations and elemend ID
+      nobsmake=0
+      do ielm=1,nelm
+        do ilev=1,nlayer
+          rewind(10)
+          n0=nobsmake
+          do
+            read(10,'(2f6.2)',iostat=ios) clon1, clat1
+            if(ios/=0) exit
             nobsmake=nobsmake+1
-            clon1=rlon(ilon)
-            clat1=rlat(ilat)
             obs(iof)%elem(nobsmake)=elemiduse(ielm)
             obs(iof)%lon(nobsmake)=clon1
             obs(iof)%lat(nobsmake)=clat1
             obs(iof)%lev(nobsmake)=real((ilev-1)*kint+1,kind=dp)
-          end do ![ilon]
-        end do ![ilat]
+          end do ![read(10)]
 !        print *, 'obslon=',obs(iof)%lon(n0+1:nobsmake)
 !        print *, 'obslat=',obs(iof)%lat(n0+1:nobsmake)
 !        print *, 'obslev=',obs(iof)%lev(n0+1:nobsmake)
-      end do ![ilev=1,nlayer]
-    end do ![ielm=1,nelm]
+        end do ![ilev=1,nlayer]
+      end do ![ielm=1,nelm]
+      
+    else
+      nobsmake=0
+      do ilat=1+jbuf,nlat-jbuf
+        if(nobsmake>0) then
+          call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
+          if(dist1.lt.dist_obs) cycle
+        endif
+        clat1=rlat(ilat)
+        do ilon=1+ibuf,nlon-ibuf
+          if(ilon.gt.1+ibuf) then
+            call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
+            if(dist1.lt.dist_obs) cycle
+          end if
+          nobsmake=nobsmake+1
+          clon1=rlon(ilon)
+          clat1=rlat(ilat)
+        end do
+      end do
+      print *, trim(datatype(iof))//' #obs ',nobsmake*nelm*nlayer
+      obs(iof)%nobs = nobsmake*nelm*nlayer
+      call obsin_allocate(obs(iof))
+
+      !! set stations and elemend ID
+      nobsmake=0
+      do ielm=1,nelm
+        do ilev=1,nlayer
+          n0=nobsmake
+          do ilat=1+jbuf,nlat-jbuf
+            if(nobsmake.gt.n0) then
+              call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
+              if(dist1.lt.dist_obs) cycle
+            endif
+            clat1=rlat(ilat)
+            do ilon=1+ibuf,nlon-ibuf
+              if(ilon.gt.1+ibuf) then
+                call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
+                if(dist1.lt.dist_obs) cycle
+              end if
+              nobsmake=nobsmake+1
+              clon1=rlon(ilon)
+              clat1=rlat(ilat)
+              obs(iof)%elem(nobsmake)=elemiduse(ielm)
+              obs(iof)%lon(nobsmake)=clon1
+              obs(iof)%lat(nobsmake)=clat1
+              obs(iof)%lev(nobsmake)=real((ilev-1)*kint+1,kind=dp)
+            end do ![ilon]
+          end do ![ilat]
+!        print *, 'obslon=',obs(iof)%lon(n0+1:nobsmake)
+!        print *, 'obslat=',obs(iof)%lat(n0+1:nobsmake)
+!        print *, 'obslev=',obs(iof)%lev(n0+1:nobsmake)
+        end do ![ilev=1,nlayer]
+      end do ![ielm=1,nelm]
+    end if
   end do ![iof=1,obsin_num]
   sync all
 !! simulate observation

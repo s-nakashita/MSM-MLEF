@@ -4,6 +4,7 @@
 #
 set -x
 CYCLE=${1}
+MEAN=${2}
 IDATE=${SDATE0:-2022083000} #cycle start
 IRES=${IRES:-9}
 INCCYCLE=${INCCYCLE:-6}
@@ -46,9 +47,11 @@ fh=`printf '%0.2d' $h`
 hold=`expr $h + $fhbase`
 fhold=`printf '%0.2d' $hold`
 rm -f fort.*
+if [ $MEAN != T ]; then
 # control
 ln -s $BASEDIR/r_sig.f$fhold ri.0000.sig.grd
 ln -s $BASEDIR/r_sfc.f$fhold ri.0000.sfc.grd
+fi
 # member
 MEM=1
 while [ $MEM -le $MEMBER ]; do
@@ -69,6 +72,7 @@ cat <<EOF >namelist
 &namlst_replace
  newfhour=0.0,
  member=${MEMBER},
+ mean=${MEAN},
 &end
 EOF
 else
@@ -76,12 +80,15 @@ cat <<EOF >namelist
 &namlst_replace
  newfhour=${h}.0,
  member=${MEMBER},
+ mean=${MEAN},
 &end
 EOF
 fi
 ./${EXEC} < namelist #2>/dev/null
+if [ $MEAN != T ]; then
 mv ro.0000.sig.grd $RUNDIR/${HEADDA}000/rb_sigf$fh
 mv ro.0000.sfc.grd $RUNDIR/${HEADDA}000/rb_sfcf$fh
+fi
 MEM=1
 while [ $MEM -le $MEMBER ]; do
 PMEM=`printf '%0.3d' $MEM` #prtb member

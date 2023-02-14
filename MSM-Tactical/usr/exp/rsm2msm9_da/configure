@@ -64,7 +64,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=2
-export CYCLEMAX=2
+export CYCLEMAX=5
 export DASTART=2
 export INCCYCLE=6 # cycle interval
 export ENDHOUR=6 # forecast length
@@ -82,7 +82,7 @@ export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-export RUNFCST=no # debug
+#export RUNFCST=no # debug
 
 # Ensemble size
 export MEMBER=40
@@ -100,6 +100,7 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 export HEAD=$head
 # DA option
 export OSSE=T
+export OBSDIST=grid # observation distribution
 export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
@@ -118,9 +119,9 @@ export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=1
-export HLOC=300 #km
-export VLOC=3   #*0.1ln p
+export MAXITER=3
+export HLOC=200 #km
+export VLOC=4   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
 export RTPS=90 #%
@@ -129,7 +130,7 @@ export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${BP}${PREP}
 if [ $OSSE = T ];then
-  head2=${head2}.siml${MEMBER}.replbase
+  head2=${head2}.siml${MEMBER}.${OBSDIST}
 fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
@@ -142,6 +143,9 @@ if [ $DA_FIXED_LEVEL = T ];then
 fi
 if [ $DA_SCL_MEM = T ];then
   head2=${head2}.scl
+fi
+if [ $DA_MEAN = T ];then
+  head2=${head2}.mean
 fi
 DA_INFL=
 if [ $MINFL -gt 0 ];then

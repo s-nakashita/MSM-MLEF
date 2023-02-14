@@ -1,4 +1,4 @@
-program calcte
+program calctesprd
 !
 ! calculate full or perturbation moist total energy
 !
@@ -6,15 +6,19 @@ program calcte
   use phconst_module
   use read_module
   use write_module
-  use norm_module, only: calc_te
+  use norm_module, only: calc_tegrd, calc_teprof
   use func_module, only: ndate
   implicit none
-  logical :: lprtb=.true. ! False=>calculate for full field
+  ! ensemble size
+  integer :: nens=10
+  character(len=10),parameter :: file_basename='r_LEV.@@@@'
+  character(len=10) :: filename
   real(kind=dp) :: epsq=1.0d0 ! weight for moist term
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region
   real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 ! calculation region
   integer :: kmax=21 ! upper limit for energy calculation
-  namelist /namlst_prtb/ lprtb, epsq, lonw, lone, lats, latn, kmax
+  logical :: wprof=.true. ! whether write out total energy profile or not
+  namelist /namlst_prtb/ nens, epsq, lonw, lone, lats, latn, kmax, wprof
   integer :: ilonw, ilone, jlats, jlatn ! calculation region indexes
   integer :: nlon, nlat
   ! for energy calculation
@@ -22,9 +26,17 @@ program calcte
   real(kind=dp), allocatable :: u(:,:,:),v(:,:,:),t(:,:,:),q(:,:,:)
   real(kind=dp), allocatable :: theta(:,:,:),fact(:,:,:)
   real(kind=dp), allocatable :: ps(:,:)
-  real(kind=dp) :: area,te(4),coef
+  real(kind=dp), allocatable :: up(:,:,:),vp(:,:,:),tp(:,:,:),qp(:,:,:)
+  real(kind=dp), allocatable :: thp(:,:,:)
+  real(kind=dp), allocatable :: psp(:,:)
+  real(kind=dp) :: area,coef
+  real(kind=dp), allocatable :: tegrd(:,:,:,:), tesprd(:,:,:,:)
+  real(kind=dp), allocatable :: vwgt(:), teprof(:,:), teprofs(:,:)
+  real(kind=sp), allocatable :: buf4(:,:)
+  integer :: irec
   integer :: ips,it,iu,iv,iq
-  character(len=6) :: ofile='te.dat'
+  character(len=10) :: ofile='teprof.dat'
+  character(len=6) :: ogfile='te.grd'
   ! input files' units (initial, plus 1 for 12h forecast)
   integer, parameter :: nisig=11, nisfc=21, niflx=31
   integer            :: nsig,     nsfc,     nflx
@@ -46,10 +58,15 @@ program calcte
   read(5,namlst_prtb)
   write(6,namlst_prtb)
   
-!!! sigma files (r_sig.fNN)
+  nsig=nisig
+  filename=file_basename
+  write(filename(3:5),'(a3)') 'sig'
+  write(filename(7:10),'(a4)') 'mean'
+  write(6,*) 'open file ',filename
+  open(nsig,file=filename,access='sequential',form='unformatted',action='read')
   ! headers are assumed to be identical for all initial time
   icld=1
-  call read_header(nisig,icld,label,idate,fhour,si,sl,ext,nfldsig)
+  call read_header(nsig,icld,label,idate,fhour,si,sl,ext,nfldsig)
   print*, label
   print*, idate
   print*, fhour
@@ -92,10 +109,10 @@ program calcte
   iu=3+levs
   iv=iu+levs
   iq=iv+levs
-  ! 0h forecast (analysis)
-  nsig=nisig
+  ! mean
 !  call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,fhour,sl,dfld,mapf,clat,clon)
   call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,0.0,sl,dfld,mapf,clat,clon)
+  close(nsig)
   !! setting boundaries
   if ((lonw.gt.-999.9d0).and.(lone.gt.-999.9d0)) then
     do i=1,igrd1
@@ -195,89 +212,150 @@ program calcte
   end do
   print *, 'ps(full,max)', maxval(ps(:,:)),maxloc(ps(:,:))
   print *, 'ps(full,min)', minval(ps(:,:)),minloc(ps(:,:))
-  if(lprtb) then
-  ! 12h forecast
-  nsig=nisig+1
-  !! consistency check
-  call read_header(nsig,icld,label,idate2,fhour2,si,sl,ext,nfldsig)
-  dtmin=nint(fhour2)*60
-  date1(1)=idate2(4)
-  date1(2)=idate2(2)
-  date1(3)=idate2(3)
-  date1(4)=idate2(1)
-  date1(5)=0
-  call ndate(date1,dtmin,date2)
-  idate2(4)=date2(1)
-  idate2(2)=date2(2)
-  idate2(3)=date2(3)
-  idate2(1)=date2(4)
-  iymdh2 = idate2(4)*1000000+idate2(2)*10000+idate2(3)*100+idate2(1)
-  if (iymdh.ne.iymdh2) then
-    print *, 'valid dates are different, ',iymdh,' ',iymdh2
-    stop 99
-  end if
+
+  allocate( up(nlon,nlat,kmax),vp(nlon,nlat,kmax) )
+  allocate( tp(nlon,nlat,kmax),qp(nlon,nlat,kmax) )
+  allocate( thp(nlon,nlat,kmax) )
+  allocate( psp(nlon,nlat) )
+  allocate( tegrd(nlon,nlat,kmax,4),tesprd(nlon,nlat,kmax,4) )
+  allocate( vwgt(kmax), teprof(kmax,4), teprofs(kmax,4) )
+  up=0.0d0
+  vp=0.0d0
+  tp=0.0d0
+  qp=0.0d0
+  psp=0.0d0
+  tesprd=0.0d0
+  teprofs=0.0d0
+  do n=1,nens
+    filename=file_basename
+    write(filename(3:5),'(a3)') 'sig'
+    write(filename(7:10),'(i4.4)') n
+    write(6,*) 'open file ',filename
+    open(nsig,file=filename,access='sequential',form='unformatted',action='read')
+    !! consistency check
+    call read_header(nsig,icld,label,idate2,fhour2,si,sl,ext,nfldsig)
+    dtmin=nint(fhour2)*60
+    date1(1)=idate2(4)
+    date1(2)=idate2(2)
+    date1(3)=idate2(3)
+    date1(4)=idate2(1)
+    date1(5)=0
+    call ndate(date1,dtmin,date2)
+    idate2(4)=date2(1)
+    idate2(2)=date2(2)
+    idate2(3)=date2(3)
+    idate2(1)=date2(4)
+    iymdh2 = idate2(4)*1000000+idate2(2)*10000+idate2(3)*100+idate2(1)
+    if (iymdh.ne.iymdh2) then
+      print *, 'valid dates are different, ',iymdh,' ',iymdh2
+      stop 99
+    end if
 !  call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,fhour,sl,dfld,mapf,clat,clon)
-  call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,0.0,sl,dfld,mapf,clat,clon)
-  do j=1,nlat
-    do i=1,nlon
-     ps(i,j)=ps(i,j)-dfld(i+ilonw-1,j+jlats-1,ips)
-    end do
-  end do
-  do k=1,kmax
+    call read_sig(nsig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,0.0,sl,dfld,mapf,clat,clon)
+    close(nsig)
+    print*, n, maxval(dfld(:,:,3)),minval(dfld(:,:,3))
     do j=1,nlat
       do i=1,nlon
-        t(i,j,k) = t(i,j,k)-dfld(i+ilonw-1,j+jlats-1,it+k-1)
-        !t(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
-        !theta(i,j,k) = theta(i,j,k) - t(i,j,k)*(p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
+       psp(i,j)=ps(i,j)-dfld(i+ilonw-1,j+jlats-1,ips)
       end do
     end do
-  end do
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        u(i,j,k) = u(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iu+k-1)
+    do k=1,kmax
+      do j=1,nlat
+        do i=1,nlon
+          tp(i,j,k) = t(i,j,k)-dfld(i+ilonw-1,j+jlats-1,it+k-1)
+          !tp(i,j,k) = dfld(i+ilonw-1,j+jlats-1,it+k-1)
+          !thp(i,j,k) = theta(i,j,k) &
+          !        - tp(i,j,k)*(p0/dfld(i+ilonw-1,j+jlats-1,ips)/sl(k))**ptheta
+        end do
       end do
     end do
-  end do
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        v(i,j,k) = v(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iv+k-1)
+    do k=1,kmax
+      do j=1,nlat
+        do i=1,nlon
+          up(i,j,k) = u(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iu+k-1)
+        end do
       end do
     end do
-  end do
-  do k=1,kmax
-    do j=1,nlat
-      do i=1,nlon
-        q(i,j,k) = q(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iq+k-1)
+    do k=1,kmax
+      do j=1,nlat
+        do i=1,nlon
+          vp(i,j,k) = v(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iv+k-1)
+        end do
       end do
     end do
+    do k=1,kmax
+      do j=1,nlat
+        do i=1,nlon
+          qp(i,j,k) = q(i,j,k)-dfld(i+ilonw-1,j+jlats-1,iq+k-1)
+        end do
+      end do
+    end do
+    print *, 'member=',n
+    do k=1,kmax
+      print*, k
+      print *, 'u(prtb,max)', maxval(up(:,:,k)),maxloc(up(:,:,k))
+      print *, 'u(prtb,min)', minval(up(:,:,k)),minloc(up(:,:,k))
+      print *, 'v(prtb,max)', maxval(vp(:,:,k)),maxloc(vp(:,:,k))
+      print *, 'v(prtb,min)', minval(vp(:,:,k)),minloc(vp(:,:,k))
+      print *, 't(prtb,max)', maxval(tp(:,:,k)),maxloc(tp(:,:,k))
+      print *, 't(prtb,min)', minval(tp(:,:,k)),minloc(tp(:,:,k))
+!      print *, 'th(prtb,max)', maxval(thp(:,:,k)),maxloc(thp(:,:,k))
+!      print *, 'th(prtb,min)', minval(thp(:,:,k)),minloc(thp(:,:,k))
+      print *, 'q(prtb,max)', maxval(qp(:,:,k)),maxloc(qp(:,:,k))
+      print *, 'q(prtb,min)', minval(qp(:,:,k)),minloc(qp(:,:,k))
+    end do
+    print *, 'ps(prtb,max)', maxval(psp(:,:)),maxloc(psp(:,:))
+    print *, 'ps(prtb,min)', minval(psp(:,:)),minloc(psp(:,:))
+    ! calculate energy for each grid
+!    call calc_tegrd(up,vp,thp,qp,psp,epsq,clat(jlats:jlatn),&
+    call calc_tegrd(up,vp,tp,qp,psp,epsq,clat(jlats:jlatn),&
+            si,nlon,nlat,kmax,tegrd)
+    tesprd = tesprd + tegrd
+    if(wprof) then
+      teprof(:,:) = 0.0d0
+!      call calc_teprof(up,vp,thp,qp,psp,epsq,clat(jlats:jlatn),&
+      call calc_teprof(up,vp,tp,qp,psp,epsq,clat(jlats:jlatn),&
+            si,nlon,nlat,kmax,vwgt,teprof)
+      teprofs = teprofs + teprof
+    end if
   end do
+  tesprd = tesprd / real(nens-1,kind=dp)
+  teprofs = teprofs / real(nens-1,kind=dp)
+  allocate( buf4(nlon,nlat) )
+  open(55,file=ogfile,form='unformatted',access='direct',recl=4*nlon*nlat)
+  irec=1
+  !pe(ps)
+  buf4 = real(tesprd(:,:,1,4),kind=sp)
+  write(55,rec=irec) buf4
+  irec=irec+1
+  !ke
   do k=1,kmax
-    print*, k
-    print *, 'u(prtb,max)', maxval(u(:,:,k)),maxloc(u(:,:,k))
-    print *, 'u(prtb,min)', minval(u(:,:,k)),minloc(u(:,:,k))
-    print *, 'v(prtb,max)', maxval(v(:,:,k)),maxloc(v(:,:,k))
-    print *, 'v(prtb,min)', minval(v(:,:,k)),minloc(v(:,:,k))
-    print *, 't(prtb,max)', maxval(t(:,:,k)),maxloc(t(:,:,k))
-    print *, 't(prtb,min)', minval(t(:,:,k)),minloc(t(:,:,k))
-!    print *, 'th(prtb,max)', maxval(theta(:,:,k)),maxloc(theta(:,:,k))
-!    print *, 'th(prtb,min)', minval(theta(:,:,k)),minloc(theta(:,:,k))
-    print *, 'q(prtb,max)', maxval(q(:,:,k)),maxloc(q(:,:,k))
-    print *, 'q(prtb,min)', minval(q(:,:,k)),minloc(q(:,:,k))
+    buf4 = real(tesprd(:,:,k,1),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
   end do
-  print *, 'ps(prtb,max)', maxval(ps(:,:)),maxloc(ps(:,:))
-  print *, 'ps(prtb,min)', minval(ps(:,:)),minloc(ps(:,:))
-  end if
-!  do k=1,10
-!    print *, u(:,67,k)
-!  end do
-  ! calculate energy
-  !call calc_te(u,v,theta,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te)
-  call calc_te(u,v,t,q,ps,epsq,clat(jlats:jlatn),si,nlon,nlat,kmax,te)
-  open(55,file=ofile)
-  write(55,'(A1,A12,4A13)') '#','ke','pe(t)','lh','pe(ps)','sum'
-  write(55,'(5F13.5)') te(1),te(2),te(3),te(4),sum(te)
+  !pe(t)
+  do k=1,kmax
+    buf4 = real(tesprd(:,:,k,2),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
+  end do
+  !lh
+  do k=1,kmax
+    buf4 = real(tesprd(:,:,k,3),kind=sp)
+    write(55,rec=irec) buf4
+    irec=irec+1
+  end do
   close(55)
+  if(wprof) then
+    open(55,file=ofile)
+    write(55,'(A1,A12,5A13)') '#','vwgt','ke','pe(t)','lh','pe(ps)','sum'
+    do k=1,kmax
+      write(55,'(6F13.5)') vwgt(k),&
+        teprofs(k,1),teprofs(k,2),teprofs(k,3),teprofs(k,4),sum(teprofs(k,:))
+    end do
+    close(55)
+    deallocate( vwgt, teprof, teprofs )
+  end if
   deallocate( dfld,u,v,t,q,ps,theta,fact ) 
 end program

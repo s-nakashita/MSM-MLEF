@@ -15,6 +15,7 @@ fhour=${INCCYCLE:-0}
 ires=${IRES:-27}
 # observation settings
 osse=${OSSE:-F}
+obsdist=${OBSDIST}
 tmem=${TMEM:-0}
 single=${SINGLEOBS:-F}
 lats=${DA_SINGLE_LATS}
@@ -144,8 +145,8 @@ else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
 if [ $osse = T ];then
-obsf=upper${prep}.siml.${sdate}-${edate}
-obsf2=surf.siml.${sdate}-${edate}
+obsf=upper${prep}.siml.${obsdist}.${sdate}-${edate}
+obsf2=surf.siml.${obsdist}.${sdate}-${edate}
 else
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
@@ -217,7 +218,7 @@ cat <<EOF >lmlef.nml
  oma_monit=T,
  obsgues_output=T,
  obsanal_output=T,
- debug_time=T,
+ debug_time=,
 &end
 EOF
 #cat lmlef.nml
@@ -227,6 +228,7 @@ rm -f ${obsf}.dat ${obsf2}.dat
 ln -s ${obsdir}/${adate}/${obsf}.dat .
 ln -s ${obsdir}/${adate}/${obsf2}.dat .
 rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
+if [ $mean != T ]; then
 if [ $cycleda -eq 1 ];then
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/r_sfc.f$fh gues.0000.sfc.grd
@@ -238,6 +240,7 @@ ln -s ${guesdir}/${pdate}/${head}000/r_flx.f$fh gues.0000.flx.grd
 fi
 if [ $obsda_in = T ];then
 ln -s ${obsdir}/${pdate}/${obsextf}.0000.dat .
+fi
 fi
 if [ -f ${guesdir}/${pdate}/infl.grd ];then
   ln -s ${guesdir}/${pdate}/infl.grd .
@@ -290,7 +293,12 @@ done
 ## post process
 ### write GrADS files
 for vtype in gues anal;do
-for emem in ctrl mean sprd;do
+if [ $mean = T ]; then
+  emems="mean sprd"
+else
+  emems="ctrl mean sprd"
+fi
+for emem in $emems;do
 if [ $emem = ctrl ];then
 in=${vtype}.0000.sig.grd
 else
@@ -375,6 +383,7 @@ EOF
   done
 fi
 ### prepare forecast initial files
+if [ $mean != T ]; then
 if [ -d ${head_da}000 ]; then
   rm -rf ${head_da}000
 fi
@@ -416,6 +425,7 @@ cp r_sig.f00 r_sigi
 cp r_sig.f00 r_sigitdt
 cp r_sfc.f00 r_sfci
 cd $wdir
+fi
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
@@ -469,6 +479,15 @@ mv anal.${emem}.sig.grd ${head_da}${emem}/r_sig.f00
 mv anal.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f00
 mv anal.${emem}.bin ${head_da}${emem}/
 mv anal.${emem}.ctl ${head_da}${emem}/
+if [ $mean = T ] && [ $emem = mean ]; then
+if [ $relax_spread_out = T ];then
+mv rtps.* ${head_da}${emem}/
+fi
+if [ $save_info = T ];then
+mv dainfo.* ${head_da}${emem}/
+mv ewgt.ctl ${head_da}${emem}/
+fi
+fi
 done
 rm gues.*.grd
 if [ $obsda_in = T ];then
