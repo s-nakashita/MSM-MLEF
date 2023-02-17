@@ -209,8 +209,8 @@ elif [ $MACHINE = mac_gfortran ]; then
    export F_COMP_FCST90=gfortran
    export F_COMP_FCST90=mpif90
 # ---- without mcmodel ----
-   export F_FLAG_FCST='-Wall -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
-   export F_LINK_FCST='-Wall -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
+   export F_FLAG_FCST='-fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
+   export F_LINK_FCST='-fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
 # ---- with mcmodel ----
 #  export F_FLAG_FCST='-O3 -fdefault-real-8 -mcmodel=large -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
 #  export F_LINK_FCST='-O3 -fdefault-real-8 -mcmodel=large -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'

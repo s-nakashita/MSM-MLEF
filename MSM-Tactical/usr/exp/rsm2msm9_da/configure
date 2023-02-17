@@ -7,6 +7,7 @@ export DISK=` cd ../../.. ; pwd `                 #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
 export WORKUSR=$DISK/usr/work
+export WORKBASE=$HOME/mnt/methane/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
@@ -17,7 +18,8 @@ else
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export BASEDIR0=$WORKUSR/rsm2rsm27_da
+#export BASEDIR0=$WORKBASE/rsm2rsm27_da
+export BASEDIR0=$WORKUSR/gfsp2rsm27
 export IRES=9
 
 # --------------- compile options ----------------
@@ -84,12 +86,12 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=0
 # BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=wbp
+export BP=
 export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #if [ do$QADJ = doyes ];then #q adjustment
@@ -165,9 +167,22 @@ export  RCENLAT=29.0
 export  RCENLON=120.0
 export  RLFTGRD=45.0
 export  RBTMGRD=53.0
-# d01 domain 70E-170W 22S-65N
-export  CIGRD=324
-export  CJGRD=288
+## d01 domain 70E-170W 22S-65N
+#export  CIGRD=324
+#export  CJGRD=288
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=133.
+#export  CBTMGRD=121.
+## base field from running RSM 
+export  CIGRD=384 
+export  CJGRD=324
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
@@ -176,8 +191,8 @@ export  CDELX=27000.
 export  CDELY=27000.
 export  CCENLAT=23.5
 export  CCENLON=120.0
-export  CLFTGRD=133.
-export  CBTMGRD=121.
+export  CLFTGRD=163.
+export  CBTMGRD=139.
 
 #
 # load default configure file

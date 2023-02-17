@@ -7,22 +7,22 @@ export DISK=$HOME/Development/grmsm/MSM-Tactical   #working top directory
 export DISKSYS=$DISK/sys
 export DISKUSR=$DISK/usr
 export WORKUSR=$DISK/usr/work
+export WORKBASE=$HOME/mnt/methane/work
 export WORK=` pwd `                            #working directory
 export EXPN=` basename $WORK `                 #experimental subdirectory
 if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
    #export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_nomad
+   export TEMP=$WORKUSR/${EXPN}
    mkdir -p $TEMP
 fi
-export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
+export BASEDIR=$WORKBASE/DATA/gfs/$SDATE
 #export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
 
-export RDA=yes            # use RDA historical data
+export RDA=no            # use RDA historical data
 if [ $RDA = yes ];then
-export TEMP=$WORKUSR/${EXPN}_rda
-export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
+export BASEDIR=$WORKBASE/DATA/gfs/rda/$SDATE
 fi
 # --------------- machine/compile options ----------------
 # compile options with machine dependent can be

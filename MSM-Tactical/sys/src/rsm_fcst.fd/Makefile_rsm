@@ -89,12 +89,19 @@ SRCS = ${OBJS:.o=.F}
 all: model-rmpi
 
 model-rmpi: ${OBJS}
-	${F90} ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${W3LB} ${LIBS}
+	${F90} -O3 ${FORT_FLAGS} -o ${EXEC} ${OBJS} ${W3LB} ${LIBS}
 
 clean:
 	rm -f *.o *.$(F_SUBF) *.mod core
 
 .SUFFIXES : .o .$(F_SUBF) .F
+
+rloopsp.o : rloopsp.f90
+	${F90} -O0 ${FORT_FLAGS} -c $<
+rgetcon_mrg.o : rgetcon_mrg.f90
+	${F90} -O2 ${FORT_FLAGS} -c $<
+rsmkenprof.o : rsmkenprof.f90
+	${F90} -O2 ${FORT_FLAGS} -c $<
 
 .F.$(F_SUBF) : *.h
 	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
@@ -103,14 +110,14 @@ clean:
 .F.o : *.h
 	${CPP} -P ${INCLUDE_DIR} $*.F >$*.i
 	sed '/^ *$$/d' $*.i >$*.$(F_SUBF) ; rm $*.i
-	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+	${F90} -O3 ${FORT_FLAGS} -c $*.$(F_SUBF)
 
 #.F.o : *.h
 #	cp $*.F $*.$(F_SUBF)
 #	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF) 
 
 .$(F_SUBF).o : *.h
-	${F90} ${FORT_FLAGS} -c $*.$(F_SUBF)
+	${F90} -O3 ${FORT_FLAGS} -c $*.$(F_SUBF)
 
 #
 # *****************************************************************

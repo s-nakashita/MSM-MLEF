@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 set -x
-export SDATE=${SDATE:-2022061018}
+export SDATE=${SDATE:-2022061812}
 
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
@@ -10,5 +10,5 @@ echo $HEAD $HEAD2
 #exit
 #
 #export RUNENV='mpiexec -s all -n '${NPES}
- export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}
+ export RUNENV='mpiexec --oversubscribe -n '${NPES}
 $JSHDIR/rsm_ensda.sh  
