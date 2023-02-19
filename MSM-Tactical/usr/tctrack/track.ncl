@@ -3,10 +3,10 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/cd_string.ncl"
 load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/cd_inv_string.ncl"
 begin
   ncols = 7
-  tcnum = 14
-  plotbst = False
-  datadir = "/Volumes/dandelion/GRMSMJob/rsm2msm9_tparc/"
-  wks = gsn_open_wks("ps", datadir+"track22"+sprinti("%0.2d",tcnum))
+  tcnum = 11
+  plotbst = True
+  datadir = "/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/rsm2msm9/"
+  wks = gsn_open_wks("x11", "track22"+sprinti("%0.2d",tcnum))
 
   res = True 
   res@gsnDraw = False 
@@ -31,7 +31,7 @@ begin
   pmres = True 
 
   if (plotbst) then
-    tfile = "/Volumes/dandelion/data/tctrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
+    tfile = "/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
     plres@gsLineColor = "black"
     plres@gsLineThicknessF = 4.0
     pmres@gsMarkerColor = "black"
@@ -65,32 +65,13 @@ begin
     delete(latf)
   end if
   npoints = 100
-  sdate = "2022091412"
-  edate = "2022091712"
+  sdate = "2022082800"
+  edate = "2022082800"
   shour = cd_inv_string(sdate,"%Y%N%D%H")
   ehour = cd_inv_string(edate,"%Y%N%D%H")
   dt = 24 ;hours
   nfiles = toint((ehour-shour)/dt) + 1
-  ;init = "2022063012"
-;  files = (/\
-;;  "track2022063012.txt",\
-;  "track2022070100.txt",\
-;  "track2022070112.txt",\
-;  "track2022070200.txt",\
-;  "track2022070212.txt",\
-;  "track2022070300.txt",\
-;  "track2022070312.txt",\
-;  "track2022070400.txt",\
-;  "track2022070412.txt"\
-;  /)
-  files = (/\
-  datadir+"2022091212/track2022091212.txt",\
-  datadir+"2022091312/track2022091312.txt",\
-  datadir+"2022091412/track2022091412.txt",\
-  datadir+"2022091512/track2022091512.txt",\
-  datadir+"2022091612/track2022091612.txt",\
-  datadir+"2022091712/track2022091712.txt"\
-  /)
+
   dum3 = new((/npoints, nfiles/), graphic)
   dum4 = new((/npoints, nfiles/), graphic)
   dum5 = new((/npoints, nfiles/), graphic)
