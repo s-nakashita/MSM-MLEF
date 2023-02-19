@@ -1,6 +1,6 @@
 import xarray as xr
 import pandas as pd
-from tracking import tracking
+import grid
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
@@ -8,16 +8,15 @@ import numpy as np
 
 dt = timedelta(hours = 12)
 dc = 5
-pmax = 102000
-#latmax = 45
-latmax = 38
+pc = 101000
+latc = 45
+latc = 38
 sigma = 0.0
 
 wdir="rsm2msm9"
 nlon=385;nlat=325
 inchour=1
 endhour=48
-delm = 9.0
 lon = np.loadtxt("rlon.txt")
 lat = np.loadtxt("rlat.txt")
 
@@ -55,7 +54,7 @@ fguess = {
 yyyy = t0.strftime("%Y")
 yy = yyyy[2:]
 lbst=False
-fbst=f"/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
+fbst=f"/Users/nakashita/mnt/dandelion/data/tctrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
 try:
     bsttrack = np.loadtxt(fbst)
 except FileNotFoundError:
@@ -65,7 +64,6 @@ else:
     nbst = bsttrack.shape[0]
     tstart = datetime(int(bsttrack[0,0]),int(bsttrack[0,1]),
     int(bsttrack[0,2]),int(bsttrack[0,3]))
-
 while t0 <= t0max:
     init = t0.strftime("%Y%m%d%H") # -> 2019100600
     sdate = init
@@ -97,14 +95,33 @@ while t0 <= t0max:
         lon0=bsttrack[i,4]; lat0=bsttrack[i,5]; slp0=bsttrack[i,6]
     else:
         lon0, lat0, slp0 = fguess[sdate]
+    ### first guess replaced by previous track
+#    if tdif.total_seconds() < 0:
+#        tpre = t0 - dt
+#        dpre = tpre.strftime("%Y%m%d%H")
+#        try:
+#            pretrack = np.loadtxt("track"+dpre+".txt")
+#        except FileNotFoundError:
+#            print(f"Not found track{dpre}.txt")
+#        else:
+#            preexist = True
+#            npre = pretrack.shape[0]
+#            ddhh = t0.strftime("%d%H") 
+#            for indpre in range(npre):
+#                print( f"{int(pretrack[indpre,2]):02d}"+f"{int(pretrack[indpre,3]):02d}", ddhh )
+#                if f"{int(pretrack[indpre,2]):02d}"+f"{int(pretrack[indpre,3]):02d}"==ddhh:
+#                    break
+#            print(f"{int(pretrack[indpre,0])} {int(pretrack[indpre,1])} "+\
+#                  f"{int(pretrack[indpre,2])} {int(pretrack[indpre,3])}")
+#            lon0 = pretrack[indpre,4]
+#            lat0 = pretrack[indpre,5]
+#            slp0 = pretrack[indpre,6]
+#            indpre += 1
     print(f"f0={f0} lon0={lon0} lat0={lat0} slp0={slp0}")
     lonpre = lon0
     latpre = lat0
     slppre = slp0
-    ### initialize
-    paramlist = ['MSLP','RV850']
     for ft in range(f0,endhour+inchour,inchour):
-        fdict = dict()
         # read binary file
         buf = np.fromfile(f"r_pgb.f{ft:02d}.grd",dtype=">f4").reshape(3,nlat,nlon)
         slpdata = buf[0,:,:]
@@ -112,51 +129,32 @@ while t0 <= t0max:
         slp = xr.DataArray(slpdata, coords=[lat,lon],\
          dims=['latitude','longitude'], \
          attrs={'name':'Mean Sea Level Pressure','units':'hPa'})
-        fdict['MSLP'] = slp.values
-        udata = buf[1,:,:]
-        vdata = buf[2,:,:]
-        u850 = xr.DataArray(udata,coords=[lat,lon],
-            dims=['latitude','longitude'], \
-            attrs={'name':'Zonal Wind','units':'m/s'})
-        v850 = xr.DataArray(vdata,coords=[lat,lon],
-            dims=['latitude','longitude'], \
-            attrs={'name':'Meridional Wind','units':'m/s'})
-        u850=u850*units('m/s')
-        v850=v850*units('m/s')
-        #print(u);print(v)
-        # calcurate vorticity
-        dx,dy = mpcalc.lat_lon_grid_deltas(lon,lat)
-        #print(dx,dy)
-        rv850 = mpcalc.vorticity(u850,v850,dx=dx,dy=dy)
-        fdict['RV850'] = rv850.values
         t = t0 + timedelta(hours=ft) 
         print(t)
         if lonpre is not None and latpre is not None and slppre is not None:
             print(f"previous center {lonpre:.3f}, {latpre:.3f}, {slppre:.5f}")
         print(f"first guess center {lon0:.3f}, {lat0:.3f}, {slp0:.5f}")
-        tctrack = tracking(delm,lon,lat,\
-            paramlist,lon0,lat0,\
-            d0=0.5,\
-            debug=True)
-        tctrack.tcycle(fdict,paramlist)
-        lonmin=0.0; latmin=0.0
-        for param in paramlist:
-            lonc,latc=tctrack.centerdict[param]
-            lonmin+=lonc
-            latmin+=latc
-            if param=='MSLP':
-                slpmin = tctrack.cvaldict[param]
-        lonmin/=float(len(paramlist))
-        latmin/=float(len(paramlist))
+        lonmin, latmin, slpmin = \
+        grid.find_minimum_loc(slpdata, lon, lat, lon0, lat0, lonpre, latpre, slppre, \
+            dc=dc, sigma=sigma)
+        #grid.find_minimum(slp, lon, lat, lon0, lat0, lonpre, latpre, slppre, sigma)
         if lonmin is None and latmin is None and slpmin is None:
             break
         print(f"estimated center {lonmin:.3f}, {latmin:.3f}, {slpmin:.3f}")
-        if latmin > latmax :
+        if latmin > latc :
             print(f"latitude exceeds {latc}")
             break
-        if slpmin > pmax :
-            print(f"mslp exceeds {pmax}")
-            continue
+        if slpmin > pc :
+            print(f"mslp exceeds {pc}")
+            break
+#        if preexist and indpre < npre:
+#            print(f"{int(pretrack[indpre,0])} {int(pretrack[indpre,1])} "+\
+#                  f"{int(pretrack[indpre,2])} {int(pretrack[indpre,3])}")
+#            lon0 = pretrack[indpre,4]
+#            lat0 = pretrack[indpre,5]
+#            slp0 = pretrack[indpre,6]
+#            indpre += 1
+#        else:
         lon0 = lonmin
         lat0 = latmin
         slp0 = slpmin
@@ -165,8 +163,25 @@ while t0 <= t0max:
         slppre = slpmin
         print("{} {} {} {} {} {} {}".format(t.year, t.month, t.day, t.hour, lonmin, latmin, slpmin), file = track)
         if plot and ft%3==0:
+            udata = buf[1,:,:]
+            vdata = buf[2,:,:]
+            u = xr.DataArray(udata,coords=[lat,lon],
+            dims=['latitude','longitude'], \
+            attrs={'name':'Zonal Wind','units':'m/s'})
+            v = xr.DataArray(vdata,coords=[lat,lon],
+            dims=['latitude','longitude'], \
+            attrs={'name':'Meridional Wind','units':'m/s'})
+            u=u*units('m/s')
+            v=v*units('m/s')
+            #print(u);print(v)
+            # calcurate vorticity
+            dx,dy = mpcalc.lat_lon_grid_deltas(lon,lat)
+            #print(dx,dy)
+            vor = mpcalc.vorticity(u,v,dx=dx,dy=dy)
+            #print(vor)#;exit()
+            #print(np.min(vor),np.max(vor))
             slp=slp*1e-2
-            rv850=rv850*1e4
+            vor=vor*1e4
             fig = plt.figure(figsize=(8,8),constrained_layout=True)
             ax = fig.add_subplot(111,projection=ccrs.PlateCarree())
             ax.coastlines()
@@ -183,24 +198,17 @@ while t0 <= t0max:
             ax.gridlines()
             ax.set_title(f'SLP[hPa] + Vor850'+r'[$10^{-4}$/s]'+f', FT={ft}H V:{t}')
             clevs = np.arange(-20,20,1)
-            p = ax.contourf(lon,lat,rv850,clevs,cmap='coolwarm',\
+            p = ax.contourf(lon,lat,vor,clevs,cmap='coolwarm',\
                 transform=ccrs.PlateCarree())
             fig.colorbar(p,orientation='horizontal')
             clevs = [960.0,980.0,990.0,1000.0,1004.0,1008.0,1012.0]
             p2 = ax.contour(lon,lat,slp,clevs,colors=['k'],\
                 transform=ccrs.PlateCarree())
             ax.clabel(p2,manual=False,inline=False)
-            for param,mark in zip(paramlist,['s','o']):
-                lonc, latc = tctrack.centerdict[param]
-                ax.scatter([lonc],[latc],edgecolors='b',marker=mark,\
-                facecolors='None',
-                transform=ccrs.PlateCarree(),
-                label=f"{param} estimated center")
             ax.scatter([lon0],[lat0],edgecolors='g',marker='^',\
                 facecolors='None',
                 transform=ccrs.PlateCarree(),
-                label="mean estimated center")
-            ax.legend()
+                label="estimated center")
             fig.savefig(outdir/f'tc{tcnum:02d}_ft{ft:03d}.png')
             #plt.show()
             plt.close()
