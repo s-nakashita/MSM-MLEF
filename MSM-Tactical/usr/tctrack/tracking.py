@@ -169,6 +169,7 @@ class tracking:
         da_zd = xr.DataArray(zd.reshape(nlat,nlon),\
             [('lat',self.latm),('lon',self.lonm)],\
                 name='zd')
+        #print(da_xd)
         xd_intp = da_xd.interp(lon=newlon,lat=newlat)
         yd_intp = da_yd.interp(lon=newlon,lat=newlat)
         zd_intp = da_zd.interp(lon=newlon,lat=newlat)
@@ -200,6 +201,7 @@ class tracking:
         nlon = self.lonm.size
         da = xr.DataArray(z.reshape(nlat,nlon),\
             [('lat',self.latm),('lon',self.lonm)],name='z')
+        print(da)
         ### interpolation
         da_intp = da.interp(lon=newlon,lat=newlat)
         ### output
@@ -210,9 +212,9 @@ class tracking:
         for param in paramlist:
             if param[:2]!='WC':
                 f = fdict[param]
-            if self.plot:
-                fig, ax = plt.subplots(figsize=[8,8])
-                c = ax.contourf(self.lonm, self.latm, f, levels=np.linspace(-0.07, 0.0, 8))
+                if self.plot:
+                    fig, ax = plt.subplots(figsize=[8,8])
+                    c = ax.contourf(self.lonm, self.latm, f, levels=np.linspace(-0.07, 0.0, 8))
             dg = self.d0
             icyc=0
             while dg > self.dgmin:
@@ -221,8 +223,8 @@ class tracking:
                 else:
                     gg = self.barnes(f,param)
                 loc_min = np.where( \
-                    ndimage.minimum_filter( \
-                    gg, size=(3,3), mode=('nearest', 'wrap')) == gg)
+                        ndimage.minimum_filter( \
+                        gg, size=(3,3), mode=('nearest', 'wrap')) == gg)
                 g_min = gg[loc_min[0],loc_min[1]]
                 if self.debug: print(g_min)
                 n = np.argsort(g_min)[0]
@@ -240,11 +242,11 @@ class tracking:
                 print(f"{param} iter={icyc} center=({lon0:.3f},{lat0:.3f}) val={f0}")
                 self.set_ggrid(lon0, lat0, dg)
                 if self.plot: ax.plot(lon0,lat0,marker='^')
-        if self.plot:
-            ax.set_aspect("equal")
-            fig.colorbar(c, ax=ax)
-            #fig.savefig("tcycletest_barnes.png", bbox_inches="tight", dpi=300)
-            plt.show()
+            if self.plot:
+                ax.set_aspect("equal")
+                fig.colorbar(c, ax=ax)
+                #fig.savefig("tcycletest_barnes.png", bbox_inches="tight", dpi=300)
+                plt.show()
         ## QC
         lonmin=0.0; latmin=0.0
         # Check 1: distance from first guess

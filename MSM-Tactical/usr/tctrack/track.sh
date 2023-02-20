@@ -8,14 +8,16 @@ decode() {
   wgrib ${infile} | grep "${var}" | grep "${lev}" | wgrib ${infile} -i -ieee -nh -o ${ofile}
 }
 
-datadir="/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/rsm2msm9"
+datadir="/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work"
 utldir="/Users/nakashita/Development/grmsm/MSM-Tactical/sys/utl"
 init=${1:-2022082800} # initial date (input)
 tcnum=${2:-11} # TC number
+wdir=rsm2msm9
 igrd=384 # size(lon)-1
 jgrd=324 # size(lat)-1
 endhour=48 # forecast length (hour)
 inchour=1  # output interval (hour)
+delm=9.0 #horizontal resolution (km)
 
 rm -rf tmp/$init
 mkdir -p tmp/$init
@@ -34,7 +36,7 @@ BEGIN{}
 }
 END{print rtruth, delx, dely, rbtmgrd, rlftgrd, rlatc, rlonc}
 EOF
-ln -fs ${datadir}/${init}/rsmlocation .
+ln -fs ${datadir}/${wdir}/${init}/rsmlocation .
 params=$(awk -f getparm.awk rsmlocation)
 echo $params
 python ../../setlatlon.py $igrd $jgrd $params
@@ -50,7 +52,7 @@ cat rlon.txt | tail -n 5
 ### Step 2 : crop SLP and UV850 from r_pgb.fNN
 for fh in $(seq 0 ${inchour} ${endhour});do
 if [ $fh -lt 10 ];then fh=0$fh; fi
-ln -s ${datadir}/${init}/r_pgb.f${fh} .
+ln -s ${datadir}/${wdir}/${init}/r_pgb.f${fh} .
 decode r_pgb.f${fh} ":PRMSL:" ":MSL:" msl.f${fh}.grd
 decode r_pgb.f${fh} ":UGRD:" ":10 m above gnd:" u10.f${fh}.grd
 decode r_pgb.f${fh} ":VGRD:" ":10 m above gnd:" v10.f${fh}.grd
@@ -71,4 +73,6 @@ done
 ls -ltr
 
 ### Step 3 : tracking
-python ../../track.py $init $tcnum
+nlon=`expr $igrd + 1`
+nlat=`expr $jgrd + 1`
+python ../../track.py $wdir $nlon $nlat $inchour $endhour $delm $init $tcnum

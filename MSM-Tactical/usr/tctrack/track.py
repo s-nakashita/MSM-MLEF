@@ -15,15 +15,6 @@ pmax = 102000
 latmax = 38
 sigma = 0.0
 
-wdir="rsm2msm9"
-nlon=385;nlat=325
-inchour=1
-endhour=48
-delm = 9.0
-lon = np.loadtxt("rlon.txt")
-lat = np.loadtxt("rlat.txt")
-dx,dy = mpcalc.lat_lon_grid_deltas(lon,lat)
-
 plot=True
 if plot:
     import matplotlib.pyplot as plt
@@ -31,17 +22,34 @@ if plot:
     plt.rcParams['font.size'] = 16
     markers = ['s','o','v','<','>','^']
 
+wdir="rsm2msm9"
+nlon=385
+nlat=325
+inchour=1
+endhour=48
+delm = 9.0
+if len(sys.argv)>6:
+    wdir=sys.argv[1]
+    nlon=int(sys.argv[2])
+    nlat=int(sys.argv[3])
+    inchour=int(sys.argv[4])
+    endhour=int(sys.argv[5])
+    delm=float(sys.argv[6])
 datadir=Path(f"/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/{wdir}")
 trackdir=datadir
 t0 = datetime(2022, 9, 17, 12)
 t0max = datetime(2022, 9, 17, 12)
 tcnum = 14
-if len(sys.argv) > 1:
-    yyyymmddhh=sys.argv[1]
+if len(sys.argv) > 7:
+    yyyymmddhh=sys.argv[7]
     t0 = datetime.strptime(yyyymmddhh,"%Y%m%d%H")
     t0max = t0
-if len(sys.argv) > 2:
-    tcnum = int(sys.argv[2])
+if len(sys.argv) > 8:
+    tcnum = int(sys.argv[8])
+lon = np.loadtxt("rlon.txt")
+lat = np.loadtxt("rlat.txt")
+dx,dy = mpcalc.lat_lon_grid_deltas(lon,lat)
+
 ### 2214 : Nanmador
 tstart = datetime(2022, 9, 14, 3)
 fguess = {
@@ -105,7 +113,7 @@ while t0 <= t0max:
     slppre = slp0
     ### initialize
     #paramlist = ['MSLP','RV10','GPH850','RV850','GPH700','RV700']
-    paramlist = ['MSLP','WC850']
+    paramlist = ['MSLP','GPH850','RV850','WC850']
     for ft in range(f0,endhour+inchour,inchour):
         fdict = dict()
         # read binary file
@@ -129,17 +137,17 @@ while t0 <= t0max:
             attrs={'name':'Meridional Wind','units':'m/s'})
         u10=u10*units('m/s')
         v10=v10*units('m/s')
-        fdict['U10'] = u10.values
-        fdict['V10'] = v10.values
+        fdict['U10'] = u10.to_numpy()
+        fdict['V10'] = v10.to_numpy()
         # calcurate vorticity
         rv10 = mpcalc.vorticity(u10,v10,dx=dx,dy=dy)
-        fdict['RV10'] = rv10.values
+        fdict['RV10'] = rv10.to_numpy()
         i+=1
         zdata = buf[i,:,:]
         z850 = xr.DataArray(zdata, coords=[lat,lon],\
          dims=['latitude','longitude'], \
          attrs={'name':'Geopotential height','units':'m'})
-        fdict['GPH850'] = z850.values
+        fdict['GPH850'] = z850.to_numpy()
         i+=1
         udata = buf[i,:,:]
         i+=1
@@ -152,17 +160,17 @@ while t0 <= t0max:
             attrs={'name':'Meridional Wind','units':'m/s'})
         u850=u850*units('m/s')
         v850=v850*units('m/s')
-        fdict['U850'] = u850.values
-        fdict['V850'] = v850.values
+        fdict['U850'] = u850.to_numpy()
+        fdict['V850'] = v850.to_numpy()
         # calcurate vorticity
         rv850 = mpcalc.vorticity(u850,v850,dx=dx,dy=dy)
-        fdict['RV850'] = rv850.values
+        fdict['RV850'] = rv850.to_numpy()
         i+=1
         zdata = buf[i,:,:]
         z700 = xr.DataArray(zdata, coords=[lat,lon],\
          dims=['latitude','longitude'], \
          attrs={'name':'Geopotential height','units':'m'})
-        fdict['GPH700'] = z700.values
+        fdict['GPH700'] = z700.to_numpy()
         i+=1
         udata = buf[i,:,:]
         i+=1
@@ -175,11 +183,11 @@ while t0 <= t0max:
             attrs={'name':'Meridional Wind','units':'m/s'})
         u700=u700*units('m/s')
         v700=v700*units('m/s')
-        fdict['U700'] = u700.values
-        fdict['V700'] = v700.values
+        fdict['U700'] = u700.to_numpy()
+        fdict['V700'] = v700.to_numpy()
         # calcurate vorticity
         rv700 = mpcalc.vorticity(u700,v700,dx=dx,dy=dy)
-        fdict['RV700'] = rv700.values
+        fdict['RV700'] = rv700.to_numpy()
         t = t0 + timedelta(hours=ft) 
         print(t)
         if lonpre is not None and latpre is not None and slppre is not None:
@@ -222,7 +230,7 @@ while t0 <= t0max:
                 ccrs.PlateCarree())
             ax.gridlines()
             ax.set_title(f'SLP[hPa] + Vor850'+r'[$10^{-4}$/s]'+f', FT={ft}H V:{t}')
-            clevs = np.arange(-20,20,1)
+            clevs = np.arange(-10,10,1)
             p = ax.contourf(lon,lat,rv850,clevs,cmap='coolwarm',\
                 transform=ccrs.PlateCarree())
             fig.colorbar(p,orientation='horizontal')
