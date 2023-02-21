@@ -4,9 +4,10 @@ load "$NCARG_ROOT/lib/ncarg/nclscripts/contrib/cd_inv_string.ncl"
 begin
   ncols = 7
   tcnum = 11
-  plotbst = False
+  plotbst = True
   datadir = "/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/rsm2msm9/"
   wks = gsn_open_wks("x11", "slpc22"+sprinti("%0.2d",tcnum))
+  ;wks = gsn_open_wks("png", "slpc2214")
 
   res = True 
   res@gsnDraw = False 
@@ -38,7 +39,7 @@ begin
 
   npoints = 100
   sdate = "2022082800"
-  edate = "2022082800"
+  edate = "2022083100"
   shour = cd_inv_string(sdate,"%Y%N%D%H")
   ehour = cd_inv_string(edate,"%Y%N%D%H")
   dt = 24 ;hours
@@ -47,7 +48,7 @@ begin
   res@tiXAxisString = "hours since "+tbase
 
   if (plotbst) then
-    tfile = "/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
+    tfile = "/Users/nakashita/mnt/dandelion/data/tctrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
     res@xyLineColor = "black"
     res@xyLineThicknessF = 6.0
 
@@ -72,7 +73,8 @@ begin
     delete(slpc)
     delete(res@xyLineColor)
   end if
-  cmap = read_colormap_file("MPL_viridis")
+;  cmap = read_colormap_file("MPL_viridis")
+  cmap = read_colormap_file("grads_rainbow")
   ncolors = dimsizes(cmap(:,0))
   color_int = toint(ncolors / (nfiles+1))
   ;colors   = (/"red","blue","green","orange","purple","magenta"/)

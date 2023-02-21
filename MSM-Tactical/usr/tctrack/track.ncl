@@ -31,7 +31,7 @@ begin
   pmres = True 
 
   if (plotbst) then
-    tfile = "/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
+    tfile = "/Users/nakashita/mnt/dandelion/data/tctrack/2022/bst22"+sprinti("%0.2d",tcnum)+".txt"
     plres@gsLineColor = "black"
     plres@gsLineThicknessF = 4.0
     pmres@gsMarkerColor = "black"
@@ -66,12 +66,11 @@ begin
   end if
   npoints = 100
   sdate = "2022082800"
-  edate = "2022082800"
+  edate = "2022083100"
   shour = cd_inv_string(sdate,"%Y%N%D%H")
   ehour = cd_inv_string(edate,"%Y%N%D%H")
   dt = 24 ;hours
   nfiles = toint((ehour-shour)/dt) + 1
-
   dum3 = new((/npoints, nfiles/), graphic)
   dum4 = new((/npoints, nfiles/), graphic)
   dum5 = new((/npoints, nfiles/), graphic)
@@ -82,7 +81,8 @@ begin
   hf = new((/npoints, nfiles/), integer)
   lonf = new((/npoints, nfiles/), float)
   latf = new((/npoints, nfiles/), float)
-  cmap = read_colormap_file("MPL_viridis")
+  ;cmap = read_colormap_file("MPL_viridis")
+  cmap = read_colormap_file("grads_rainbow")
   ncolors = dimsizes(cmap(:,0))
   color_int = toint(ncolors / (nfiles+1))
   ;colors   = (/"red","blue","green","orange","purple","magenta"/)

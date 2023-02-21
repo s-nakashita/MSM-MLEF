@@ -261,20 +261,20 @@ class tracking:
         # Calculate mean center
         lonmin/=float(len(paramlist))
         latmin/=float(len(paramlist))
-        # Check 2: MSLP gradient
-        ri = np.array([100.0])
-        lattmp = np.arcsin( np.cos(ri / rearth) )
-        lattmp = np.rad2deg(lattmp)
-        slp = fdict['MSLP']
-        slpnp = self.rotate(lonmin, latmin, \
-            self.loncirc, lattmp, slp)
-        slpmin = self.cvaldict['MSLP']
-        for i in range(slpnp.shape[1]):
-            psg = slpmin - slpnp[-1,i]
-            psg = psg * 0.01 / ri
-            if np.abs(psg) < self.pgradmin:
-                print(f"MSLP gradient is too small, {psg} mb/km")
-                return None,None,1
+        ## Check 2: MSLP gradient
+        #ri = np.array([100.0])
+        #lattmp = np.arcsin( np.cos(ri / rearth) )
+        #lattmp = np.rad2deg(lattmp)
+        #slp = fdict['MSLP']
+        #slpnp = self.rotate(lonmin, latmin, \
+        #    self.loncirc, lattmp, slp)
+        #slpmin = self.cvaldict['MSLP']
+        #for i in range(slpnp.shape[1]):
+        #    psg = slpmin - slpnp[-1,i]
+        #    psg = psg * 0.01 / ri
+        #    if np.abs(psg) < self.pgradmin:
+        #        print(f"MSLP gradient is too small, {psg} mb/km")
+        #        return None,None,1
         # Check 3: tangential wind speed
         ri = np.linspace(50.0,self.tanwrad,9)
         lattmp = np.arcsin( np.cos(ri / rearth) )
