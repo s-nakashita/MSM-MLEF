@@ -64,6 +64,10 @@ else
    INEWSST=0
 fi
 SSTLAG=${SSTLAG:-0}
+# BGM
+BP=${BP}
+PSUB=${PSUB:-no}
+export BP PSUB
 #
 # NO NEED TO CHANGE BELOW THIS!
 #
@@ -96,20 +100,18 @@ SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
-  if [ $CYCLE -gt 1 ];then
+  if [ $CYCLE -gt 1 ] && [ $EXTEND -eq 1 ];then
     PCYCLE=`expr $CYCLE - 1`
     inch=`expr $INCCYCLE \* $PCYCLE`
     SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
     export SDATE
     HZ=`echo $SDATE | cut -c9-10`
     HZ=`expr $HZ`
-#    if [ $EXTEND -eq 1 ];then
-#      if [ $HZ -ne 0 ] && [ $HZ -ne 12 ]; then
-#        export ENDHOUR=$INCCYCLE
-#      fi
-#    fi
-#  else
-#    export ENDHOUR=$INCCYCLE
+    if [ $HZ -ne 0 ]; then
+      export ENDHOUR=$INCCYCLE
+    fi
+  else
+    export ENDHOUR=$INCCYCLE
   fi
   if [ $CYCLE -lt $DASTART ];then
     BGM=yes
@@ -203,14 +205,18 @@ if [ do$DA = doyes ]; then
     if [ do$POSTTYPE = dosync ]; then
 #      $USHDIR/rpgb_post.sh 00 || exit 5
       if [ $DA_MEAN = T ]; then
-      mem=1
+      mem=mean
       else
-      mem=0
+      mem=000
       fi
+      cd ${head}${mem}
+      $USHDIR/rpgb_post.sh 00 || exit 5
+      cd ..
+      mem=1
       while [ $mem -le $MEMBER ];do
         if [ $mem -lt 10 ]; then
           mem=00$mem
-        else
+        elif [ $mem -lt 100 ];then
           mem=0$mem
         fi
         cd ${head}${mem}
@@ -221,12 +227,12 @@ if [ do$DA = doyes ]; then
     fi
   fi # -d ${head}mean
 else
-#
-# control
-if [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
   #
-  #  Restart
-  #
+  # control
+  if [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
+    #
+    #  Restart
+    #
         echo 'Restart files existed!!!!!!!'
         rm fort.*
         ln -fs r_sigi fort.11
@@ -237,23 +243,23 @@ if [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
         if [ $FEND -gt $ENDHOUR ]; then
            FEND=$ENDHOUR
         fi
-else 
+  else 
         FH=00
         FEND=`expr $FH + $FHMAX`
         if [ $FEND -gt $ENDHOUR ]; then
            FEND=$ENDHOUR
         fi
-#
-#   Regional mountain
-#
-if [ do$RUNRMTN = doyes ] ; then
-    $USHDIR/rmtn.sh $MTNRES || exit 3
-fi
-#
-# RSM INITIAL forecast (control)
-#
-#     ln -fs $BASEDIR/sigf$CDATE$CHOUR rb_sigf00
-#     ln -fs $BASEDIR/sfcf$CDATE$CHOUR rb_sfcf00
+    #
+    #   Regional mountain
+    #
+    if [ do$RUNRMTN = doyes ] ; then
+      $USHDIR/rmtn.sh $MTNRES || exit 3
+    fi
+    #
+    # RSM INITIAL forecast (control)
+    #
+    #     ln -fs $BASEDIR/sigf$CDATE$CHOUR rb_sigf00
+    #     ln -fs $BASEDIR/sfcf$CDATE$CHOUR rb_sfcf00
      if [ do$G2R = doyes ] ; then
        ln -fs $BASEDIR/sigf00 rb_sigf00
        ln -fs $BASEDIR/sfcf00 rb_sfcf00
@@ -283,52 +289,68 @@ fi
        ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
      fi
 
-#
-#  Initial field for rsm run
-#
-if [ do$RUNRINP = doyes ] ; then
-    $USHDIR/rinp.sh $NEST 00 || exit 4
-    cp r_sigi  r_sig.f00
-    cp r_sfci  r_sfc.f00
-fi
-if [ do$POSTTYPE = dosync ]; then
-    $USHDIR/rpgb_post.sh 00 || exit 5
-fi
-#
-fi #restart
-#
-# BGM rescaling (ensemble)
-#
-if [ do$BGM = doyes ]; then
-  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
-    cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
-    NSAMPLE=`expr $MEMBER \* 2`
-    $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdate.txt || exit 6
-  fi
-mem=1
-while [ $mem -le $MEMBER ];do
-  if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ] && [ $IRES -eq 27 ]; then
-    #cp $DISKUSR/exp/$EXPN/pdate.txt pdate.txt
-    irow=`expr 2 \* $mem - 1`
-    PDATE1=`cat pdate.txt | awk '{if(NR == '$irow'){print $1}}'`
-    irow=`expr $irow + 1`
-    PDATE2=`cat pdate.txt | awk '{if(NR == '$irow'){print $1}}'`
-    export PDATE1 PDATE2
-  fi
-  if [ $mem -lt 10 ]; then
-    mem=00$mem
-  else
-    mem=0$mem
-  fi
-if [ -s ${head}${mem}/r_sigi -a -s ${head}${mem}/r_sigitdt -a -s ${head}${mem}/r_sfci ] ; then
-  echo 'Restart file exists'
-else
-  if [ $IRES -eq 27 ];then #rescaling
-    $USHDIR/raddprtb.sh $CYCLE $mem || exit 7
+    #
+    #  Initial field for rsm run
+    #
+    if [ do$RUNRINP = doyes ] ; then
+      $USHDIR/rinp.sh $NEST 00 || exit 4
+      cp r_sigi  r_sig.f00
+      cp r_sfci  r_sfc.f00
+    fi
+    if [ do$POSTTYPE = dosync ]; then
+      $USHDIR/rpgb_post.sh 00 || exit 5
+    fi
+  #
+  fi #restart
+  #
+  # BGM rescaling (ensemble)
+  #
+  if [ do$BGM = doyes ] && [ $IRES -eq 27 ]; then
+    #rescaling
+    if [ ! -s pdate.txt ]; then
+    if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ]; then
+      cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
+      NSAMPLE=`expr $MEMBER \* 2`
+      $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdate.txt || exit 6
+    fi
+    fi
+    $USHDIR/raddprtb.sh $CYCLE || exit 7
+    if [ do$POSTTYPE = dosync ]; then
+      mem=1
+      while [ $mem -le $MEMBER ];do
+      pmem=$mem
+      if [ $pmem -lt 10 ]; then
+        pmem=00$pmem
+      else
+        pmem=0$pmem
+      fi
+      if [ do$PSUB = doyes ]; then
+        pmem=m$pmem
+      fi
+      cd ${head}${pmem}
+      $USHDIR/rpgb_post.sh 00 || exit 5
+      cd ..
+      mem=`expr $mem + 1`
+      done
+    fi #POST sync
   else #downscaling
-    GBASEDIR=${BASEDIR0}/${SDATE}/${head}${mem}
+  mem=1
+  while [ $mem -le $MEMBER ];do
+    pmem=$mem
+    if [ $pmem -lt 10 ]; then
+      pmem=00$pmem
+    elif [ $mem -lt 100 ]; then
+      pmem=0$pmem
+    fi
+    if [ do$PSUB = doyes ]; then
+      pmem=m$pmem
+    fi
+    if [ -s ${head}${pmem}/r_sigi -a -s ${head}${pmem}/r_sigitdt -a -s ${head}${pmem}/r_sfci ] ; then
+      echo 'Restart file exists'
+    else
+    GBASEDIR=${BASEDIR0}/${SDATE}/${head}${pmem}
     GBASESFCDIR=${GBASEDIR}
-    GUESDIR=${RUNDIR0}/${SDATE}/${head}${mem}
+    GUESDIR=${RUNDIR0}/${SDATE}/${head}${pmem}
     mkdir -p $GUESDIR
     cd ${GUESDIR}
     ### copy namelists
@@ -371,31 +393,33 @@ else
     $USHDIR/rinp.sh $NEST 00 || exit 4
     cp r_sigi  r_sig.f00
     cp r_sfci  r_sfc.f00
+    if [ do$POSTTYPE = dosync ]; then
+      $USHDIR/rpgb_post.sh 00 || exit 5
+    fi #POST sync
     cd $RUNDIR
-  fi #IRES -eq 27
-  if [ do$POSTTYPE = dosync ]; then
-    cd ${head}${mem}
-    $USHDIR/rpgb_post.sh 00 || exit 5
-    cd ..
-  fi
-fi #restart
+    fi #restart
   mem=`expr $mem + 1`
-done #while [ $mem -le $MEMBER ]
-fi #doBGM=doyes
+  done #while [ $mem -le $MEMBER ]
+  fi #doBGM=doyes
 #
 fi #doDA=doyes
 #######################################
 # Ensemble Forecast loop
 ########################################
+PREPBASE=F
 if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+  if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
   cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
   NSAMPLE=`expr $MEMBER \* 2`
   $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
+  fi
   $USHDIR/raddprtbbase.sh || exit 5
+  PREPBASE=T
 fi
 if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLE $DA_MEAN || exit 6
+  PREPBASE=T
 fi
 if [ $DA_MEAN = T ]; then
 mem=1
@@ -414,18 +438,22 @@ while [ $mem -le $MEMBER ];do
     export BASESFCDIR=$BASEDIR
     fi
   else ## member
-    if [ $mem -lt 10 ]; then
-      mem=00$mem
+    pmem=$mem
+    if [ $pmem -lt 10 ]; then
+      pmem=00$pmem
     else
-      mem=0$mem
+      pmem=0$pmem
     fi
-    cd $RUNDIR/${head}${mem}
-    if [ do$BP = dowbp ]; then
-      export BASEDIR=${base_dir}/${mem}
-      export BASESFCDIR=$BASEDIR
+    if [ do$PSUB = doyes ]; then
+      pmem=m$pmem
     fi
+    cd $RUNDIR/${head}${pmem}
+    #if [ do$BP = dowbp ]; then
+    #  export BASEDIR=${base_dir}/${pmem}
+    #  export BASESFCDIR=$BASEDIR
+    #fi
     if [ $IRES -lt 27 ];then
-    export BASEDIR=${base_dir}/${HEAD}${mem}
+    export BASEDIR=${base_dir}/${HEAD}${pmem}
     export BASESFCDIR=$BASEDIR
     fi
   fi
@@ -445,10 +473,10 @@ while [ $h -lt $FEND ]; do
   hh=$hx
   if [ $hx -lt 10 ];then hx=0$hx;fi
   hhr=`expr $h + 0`
-  if [ $OSSE = F ]; then
   while [ $hhr -le $hx ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
+  if [ $mem -eq 0 ] || [ $PREPBASE = F ]; then
        if [ do$G2R = doyes ] ; then
          ln -fs $BASEDIR/sigf$hhr rb_sigf$hhr
          ln -fs $BASEDIR/sfcf$hhr rb_sfcf$hhr
@@ -466,6 +494,7 @@ while [ $h -lt $FEND ]; do
            ln -fs $BASESFCDIR/r_sfc.f$hhr rb_sfcf$hhr
          fi
        fi
+  fi #PREPBASE
        if [ do$NEWSST = do.TRUE. ] ; then
          #ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
          slag=`expr $hhr + $SSTLAG`
@@ -479,7 +508,6 @@ while [ $h -lt $FEND ]; do
        fi
        hhr=`expr $hhr + $INCBASE`
   done
-  fi
 #
 # rinp for g2c and l2c
   if [ do$RUNRINP2 = doyes ] ; then
@@ -586,7 +614,10 @@ while [ $h -lt $FEND ]; do
 done  ###### end of while forecast loop
 mem=`expr $mem + 1`
 done  ###### end of while member loop
-
+# ensemble mean and spread
+if [ do$ENSMSPR = doyes ]; then
+  $USHDIR/rensmspr.sh $head || exit 17
+fi
 # -------- schedule job submit  ----------------
 if [ do$RUNFCST = doyes ] ; then
 

@@ -72,6 +72,9 @@ else
    INEWSST=0
 fi
 SSTLAG=${SSTLAG:-0}
+# ensemble
+BV=${BV:-no}
+BP=${BP}
 #
 # NO NEED TO CHANGE BELOW THIS!
 #
@@ -224,6 +227,9 @@ while [ $h -lt $FEND ]; do
   while [ $hhr -le $hxb ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
+     if [ do$BV = doyes ] && [ do$BP != do ]; then
+	     ## base field prepared external
+     else
        if [ do$G2R = doyes ] ; then
          ln -fs $BASEDIR/sigf$hhr rb_sigf$hhr
          ln -fs $BASEDIR/sfcf$hhr rb_sfcf$hhr
@@ -241,6 +247,7 @@ while [ $h -lt $FEND ]; do
            ln -fs $BASESFCDIR/r_sfc.f$hhr rb_sfcf$hhr
          fi
        fi
+     fi
        if [ do$NEWSST = do.TRUE. ] ; then
          #ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
          slag=`expr $hhr + $SSTLAG`

@@ -57,7 +57,7 @@ ln -s ${SRCDIR}/${EXEC} ${EXEC}
 
 fhfree=0
 icyc=$CYCLESTART
-icyc=5
+#icyc=5
 SDATE=$SDATE0
 if [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`

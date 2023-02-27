@@ -104,9 +104,9 @@ cat <<EOF >obsmake.nml
  atime=${yyyy},${imm},${idd},${ihh},0
  lmin=${lmin},
  rmin=${rmin},
- ibuf=10,
- jbuf=10, 
- kint=3,
+ ibuf=,
+ jbuf=, 
+ kint=,
  dist_obs_upper=300.0d3, 
  dist_obs_synop=100.0d3,
  stationin=T,
@@ -126,8 +126,8 @@ rm -f STDIN obsmake *.siml*.${sdate}-${edate}.dat
 ln -s obsmake.nml STDIN
 ln -s ${bindir}/obsmake obsmake
 ${RUNENV} ./obsmake #2>${logf}.err | tee ${logf}.log
-mv surf.siml.${sdate}-${edate}.dat ../surf.siml.uniform.${sdate}-${edate}.dat
-mv upper.siml.${sdate}-${edate}.dat ../upper${prep}.siml.uniform.${sdate}-${edate}.dat
+mv surf.siml.${sdate}-${edate}.dat ../surf.siml.gridalllev.${sdate}-${edate}.dat
+mv upper.siml.${sdate}-${edate}.dat ../upper${prep}.siml.gridalllev.${sdate}-${edate}.dat
 mv NOUT-001 ../${logf}.log
 rm -f NOUT-*
 #mv *station.txt ../

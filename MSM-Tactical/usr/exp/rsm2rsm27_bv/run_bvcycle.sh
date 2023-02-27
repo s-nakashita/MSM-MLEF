@@ -6,8 +6,10 @@ export BV_H=6
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=
+export ORTH=
+export BP=wbp
 export SCLBASE=
+export SCLPOW=10
 export NTRUNC=
 if [ do$NTRUNC != do ]; then
 export BP=${BP}ntrunc${NTRUNC}
@@ -23,6 +25,9 @@ POSTDIR=`cd ../../post && pwd`
 echo $EXPDIR
 echo $POSTDIR
 
+PDATELIST=${EXPDIR}/pdate2.txt
+export PDATELIST
+
 for CYCLE in $(seq 1 5);do
 export CYCLE
 ### control
@@ -31,21 +36,24 @@ export MEM=000
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err
 
+cd $POSTDIR
+./run_addprtb.sh || exit 3 #1>out.log 2>out.err
+cd $EXPDIR
 if [ do$BP != do ];then
 cd $POSTDIR
-./run_addprtbbase.sh
-cd -
+./run_addprtbbase.sh || exit 4
+cd $EXPDIR
 fi
 #exit
 
 MEM=1
 while [ $MEM -le $MEMBER ]; do
-if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
-cd $EXPDIR
-PDATE=`cat pdate2.txt | awk '{if(NR == '$MEM') {print $1}}'`
-echo $PDATE
-export PDATE
-fi
+#if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ];then
+#cd $EXPDIR
+#PDATE=`cat pdate2.txt | awk '{if(NR == '$MEM') {print $1}}'`
+#echo $PDATE
+#export PDATE
+#fi
 if [ $MEM -lt 10 ]; then
 MEM=00$MEM
 else
@@ -82,9 +90,9 @@ if [ $CYCLE -gt 1 ]; then
 fi
 . ./configure
 #if [ ! -d $RUNDIR ]; then
-cd $POSTDIR
-./run_addprtb.sh || exit 3 #1>out.log 2>out.err
-cd $EXPDIR
+#cd $POSTDIR
+#./run_addprtb.sh || exit 3 #1>out.log 2>out.err
+#cd $EXPDIR
 #fi
 export SDATE=$IDATE
 ./run || exit 2 #1>run.log 2>run.err

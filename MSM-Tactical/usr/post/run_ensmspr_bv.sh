@@ -15,13 +15,15 @@ TETYPE=${3:-dry}
 TESIZE=${4}
 BP=${5:-wbp}
 SCLBASE=${6}
-QADJ=${7:-yes}
-BV_H=${8:-6}
-EDATE=${9:-$SDATE}
+SCLPOW=${7:-10}
+QADJ=${8:-yes}
+ORTH=${9:-no}
+BV_H=${BV_H:-6}
+EDATE=${EDATE:-$SDATE}
 MEMBER=10
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 #SRCDIR=${MSMDIR}/usr/post
-SRCDIR=${MSMDIR}/dpac/builddev/post
+SRCDIR=${MSMDIR}/dpac/build/post
 SDATE0=2022082900
 ut0=`date -j -f "%Y%m%d%H" +"%s" "${SDATE0}"`
 echo $SDATE0 $ut0
@@ -32,18 +34,13 @@ dt=`expr ${ut} - ${ut0}`
 icyc=`expr $dt / $BV_H / 3600 + 1`
 echo $dt $icyc
 if [ $IRES -eq 27 ]; then
-#DATADIR=/zdata/grmsm/work/gefs2rsm27_nomad/$SDATE
 #EXPDIR=$MSMDIR/usr/exp/gefs2rsm27
-DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE
 EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 SUF=_c${icyc}
 elif [ $IRES -eq 9 ]; then
-#DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE
 EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 SUF=
 elif [ $IRES -eq 3 ]; then
-DATADIR=/zdata/grmsm/work/msm2msm3_bv/$SDATE
 EXPDIR=$MSMDIR/usr/exp/msm2msm3_bv
 SUF=
 else
@@ -74,7 +71,11 @@ fi
 if [ do$QADJ = doyes ]; then
 SUF=_qadj${SUF}
 fi
-SUF=${BP}${SCLBASE}${SUF}
+if [ ! -z $BP ] && [ ! -z $SCLPOW ]; then
+  SUF=${BP}${SCLBASE}p${SCLPOW}${SUF}
+else
+  SUF=${BP}${SCLBASE}${SUF}
+fi
 rm -rf $DATADIR/${HEAD}mean${SUF}
 mkdir -p $DATADIR/${HEAD}mean${SUF}
 rm -rf $DATADIR/${HEAD}sprd${SUF}

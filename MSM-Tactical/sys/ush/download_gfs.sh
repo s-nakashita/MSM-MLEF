@@ -14,6 +14,12 @@ LONMIN=${CLON1:--100}
 LONMAX=${CLON2:--50}
 LATMIN=${CLAT1:-10}
 LATMAX=${CLAT2:-60}
+if [ $LONMIN -gt 180 ]; then
+  LONMIN=`expr $LONMIN - 360`
+fi
+if [ $LONMAX -gt 180 ]; then
+  LONMAX=`expr $LONMAX - 360`
+fi
 
 fh=000
 fh2=00

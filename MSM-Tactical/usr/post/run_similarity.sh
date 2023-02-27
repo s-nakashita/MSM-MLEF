@@ -14,15 +14,16 @@ BV_H=${BV_H:-6}
 TETYPE=${TETYPE}
 SCL=${SCL}
 BV=${BV:-yes}
-QADJ=${QADJ:-no} #super saturation and dry adjustment
-BP=${BP} #with boundary perturbation
+QADJ=${QADJ:-yes} #super saturation and dry adjustment
+ORTH=${ORTH:-no}
+BP=${BP:-wbp} #with boundary perturbation
 SCLBASE=${SCLBASE}
 MEMBER=${MEMBER:-10}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/dpac/builddev/post
+SRCDIR=${MSMDIR}/dpac/build/post
 if [ $IRES -eq 27 ]; then
   DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
-#  DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
+  DATADIR=/zdata/grmsm/work/rsm2rsm27_bv
   EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
   DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs
@@ -95,6 +96,9 @@ for dt in $(seq 0 $inch $dte);do
     fi
     if [ do$QADJ = doyes ];then
       WDIR=${WDIR}_qadj
+    fi
+    if [ do$ORTH = doyes ];then
+      WDIR=${WDIR}_orth
     fi
     if [ $IRES -eq 27 ];then
       WDIR=${WDIR}_c${CYCLE}

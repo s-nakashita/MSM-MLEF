@@ -1,8 +1,10 @@
 #!/bin/sh
 #
 set -x
-export SDATE=${SDATE:-2022061812}
-export SAMPLETXT="gfs_sampledate_MJ.txt"
+#export SDATE=${SDATE:-2022061812}
+#export SAMPLETXT="gfs_sampledate_MJ.txt"
+export SDATE=2022082600
+export SAMPLETXT="gfs_sampledate_AS.txt"
 
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 

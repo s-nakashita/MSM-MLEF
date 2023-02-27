@@ -1,17 +1,17 @@
 #!/bin/sh
 #
-# add rescaled perturbations to base fields' r_sig.f00
+# add rescaled perturbations to base fields of r_sig.f00
 #
 set -ex
-IDATE=${SDATE:-2022083000} #base
-IRES=${IRES:-27}
-BV_H=${INCCYCLE:-6}
 TETYPE=${TETYPE}
-SCL=${SCL}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
+PSUB=${PSUB:-no} #subtract perturbation
 BP=${BP} #with boundary perturbation
+SCLBASE=${SCLBASE}
+SCLPOW=${SCLPOW}
+head=${HEAD:-bv$TETYPE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/dpac/build/post
+SRCDIR=${MSMDIR}/dpac/build/pre
 DATADIR=${RUNDIR:-/zdata/grmsm/work/dpac/rsm27/$SDATE}
 BASE0=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
 BASE1=${BASEDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
@@ -40,14 +40,6 @@ if [ ! -d $BASEDIR ];then
   fi
 fi
 echo $BASEDIR
-#restart check
-MEM=$MEMBER
-PMEM=`printf '%0.3d' $MEM` #prtb member
-OUTDIR=$BASEDIR/${PMEM}
-if [ -d $OUTDIR ]; then
-  echo 'base perturbation already done.'
-  exit
-fi
 
 rm -rf tmp
 mkdir -p tmp
@@ -57,37 +49,32 @@ cp $DATADIR/pdatebase.txt .
 h=0
 while [ $h -le $ENDHOUR ]; do
 fh=`printf '%0.2d' $h`
-rm -f fort.*
+rm -f *.sig.grd *.sfc.grd
 # base field
-ln -s $BASEDIR/r_sig.f$fh fort.11 #control
-ln -s $BASEDIR/r_sfc.f$fh fort.12 #control
+ln -s $BASEDIR/r_sig.f$fh rb.0000.sig.grd #control
+ln -s $BASEDIR/r_sfc.f$fh rb.0000.sfc.grd #control
 # prtb field
-nisig1=13
-nisig2=14
-nosig=51
-nosfc=52
+if [ do$PSUB = doyes ]; then
+  SIGN=m
+else
+  SIGN=
+fi
 MEM=1
 while [ $MEM -le $MEMBER ]; do
-echo 'input unit ' $nisig1 $nisig2
-echo 'output unit ' $nosig $nosfc
 irow=$MEM
 PDATE1=`cat pdatebase.txt | awk '{if(NR == '$irow') {print $1}}'`
 irow=`expr $irow + $MEMBER`
 PDATE2=`cat pdatebase.txt | awk '{if(NR == '$irow') {print $1}}'`
 echo $PDATE1 $PDATE2
 PMEM=`printf '%0.3d' $MEM` #prtb member
-OUTDIR=$BASEDIR/${PMEM}
-if [ $h -eq 0 ];then
-rm -rf $OUTDIR
-mkdir -p $OUTDIR
-##copy orography
-cp $BASEDIR/rmtn.parm $OUTDIR/
-cp $BASEDIR/rmtnoss $OUTDIR/
-cp $BASEDIR/rmtnslm $OUTDIR/
-cp $BASEDIR/rmtnvar $OUTDIR/
+OUTDIR=$DATADIR/${head}${SIGN}${PMEM}
+if [ ! -d $OUTDIR ]; then
+  echo 'no such directory '$OUTDIR
+  exit 99
 fi
-ln -s $OUTDIR/r_sig.f$fh fort.$nosig
-ln -s $OUTDIR/r_sfc.f$fh fort.$nosfc
+MEM4=`printf '%0.4d' $MEM`
+ln -s $OUTDIR/rb_sigf$fh ro.$MEM4.sig.grd
+ln -s $OUTDIR/rb_sfcf$fh ro.$MEM4.sfc.grd
 #
 PRTBDIR1=${BASE0}/${PDATE1}
 if [ ! -d $PRTBDIR1 ];then
@@ -98,7 +85,9 @@ if [ ! -d $PRTBDIR1 ];then
   fi
 fi
 echo $PRTBDIR1
-ln -s $PRTBDIR1/r_sig.f$fh fort.$nisig1
+MEM4=`expr 2 \* $MEM - 1`
+MEM4=`printf '%0.4d' $MEM4`
+ln -s $PRTBDIR1/r_sig.f$fh ri.$MEM4.sig.grd
 #
 PRTBDIR2=${BASE0}/${PDATE2}
 if [ ! -d $PRTBDIR2 ];then
@@ -109,12 +98,10 @@ if [ ! -d $PRTBDIR2 ];then
   fi
 fi
 echo $PRTBDIR2
-ln -s $PRTBDIR2/r_sig.f$fh fort.$nisig2
+MEM4=`expr 2 \* $MEM`
+MEM4=`printf '%0.4d' $MEM4`
+ln -s $PRTBDIR2/r_sig.f$fh ri.$MEM4.sig.grd
 #
-nisig1=`expr $nisig1 + 2`
-nisig2=`expr $nisig2 + 2`
-nosig=`expr $nosig + 2`
-nosfc=`expr $nosfc + 2`
 MEM=`expr $MEM + 1`
 done #while MEM -le MEMBER
 ### set namelist
@@ -131,9 +118,11 @@ cat <<EOF >namelist
  alpha=${alpha},
  member=${MEMBER},
  adjust_q=${adjust_q},
+ pow=${SCLPOW},
 &end
 EOF
-./${EXEC} < namelist 2>/dev/null
+./${EXEC} < namelist 2>>${EXEC}.log 1>>${EXEC}.err
 h=`expr $h + $INCBASE`
 done #while h -le ENDHOUR
+mv ${EXEC}.log ${EXEC}.err $DATADIR/
 echo END

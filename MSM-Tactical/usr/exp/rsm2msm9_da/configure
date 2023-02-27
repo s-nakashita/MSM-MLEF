@@ -63,11 +63,11 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=2
-export CYCLEMAX=5
+export CYCLESTART=1
+export CYCLEMAX=1
 export DASTART=2
 export INCCYCLE=6 # cycle interval
-export ENDHOUR=6 # forecast length
+export ENDHOUR=24 # forecast length
 export PRTHOUR=1
 export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
@@ -87,11 +87,14 @@ export RUNFCST=yes
 # Ensemble size
 export MEMBER=40
 export MEMBER=20
+export ENSMSPR=no
 # BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=
+export ORTH=yes
+export PSUB=no
+export BP=wbp
 export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #if [ do$QADJ = doyes ];then #q adjustment
@@ -116,10 +119,10 @@ export LOBSMIN=0
 export ROBSMIN=0
 export SELOBS=all
 export PREP=_preprh
-export DA_MEAN=F
+export DA_MEAN=T
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=3
+export MAXITER=1
 export HLOC=200 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
@@ -163,9 +166,35 @@ export HEAD2=$head2
 
 #### rsmlocation
 
+## d02 domain 110E-150E 16N-46N
+#export  IGRD=384
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=140.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=35.0
+#export  RCENLON=130.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+## d01 domain 70E-170W 22S-65N
+#export  CIGRD=324
+#export  CJGRD=288
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=133.
+#export  CBTMGRD=121.
 # d02 domain 110E-150E 16N-46N
-export  IGRD=384
-export  JGRD=324
+export  IGRD=324
+export  JGRD=288
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
@@ -174,21 +203,21 @@ export  RDELX=9000.
 export  RDELY=9300.
 export  RCENLAT=35.0
 export  RCENLON=130.0
-export  RLFTGRD=183.0
-export  RBTMGRD=190.0
-# d01 domain 70E-170W 22S-65N
-export  CIGRD=324
-export  CJGRD=288
+export  RLFTGRD=176.0
+export  RBTMGRD=145.0
+# d01 domain 100E-170E 10N-60N
+export  CIGRD=216
+export  CJGRD=216
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
 export  CORIENT=120.0
 export  CDELX=27000.
 export  CDELY=27000.
-export  CCENLAT=23.5
+export  CCENLAT=30.0
 export  CCENLON=120.0
-export  CLFTGRD=133.
-export  CBTMGRD=121.
+export  CLFTGRD=59.
+export  CBTMGRD=63.
 
 #
 # load default configure file

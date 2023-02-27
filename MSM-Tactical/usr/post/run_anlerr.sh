@@ -63,7 +63,7 @@ truth=${HEAD}${tmem}
 echo $truth
 fhtrue=0
 icyc=$CYCLESTART
-icyc=1
+#icyc=1
 SDATE=$SDATE0
 if [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`

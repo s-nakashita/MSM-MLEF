@@ -35,14 +35,21 @@ else #BGM
     head=${head}${BV_H}h
   fi #scaling interval
   head=${head}${MEM}${BP}${SCLBASE}
+  if [ ! -z $SCLPOW ]; then
+    head=${head}p${SCLPOW}
+  fi
   if [ do$QADJ = doyes ];then #q adjustment
     head=${head}_qadj
   fi #q adjustment
+  if [ do$ORTH = doyes ];then #orthogonalization
+    head=${head}_orth
+  fi #orthogonalization
   export RUNDIR=$TEMP/$SDATE/${head}_c${CYCLE}
   # basedir
   BMEM=${SCLBASE}${MEM}
   #BMEM=${BMEM}nps
   #BMEM=${BMEM}ntrunc100
+  BMEM=${BMEM}ltb
   if [ do$BP != do ];then #base perturbation by global ensemble
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
     if [ $GLOBAL = GFS ];then #deterministic

@@ -54,9 +54,9 @@ export RINP=yes
 export FCST=no 
 
 # --------------- run option --------------------
-#export ENDHOUR=120 
-export ENDHOUR=48                                # release_test
-export ENDHOUR=24                                # release_test
+export ENDHOUR=120 
+#export ENDHOUR=48                                # release_test
+#export ENDHOUR=24                                # release_test
 export CLIM=1
 export POSTTYPE=sync
 export RUNRMTN=yes
@@ -79,10 +79,15 @@ export  RCENLAT=23.5
 export  RCENLON=120.0
 export  RLFTGRD=163.
 export  RBTMGRD=139.
-# d01 domain 170W-40W 22S-65N
+## d01 domain 170W-40W 22S-65N
 #export  RORIENT=250.0
 #export  RCENLON=250.0
 #export  RCENLAT=39.0
+## d01 domain for mediterrenian sea
+#export  RCENLAT=39.0
+#export  RCENLON=17.0
+#export  RLFTGRD=192.
+#export  RBTMGRD=162.
 # test dimension and shift
 #export  IGRD=128                             # release_test
 #export  JGRD=108                             # release_test

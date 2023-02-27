@@ -39,7 +39,11 @@ while [ $fh -le $fend ]; do
    echo "Domain northbound latitude "$LATMAX  >>$DATADIR/Domain_Info
    PRODUCT=Analysis
    else
-   PRODUCT=${PRODUCT}"/${fh}-hour Forecast"
+     if [ ! -z "$PRODUCT" ]; then
+       PRODUCT=${PRODUCT}"/${fh}-hour Forecast"
+     else
+       PRODUCT="${fh}-hour Forecast"
+     fi
    fi
    fi
    fh=`expr $fh + $INCBASE`
@@ -55,8 +59,9 @@ fi
 #if [ ! -f $tarf ]
 tarfiles=`ls *.tar`
 echo $tarfiles
-if [ -z "$tarfiles" ] && [ -n "$PRODUCT" ]
+if [ ! -z "$tarfiles" ] && [ -z "$PRODUCT" ]
 then
+else
 cat << EOF > download.py
 import sys
 sys.path.append('${DISK}/rda-apps-clients/')
