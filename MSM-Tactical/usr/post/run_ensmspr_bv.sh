@@ -13,10 +13,10 @@ IRES=${2}
 #export SDATE IRES
 TETYPE=${3:-dry}
 TESIZE=${4}
-BP=${5:-wbp}
+BP=${5}
 SCLBASE=${6}
-SCLPOW=${7:-10}
-QADJ=${8:-yes}
+SCLPOW=${7}
+QADJ=${8:-no}
 ORTH=${9:-no}
 BV_H=${BV_H:-6}
 EDATE=${EDATE:-$SDATE}

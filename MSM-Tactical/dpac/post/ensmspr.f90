@@ -79,8 +79,13 @@ program ensmspr
     dflds = dflds + dfld**2
   !  nsig=nsig+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  dflds = dflds/real(nens,kind=dp) - dfldm**2
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   ! write output
   print *,icld, nfldsig, size(dfldm,1), size(dfldm,2), size(dfldm,3)
   call write_sig(nmsig,label,idate,fhour,si,sl,ext,&
@@ -110,8 +115,13 @@ program ensmspr
     dflds = dflds + dfld**2
 !    nsfc = nsfc+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  dflds = dflds/real(nens,kind=dp) - dfldm**2
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   slmsk = dfld(:,:,16)
   ! write output
   call write_sfc(nmsfc,igrd1,jgrd1,dfldm,label,idate,fhour)
@@ -139,8 +149,13 @@ program ensmspr
     dflds = dflds + dfld**2
 !    nflx = nflx+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  dflds = dflds/real(nens,kind=dp) - dfldm**2
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   ! write output
   call write_flx(nmflx,igrd1,jgrd1,dfldm,ids,iparam,slmsk,&
                & idate,fhour,zhour,&

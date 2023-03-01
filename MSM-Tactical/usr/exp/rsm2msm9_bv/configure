@@ -86,7 +86,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export ENDHOUR=24 
-#export ENDHOUR=48                             # release_test
+export ENDHOUR=48                             # release_test
 #from gfsp2rsm27
 export INCBASE=3
 export INCHOUR=3

@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
-#   export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
+   export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
 fi
 GLOBAL=${GLOBAL:-GEFS}
 if [ "$MEM" = "000" ];then #control
@@ -111,7 +111,7 @@ export FCST=yes
 # --------------- run option --------------------
 export ENDHOUR=168 
 export ENDHOUR=48                             # release_test
-export ENDHOUR=24                             # release_test
+#export ENDHOUR=24                             # release_test
 export PRTHOUR=3                             # release_test
 export INCBASE=3
 export INCHOUR=3

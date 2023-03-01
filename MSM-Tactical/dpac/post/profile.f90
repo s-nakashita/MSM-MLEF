@@ -1,27 +1,30 @@
-program spectra
+program profile
 !
-! calculate full or perturbation power spectrum
+! calculate vertical profile of r_sig.fNN
 !
   use kind_module
   use phconst_module
   use rsmcom_module
   use read_module
-  use spectral_module
   use func_module, only: ndate
   implicit none
-  logical :: lprtb=.true. ! False=>calculate for full field
-  namelist /namlst_spectra/ lprtb
-  ! for calculation
-  real(kind=dp), allocatable :: grid(:,:)
-  real(kind=dp), allocatable :: coef(:,:)
+  logical       :: lprtb=.false. ! False=>calculate for full field
+  real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region
+  real(kind=dp) :: lats=-999.9d0, latn=-999.9d0 ! calculation region
+  namelist /namlst_prof/ lprtb, lonw, lone, lats, latn
+  integer :: ilonw, ilone, jlats, jlatn ! calculation region indexes
+  integer :: nlonl, nlatl, ilon, jlat
+  !
+  real(kind=dp) :: area,coef
+  real(kind=dp), allocatable :: vwgt(:), prof(:,:)
   real(kind=sp), allocatable :: buf4(:)
+  integer :: irec
+  integer :: ips,it,iu,iv,iq
   integer, allocatable :: idvars(:)
-  character(len=2), allocatable :: cvars(:)
-  integer :: nvarall, irec
-  character(len=17) :: ofile='spectrum_fhNN.bin'
-  character(len=17) :: cfile='spectrum_fhNN.ctl'
+  character(len=13) :: ofile='prof_fhNN.bin'
+  character(len=13) :: cfile='prof_fhNN.ctl'
   ! input files
-  character(len=4) :: inf1='base' !base
+  character(len=4) :: inf1='base'
   character(len=4) :: inf2='prtb' !prtb+base
   integer, parameter :: nisig=11, nisfc=21, niflx=31
   integer            :: nsig,     nsfc,     nflx
@@ -33,46 +36,94 @@ program spectra
   real(kind=sp) :: fhour2
   integer :: n,nn,i,j,k
 
-  read (5,namlst_spectra)
-  write(6,namlst_spectra)
+  read(5,namlst_prof)
+  write(6,namlst_prof)
   
 !!! set parameters
-  ! headers are assumed to be identical for all initial time
   call set_rsmparm(inf1)
   print*, label
   print*, idate
   print*, fhour
-  print*, nflds
+  dtmin=nint(fhour)*60
+  date1(1)=idate(4)
+  date1(2)=idate(2)
+  date1(3)=idate(3)
+  date1(4)=idate(1)
+  date1(5)=0
+  call ndate(date1,dtmin,date2)
+  idate(4)=date2(1)
+  idate(2)=date2(2)
+  idate(3)=date2(3)
+  idate(1)=date2(4)
+  iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   print*, igrd1, jgrd1
   print*, nlev
   print*, nonhyd
   print*, sigh(1:nlev+1)
-  print*, sig (1:nlev)
+  print*, sig(1:nlev)
   allocate( v3dg(nlon,nlat,nlev,nv3d) )
   allocate( v2dg(nlon,nlat,nv2d) ) !not used
+  !! setting boundaries
+  if ((lonw.gt.-999.9d0).and.(lone.gt.-999.9d0)) then
+    do i=1,igrd1
+      if(rlon(i).ge.lonw) then
+        ilonw=i
+        exit
+      end if
+    end do 
+    do i=1,igrd1
+      if(rlon(i).ge.lone) then
+        ilone=i
+        exit
+      end if
+    end do 
+  else
+    ilonw=1
+    ilone=igrd1
+  end if
+  if ((lats.gt.-999.9d0).and.(latn.gt.-999.9d0)) then
+    do j=1,jgrd1
+      if(rlat(j).ge.lats) then
+        jlats=j
+        exit
+      end if
+    end do 
+    do j=1,jgrd1
+      if(rlat(j).ge.latn) then
+        jlatn=j
+        exit
+      end if
+    end do 
+  else
+    jlats=1
+    jlatn=jgrd1
+  end if
+  print *, 'boundary ',ilonw,'-',ilone,' lon ',rlon(ilonw),'-',rlon(ilone)
+  print *, 'boundary ',jlats,'-',jlatn,' lat ',rlat(jlats),'-',rlat(jlatn)
+  nlonl = ilone - ilonw + 1
+  nlatl = jlatn - jlats + 1
+  print *, 'nlonl ',nlonl,' nlatl ',nlatl
   
   if(nonhyd.eq.1) then 
     iv3d_t=iv3d_tn
     allocate( idvars(nv3d-1) )
-    allocate( cvars(nv3d-1) )
-    idvars(1)=iv3d_t;cvars(1)='t'
-    idvars(2)=iv3d_q;cvars(2)='q'
-    idvars(3)=iv3d_oz;cvars(3)='oz'
-    idvars(4)=iv3d_cw;cvars(4)='cw'
-    idvars(5)=iv3d_pn;cvars(5)='p'
-    idvars(6)=iv3d_wn;cvars(6)='w'
-    idvars(7)=iv3d_u;cvars(7)='u'
-    idvars(8)=iv3d_v;cvars(8)='v'
+    idvars(1)=iv3d_t
+    idvars(2)=iv3d_u
+    idvars(3)=iv3d_v
+    idvars(4)=iv3d_q
+    idvars(5)=iv3d_oz
+    idvars(6)=iv3d_cw
+    idvars(7)=iv3d_pn
+    idvars(8)=iv3d_wn
   else
     iv3d_t=iv3d_th
     allocate( idvars(nv3d) )
-    allocate( cvars(nv3d) )
-    idvars(1)=iv3d_t;cvars(1)='t'
-    idvars(2)=iv3d_q;cvars(2)='q'
-    idvars(3)=iv3d_oz;cvars(3)='oz'
-    idvars(4)=iv3d_cw;cvars(4)='cw'
-    idvars(5)=iv3d_u;cvars(5)='u'
-    idvars(6)=iv3d_v;cvars(6)='v'
+    idvars(1)=iv3d_t
+    idvars(2)=iv3d_u
+    idvars(3)=iv3d_v
+    idvars(4)=iv3d_q
+    idvars(5)=iv3d_oz
+    idvars(6)=iv3d_cw
   end if
   ! base
   call read_restart(inf1,v3dg,v2dg)
@@ -87,8 +138,6 @@ program spectra
     print *, 'q(full,max)', maxval(v3dg(:,:,k,iv3d_q)),maxloc(v3dg(:,:,k,iv3d_q))
     print *, 'q(full,min)', minval(v3dg(:,:,k,iv3d_q)),minloc(v3dg(:,:,k,iv3d_q))
   end do
-  print *, 'ps(full,max)', maxval(v2dg(:,:,iv2d_ps)),maxloc(v2dg(:,:,iv2d_ps))
-  print *, 'ps(full,min)', minval(v2dg(:,:,iv2d_ps)),minloc(v2dg(:,:,iv2d_ps))
   if(lprtb) then
   ! perturbed field
   allocate( v3dp(nlon,nlat,nlev,nv3d) )
@@ -113,7 +162,6 @@ program spectra
   end if
   call read_restart(inf2,v3dp,v2dp)
   v3dg = v3dg - v3dp
-  v2dg = v2dg - v2dp
   do k=1,nlev
     print*, k
     print *, 'u(prtb,max)', maxval(v3dg(:,:,k,iv3d_u)),maxloc(v3dg(:,:,k,iv3d_u))
@@ -125,74 +173,44 @@ program spectra
     print *, 'q(prtb,max)', maxval(v3dg(:,:,k,iv3d_q)),maxloc(v3dg(:,:,k,iv3d_q))
     print *, 'q(prtb,min)', minval(v3dg(:,:,k,iv3d_q)),minloc(v3dg(:,:,k,iv3d_q))
   end do
-  print *, 'ps(prtb,max)', maxval(v2dg(:,:,iv2d_ps)),maxloc(v2dg(:,:,iv2d_ps))
-  print *, 'ps(prtb,min)', minval(v2dg(:,:,iv2d_ps)),minloc(v2dg(:,:,iv2d_ps))
   deallocate( v3dp, v2dp )
   end if
+
+  write(ofile(8:9),'(i2.2)') nint(fhour)
+  write(cfile(8:9),'(i2.2)') nint(fhour)
   nn=size(idvars)
-  nvarall=1+nn*nlev
-  print *, 'nvarall=',nvarall
-  ! calculate spectrm
-  call spectral_init
-  allocate( grid(lngrd,nlev) )
-  allocate( coef(lnwav,nlev) )
-  allocate( buf4(lnwav) )
-  ! output
-  write(ofile(12:13),'(i2.2)') nint(fhour)
-  write(cfile(12:13),'(i2.2)') nint(fhour)
-  open(55,file=ofile,form='unformatted',access='direct',recl=4*lnwav)
-  n=1
-  irec=1
-  do j=1,jgrd1
-    do i=1,igrd1
-      grid(i+(j-1)*igrd1,n)=v2dg(i,j,iv2d_ps)
-    end do
-  end do
-  call gdtocc(grid(:,1),coef(:,1),1)
-  print *, 'ps(grid,max)', maxval(grid(:,1)),maxloc(grid(:,1))
-  print *, 'ps(grid,min)', minval(grid(:,1)),minloc(grid(:,1))
-  print *, 'ps(coef,max)', maxval(coef(:,1)),maxloc(coef(:,1))
-  print *, 'ps(coef,min)', minval(coef(:,1)),minloc(coef(:,1))
-  buf4 = real(coef(:,1),kind=sp)
-  write(55,rec=irec) buf4
-  irec=irec+1
+  allocate( vwgt(nlev), prof(nlev,nn) )
+  prof(:,:) = 0.0d0
   do n=1,nn
+    print *, idvars(n)
     do k=1,nlev
-      do j=1,jgrd1
-        do i=1,igrd1
-          grid(i+(j-1)*igrd1,k) = v3dg(i,j,k,idvars(n))
+      vwgt(k) = sigh(k) - sigh(k+1)
+      area=0.0d0
+      do j=1,nlatl
+        jlat=jlats+j-1
+        coef=cos(rlat(jlat)*deg2rad)
+        do i=1,nlonl
+          ilon=ilonw+i-1
+          prof(k,n)=prof(k,n)+v3dg(ilon,jlat,k,idvars(n))*coef
+          area=area+coef
         end do
       end do
+      prof(k,n)=prof(k,n)/area
     end do
-    if(idvars(n)==iv3d_u) then
-      !u
-      call gdtosc(grid,coef,nlev)
-    else if(idvars(n)==iv3d_v) then
-      !v
-      call gdtocs(grid,coef,nlev)
-    else
-      !others
-      call gdtocc(grid,coef,nlev)
-    end if
-    do k=1,nlev
-      print*, k
-      print *, cvars(n),'(grid,max)', maxval(grid(:,k)),maxloc(grid(:,k))
-      print *, cvars(n),'(grid,min)', minval(grid(:,k)),minloc(grid(:,k))
-      print *, cvars(n),'(coef,max)', maxval(coef(:,k)),maxloc(coef(:,k))
-      print *, cvars(n),'(coef,min)', minval(coef(:,k)),minloc(coef(:,k))
-      buf4 = real(coef(:,k),kind=sp)
-      write(55,rec=irec) buf4
-      irec=irec+1
-    end do
+  end do
+  open(55,file=ofile,form='unformatted',access='direct',recl=4*nlev)
+  buf4 = real(vwgt(:),kind=sp)
+  write(55,rec=1) buf4
+  do n=1,nn
+    buf4 = real(prof(:,n),kind=sp)
+    write(55,rec=n+1) buf4
   end do
   close(55)
   open(60,file=cfile)
   call genctl(60,ofile)
   close(60)
-
-  call spectral_clean
-  deallocate( v3dg,v2dg )
-  deallocate( grid,coef )
+  deallocate( vwgt, prof )
+  deallocate( v3dg, v2dg )
 contains
   subroutine genctl(nctl,cfile)
     implicit none
@@ -211,9 +229,9 @@ contains
     write(nctl,'(2a)') 'dset ^',cfile
     write(nctl,'(a)') 'options big_endian'
     write(nctl,'(a)') 'undef -9.99E+33'
-    write(nctl,108) iwav1
+    write(nctl,108) 1
  108  format('xdef',I5,' linear 0 1')
-    write(nctl,110) jwav1
+    write(nctl,110) 1
  110  format('ydef',I5,' linear 0 1')
     write(nctl,112) nlev
  112  format('zdef',I5,' linear 1 1')
@@ -245,21 +263,21 @@ contains
     write(nctl,114) hour,day,mon(imo),iyr
  114 format('tdef 1 linear ',A2,'Z',A2,A3,I4,'   1hr')
     if(nonhyd.eq.1) then
-    write(nctl,'(a)') 'vars 10'
+    write(nctl,'(a)') 'vars 9'
     else
     write(nctl,'(a)') 'vars 7'
     end if
-    write(nctl,'(a)') 'ps 0 99 surface pressure [Pa]'
+    write(nctl,'(a,i5,a)') 'vwgt ',nlev,' 99 layer thickness'
     write(nctl,'(a,i5,a)') 't ',nlev,' 99 temperature [K]'
-    write(nctl,'(a,i5,a)') 'u ',nlev,' 99 zonal wind [m/s]'
-    write(nctl,'(a,i5,a)') 'v ',nlev,' 99 meridional wind [m/s]'
     write(nctl,'(a,i5,a)') 'q ',nlev,' 99 specific humidity [g/kg]'
     write(nctl,'(a,i5,a)') 'oz ',nlev,' 99 ozone mixing ratio'
     write(nctl,'(a,i5,a)') 'cw ',nlev,' 99 cloud water'
     if(nonhyd.eq.1) then
-    write(nctl,'(a,i5,a)') 'pn ',nlev,' 99 full log pressure'
+    write(nctl,'(a,i5,a)') 'pn ',nlev,' 99 full pressure'
     write(nctl,'(a,i5,a)') 'wn ',nlev,' 99 vertical velocity'
     end if
+    write(nctl,'(a,i5,a)') 'u ',nlev,' 99 zonal wind [m/s]'
+    write(nctl,'(a,i5,a)') 'v ',nlev,' 99 meridional wind [m/s]'
     write(nctl,'(a)') 'endvars'
     return
   end subroutine

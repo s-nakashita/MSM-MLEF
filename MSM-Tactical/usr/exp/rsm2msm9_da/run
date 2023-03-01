@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 set -x
-export SDATE=${SDATE:-2022083000}
+export SDATE=${SDATE:-2022082600}
 
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
