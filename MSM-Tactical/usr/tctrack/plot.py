@@ -12,7 +12,7 @@ if not figdir.exists():
     figdir.mkdir(parents=True)
 
 sdate = datetime(2022,8,28,0)
-edate = datetime(2022,8,31,0)
+edate = datetime(2022,9,1,0)
 dt = timedelta(hours=24)
 tcnum = 11
 if len(sys.argv) > 1:

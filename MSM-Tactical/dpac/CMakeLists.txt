@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(dummy NONE)
-set(CMAKE_Fortran_COMPILER "/home/nakashita/.local/bin/caf")
+set(CMAKE_Fortran_COMPILER "/Users/nakashita/.local/bin/caf")
 #set(CMAKE_Fortran_COMPILER "/home/nakashita/.local/bin/gfortran")
 
 project(dpac)
@@ -24,8 +24,11 @@ find_package(fortran_stdlib REQUIRED)
 message(STATUS "fortran_stdlib_FOUND=${fortran_stdlib_FOUND}")
 
 add_subdirectory(mod/common)
+add_subdirectory(mod/parallel)
 add_subdirectory(mod/lmlef)
 add_subdirectory(mod/obs)
 add_subdirectory(obs)
 add_subdirectory(lmlef)
+add_subdirectory(post)
+add_subdirectory(pre)
 #add_subdirectory(test)

@@ -30,14 +30,18 @@ module lmlef_tools
 
   integer,save :: nobstotal
   real(kind=dp),save,public :: pscale
-!DEBUG
-  character(len=4) :: cn
   real(kind=dp),allocatable :: var_local(:,:)
   integer,allocatable,save  :: var_local_n2n(:)
   integer,allocatable,save  :: var_update(:) !=1:updated =0:not updated
 ! for obs_local & obs_update
   real(kind=dp),allocatable,save :: obsdepk(:)
   real(kind=dp),allocatable,save :: obshdxk(:,:)
+!!DEBUG
+  character(len=4) :: cn
+  integer, parameter :: timeunit=7
+  character(len=18) :: recfilename='debug_time-MMM.txt'
+  real(kind=dp) :: rtimer00,rtimer
+!!DEBUG
 
 contains
 subroutine init_das_lmlef
@@ -65,6 +69,7 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Q
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! RH
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Ps
+   &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! T2m
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Td
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
@@ -82,6 +87,7 @@ subroutine init_das_lmlef
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Q
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! RH
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Ps
+   &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! T2m
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Td
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, & ! Wind Direction
    &    1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0, 1.0d0/)& ! Wind speed
@@ -97,6 +103,10 @@ subroutine init_das_lmlef
   write(6,'(a)') 'var_update'
   write(6,'('//trim(cn)//'(a6,x))') varnames
   write(6,'('//trim(cn)//'(i6,x))') var_update
+  if(debug_time) then
+    write(recfilename(12:14),'(i3.3)') myimage
+    open(timeunit,file=recfilename)
+  end if
   return
 end subroutine init_das_lmlef
 !-----------------------------------------------------------------------
@@ -166,6 +176,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 ! for q adjustment
   real(kind=dp) :: rh, qlim
 
+  if(debug_time) call cpu_time(rtimer00)
   write(6,'(A)') 'Hello from das_lmlef'
   nobstotal = obsdasort%nobs !+ ntvs
   write(6,'(A,I8)') 'Target observation numbers : NOBS=',obsdasort%nobs!,', NTVS=',ntvs
@@ -356,6 +367,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   fval(:,:) = 0.0d0
   flag(:,:) = 1
   hfirst = .TRUE.
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(INITIALIZE):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
   ! start optimization for all grids and variables
   do while ( niter <= maxiter )
     if( jout .and. (gflag==1) ) write(6,'(A,i4)') 'iteration', niter
@@ -370,6 +386,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         fglb[myimage] = fglb[myimage] + fglb[k]
       end do
     end if
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(GLOBALCOST):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
     do ilev=1,nlev
       write(6,'(A,I3)') 'ilev = ',ilev
       do ij=1,nij1
@@ -384,6 +405,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
           call obs_local(ij,ilev,n,zxb,dep,rloc,&
           & nobsl(ij,ilev),nobs_use(:,ij,ilev),&
           & logpfm,hfirst)
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,I5,L2,F12.7)') '### DAS_LMLEF TIMER(OBS_LOCAL):',nobsl(ij,ilev),hfirst,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
           parm = infl_mul3d(i,j,ilev)
           ! adaptive inflation
           if((cov_infl_mul < 0.0d0).and.(nobsl(ij,ilev).gt.0).and.hfirst) then
@@ -401,6 +427,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
             jwork3d(i,j,ilev,2) = jo1
           end if
           if(debug) write(6,'(2I4,A,I4)') ij, ilev, ' flag=', flag(ij,ilev) 
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,I5,F12.7)') '### DAS_LMLEF TIMER(MLEF_CORE):',nobsl(ij,ilev),rtimer-rtimer00
+    rtimer00=rtimer
+  end if
         end if
       end do
     end do
@@ -472,6 +503,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       end do      
     end if
     sync all
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(SYNC_MINIMIZE):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
     if ( gflag==0 ) then
       EXIT 
     else
@@ -479,6 +515,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
       ! update Z & dep in entire region
       call obs_update( gues3dc,gues2dc,gues3d,gues2d,w )
       hfirst=.FALSE.
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(OBS_UPDATE):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
     end if
   end do ! while ( niter <= maxiter )
   if (niter>=maxiter) write(6,'(A,I4)') 'iteration number exceeds ',maxiter
@@ -502,6 +543,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         jwork3d(i,j,ilev,5) = real(nobsl(ij,ilev),kind=dp)
         jwork3d(i,j,ilev,6) = real(sum(rloc(1:nobsl(ij,ilev))),kind=dp)
       end if
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,I5,L2,F12.7)') '### DAS_LMLEF TIMER(OBS_LOCAL):',nobsl(ij,ilev),hfirst,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
       parm = infl_mul3d(i,j,ilev)
       if(save_info) then
         if(sp_infl_rtps>0.0d0) then
@@ -526,6 +572,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
         call calc_trans(member,nobstotal,nobsl(ij,ilev),w(:,ij,ilev),zxb,trans,parm)
         end if
       end if
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,I5,F12.7)') '### DAS_LMLEF TIMER(CALC_TRANS):',nobsl(ij,ilev),rtimer-rtimer00
+    rtimer00=rtimer
+  end if
       if(sp_infl_rtpp>0.0d0) then
       !
       ! Relaxation-to-prior-perturbations (Zhang et al. 2004)
@@ -698,6 +749,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 !          end if
         end do
       end if ! q limit and/or super saturation (dry) adjustment
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(VAR_UPDATE):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
     end do !ij=1,nij1
   end do !ilev=1,nlev
   ! (for non-hydrostatic) pn, tt and wn is replaced by hydrostatic 
@@ -848,6 +904,11 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
 
   deallocate(logpfm)
   sync all
+  if(debug_time) then
+    call cpu_time(rtimer)
+    write(timeunit,'(A,2F12.7)') '### DAS_LMLEF TIMER(FINALIZE):',rtimer,rtimer-rtimer00
+    rtimer00=rtimer
+  end if
   return
 end subroutine das_lmlefy
 !-----------------------------------------------------------------------
@@ -1063,10 +1124,10 @@ if(hfirst) then
       !
       ! vertical localization
       !
-      if(obsdasort%elem(nobs_use(n)) == id_ps_obs .and. ilev > 1) then
+      if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
         tmplev = LOG(obsdasort%dat(nobs_use(n)))
         dlev = ABS(tmplev - logpfm(ij,ilev))
-      else if(obsdasort%elem(nobs_use(n)) /= id_ps_obs) then
+      else if(obsdasort%elem(nobs_use(n)) < 10000) then
         tmplev = LOG(obsdasort%lev(nobs_use(n)))
         dlev = ABS(tmplev - logpfm(ij,ilev))
       else
@@ -1121,10 +1182,10 @@ else
     !
     ! vertical localization
     !
-    if(obsdasort%elem(nobs_use(n)) == id_ps_obs .and. ilev > 1) then
+    if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
       tmplev = LOG(obsdasort%dat(nobs_use(n)))
       dlev = ABS(tmplev - logpfm(ij,ilev))
-    else if(obsdasort%elem(nobs_use(n)) /= id_ps_obs) then
+    else if(obsdasort%elem(nobs_use(n)) < 10000) then
       tmplev = LOG(obsdasort%lev(nobs_use(n)))
       dlev = ABS(tmplev - logpfm(ij,ilev))
     else
@@ -1150,7 +1211,7 @@ else
   end do 
 end if
 if(debug) then
-  write(6,'(A, L1, A, I4)') 'hfirst=',hfirst,' nobsl=', nobsl
+  write(6,'(A, L2, A, I4)') 'hfirst=',hfirst,' nobsl=', nobsl
   if(nobsl > 0) then
   write(cn,'(I4)') nobsl
   write(6,'(A9,'//trim(cn)//'I12)') 'nobs_use=', nobs_use(1:nobsl)

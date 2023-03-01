@@ -28,9 +28,11 @@ module nml_module
   real(kind=dp),save :: lone=0.0d0
   real(kind=dp),save :: lats=0.0d0
   real(kind=dp),save :: latn=0.0d0
-  logical, save :: luseobs(9)=(/&
-  !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
-  & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
+  logical, save :: luseobs(10)=(/&
+  !!     U       V       T       Q      RH
+  & .true., .true., .true., .true., .true., &
+  !!    Ps      T2      Td      Wd      Ws
+  & .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0
 
   logical, save :: fixed_level=.false. ! only used mandatory level data
@@ -91,6 +93,8 @@ module nml_module
   logical, save :: oma_monit=.true.
   logical, save :: obsgues_output=.false.
   logical, save :: obsanal_output=.false.
+! debug
+  logical, save :: debug_time=.false.
 !
 contains
   subroutine read_nml_ens
@@ -207,7 +211,8 @@ contains
       q_adjust, &
       oma_monit, &
       obsgues_output, &
-      obsanal_output
+      obsanal_output, &
+      debug_time
 
     rewind(5)
     read (5,nml=param_lmlef,iostat=ierr)

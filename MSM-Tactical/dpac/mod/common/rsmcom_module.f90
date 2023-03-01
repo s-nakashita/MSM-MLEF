@@ -8,7 +8,8 @@ module rsmcom_module
   use kind_module
   use nml_module, only : filelenmax
   use phconst_module, only : rad2deg
-  use read_module, only: levmax,nwext,read_header,read_sig,nfldsfc,read_sfc
+  use read_module, only: levmax,nwext,read_header,read_sig,nfldsfc,read_sfc &
+          ,nfldflx,read_flx
   use write_module, only: write_sig,write_sfc
   implicit none
   public
@@ -89,6 +90,12 @@ module rsmcom_module
   '  ZORL','    CV','   CVB','   CVT',' SLMSK',' VFRAC','  F10m',&
   'CANOPY',' VTYPE',' STYPE','UUSTAR','  FFMM','  FFHH',' ALVSF',&
   ' ALVWF',' ALNSF',' ALNWF',' FACSF',' FACWF'/)
+  integer,parameter :: nv2d_flx=2 !r_flx(diagnostic,no need to write)
+  integer,parameter :: iv2d_t2m=1
+  integer,parameter :: iv2d_q2m=2
+  !integer,parameter :: iv2d_u10m=3
+  !integer,parameter :: iv2d_v10m=4
+  integer,save      :: ind_t2m,ind_q2m,ind_u10m,ind_v10m
   !!! 3D variables
   !!! pn,tn,ww are only for nonhydrostatic
   integer,save      :: nv3d
@@ -174,7 +181,7 @@ module rsmcom_module
 
     if(nonhyd.eq.1) then
       nv2d_sig=3
-      nv2d=nv2d_sig+nv2d_sfc
+      nv2d=nv2d_sig+nv2d_sfc+nv2d_flx
       nv3d=nv3d_hyd+nv3d_nonhyd
       write(6,*) 'model version is nonhydrostatic'
       allocate( varnames(nv3d+nv2d) )
@@ -183,7 +190,7 @@ module rsmcom_module
               '    Pn','    Tn','    Wn','    GZ','    Ps','    Wb'/)
     else
       nv2d_sig=2
-      nv2d=nv2d_sig+nv2d_sfc
+      nv2d=nv2d_sig+nv2d_sfc+nv2d_flx
       nv3d=nv3d_hyd
       write(6,*) 'model version is hydrostatic'
       allocate( varnames(nv3d+nv2d) )
@@ -191,9 +198,11 @@ module rsmcom_module
               '     T','     U','     V','     Q','    OZ','    CW',&
               '    GZ','    Ps'/)
     end if
-    varnames(nv3d+nv2d_sig+1:) = varnames_sfc
+    varnames(nv3d+nv2d_sig+1:nv3d+nv2d_sig+nv2d_sfc) = varnames_sfc
+    varnames(nv3d+nv2d_sig+nv2d_sfc+1:) = (/'   T2m','   Q2m'/)
     nlevall=nv3d*nlev+nv2d
-    nskip=2+(nlevall-nv2d_sfc)!+3
+!    nskip=2+(nlevall-nv2d_sfc)!+3
+    nskip=2+(nlevall-nv2d_sfc-nv2d_flx)!+3
     allocate( sfld(lngrd) )
     rewind(nsig)
     do i=1,nskip
@@ -296,12 +305,16 @@ module rsmcom_module
     real(kind=dp), intent(out) :: v2dg(nlon,nlat,nv2d)
     logical, intent(in), optional :: convert
 
-    integer :: nsig,nsfc
+    integer :: nsig,nsfc,nflx
     character(len=filelenmax) :: filename
     character(len=3) :: clev
     real(kind=dp), allocatable :: dfld(:,:,:)
     real(kind=dp), allocatable :: dummp(:,:,:),dumlat(:),dumlon(:) !dummy
     integer :: k,kk
+    ! read_flx
+    integer      :: ids(255)
+    integer      :: iparam(nfldflx)
+    real(kind=sp) :: fhr, zhr
 
     allocate( dfld(igrd1,jgrd1,nflds) )
     allocate( dummp(igrd1,jgrd1,3) )
@@ -380,6 +393,23 @@ module rsmcom_module
     end do
     close(nsfc)
 
+    deallocate( dfld )
+    allocate( dfld(igrd1,jgrd1,nfldflx) )
+    call search_fileunit(nflx)
+    clev='flx'
+    filename=trim(cfile)//'.'//clev//filesuffix
+    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsfc
+    open(nflx,file=filename,access='sequential',form='unformatted',action='read')
+    call read_flx(nflx,igrd1,jgrd1,dfld,ids,iparam,fhr,zhr&
+                ,ind_t2m,ind_q2m,ind_u10m,ind_v10m)
+    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m) = dfld(:,:,ind_t2m)
+    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m) = dfld(:,:,ind_q2m)
+    !print *, 't2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))&
+    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))
+    !print *, 'q2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))&
+    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))
+    close(nflx)
+    deallocate(dfld)
     return
   end subroutine read_restart
 !

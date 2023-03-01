@@ -3,7 +3,7 @@ program decode_dcdf
 ! decode dcdf files
 ! history:
 ! 22-12-09 SN create
-! 23-01-18 surf observation decode add
+! 23-01-18 add surface observation decode
 !
   use kind_module
   use obs_module, only : obstype, get_nobs_dcdf, read_upper, read_synop, &
