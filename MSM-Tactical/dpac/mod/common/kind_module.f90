@@ -26,4 +26,6 @@ module kind_module
 !
   real(kind=dp), parameter :: undef=-9.99d33
 !
+  integer, parameter :: filelenmax=256
+!
 end module kind_module
