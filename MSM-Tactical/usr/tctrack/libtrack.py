@@ -26,6 +26,24 @@ def linint2_points(xi, yi, fi, xo, yo):
              u * (t * fi[j+1, i+1] + (1-t) * fi[j+1,i])
     return fo
 
+def nearest_min(xi, yi, fi, xo, yo):
+    i = np.argmin(np.abs(xi - xo))
+    i = np.where(xi[i] <= xo, i, i-1)
+    j = np.argmin(np.abs(yi - yo))
+    j = np.where(yi[j] <= yo , j, j-1)
+    if j>=yi.size-1:
+        if i>=xi.size-1:
+            fo = fi[j,i]
+        else:
+            fo = min(fi[j,i],fi[j,i+1])
+    else:
+        if i>=xi.size-1:
+            fo = min(fi[j,i],fi[j+1,i])
+        else:
+            fo = min(fi[j, i], fi[j, i+1],\
+             fi[j+1, i+1], fi[j+1,i])
+    return fo
+
 class tracking:
     def __init__(self,delm,lonm,latm,\
         paramlist,lon0,lat0,\
@@ -234,7 +252,12 @@ class tracking:
                 if param[:2]=='WC':
                     f0 = -1.0*g_min[n]
                 else:
-                    f0 = linint2_points(self.lonm, self.latm, f, self.long[imin],self.latg[jmin])
+                    #f0 = linint2_points(self.lonm, self.latm, f, self.long[imin],self.latg[jmin])
+                    if param=="MSLP" or param[:3]=="GPH":
+                        f0 = nearest_min(self.lonm, self.latm, f, self.long[imin],self.latg[jmin])
+                    else:
+                        f0 = nearest_min(self.lonm, self.latm, -1.0*f, self.long[imin],self.latg[jmin])
+                        f0 = -1.0*f0
                 self.cvaldict[param] = f0
                 icyc+=1
                 dg *= 0.5

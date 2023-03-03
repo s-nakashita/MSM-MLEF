@@ -15,7 +15,7 @@ wdir=rsm2msm9
 igrd=384 # size(lon)-1
 jgrd=192 # size(lat)-1
 endhour=120 # forecast length (hour)
-inchour=3  # output interval (hour)
+inchour=24  # output interval (hour)
 delm=9.0 #horizontal resolution (km)
 
 rm -rf tmp/$init
@@ -53,26 +53,10 @@ cat rlon.txt | tail -n 5
 for fh in $(seq 0 ${inchour} ${endhour});do
 if [ $fh -lt 10 ];then fh=0$fh; fi
 ln -s ${datadir}/${wdir}/${init}/r_pgb.f${fh} .
-decode r_pgb.f${fh} ":PRMSL:" ":MSL:" msl.f${fh}.grd
-decode r_pgb.f${fh} ":UGRD:" ":10 m above gnd:" u10.f${fh}.grd
-decode r_pgb.f${fh} ":VGRD:" ":10 m above gnd:" v10.f${fh}.grd
-decode r_pgb.f${fh} ":HGT:" ":850 mb:" z850.f${fh}.grd
-decode r_pgb.f${fh} ":UGRD:" ":850 mb:" u850.f${fh}.grd
-decode r_pgb.f${fh} ":VGRD:" ":850 mb:" v850.f${fh}.grd
-decode r_pgb.f${fh} ":HGT:" ":700 mb:" z700.f${fh}.grd
-decode r_pgb.f${fh} ":UGRD:" ":700 mb:" u700.f${fh}.grd
-decode r_pgb.f${fh} ":VGRD:" ":700 mb:" v700.f${fh}.grd
-cat msl.f${fh}.grd u10.f${fh}.grd v10.f${fh}.grd \
-z850.f${fh}.grd u850.f${fh}.grd v850.f${fh}.grd \
-z700.f${fh}.grd u700.f${fh}.grd v700.f${fh}.grd > r_pgb.f${fh}.grd
-rm msl.f${fh}.grd u10.f${fh}.grd v10.f${fh}.grd \
-z850.f${fh}.grd u850.f${fh}.grd v850.f${fh}.grd \
-z700.f${fh}.grd u700.f${fh}.grd v700.f${fh}.grd
+decode r_pgb.f${fh} ":TMP:" ":sfc:" tsfc.f${fh}.grd
+decode r_pgb.f${fh} ":LAND:" ":sfc:" slmsk.f${fh}.grd
+cat tsfc.f${fh}.grd slmsk.f${fh}.grd > r_sst.f${fh}.grd
+rm tsfc.f${fh}.grd slmsk.f${fh}.grd
 rm r_pgb.f${fh}
+python ../../plot_sst.py $wdir $init $fh $tcnum
 done
-ls -ltr
-
-### Step 3 : tracking
-nlon=`expr $igrd + 1`
-nlat=`expr $jgrd + 1`
-python ../../track.py $wdir $nlon $nlat $inchour $endhour $delm $init $tcnum

@@ -129,9 +129,9 @@ export RUNFCST=yes
 #export  RCENLON=130.0
 #export  RLFTGRD=183.0
 #export  RBTMGRD=190.0
-## For T-PARC II domain 120E-164E 5N-38N
+## For T-PARC II domain 120E-164E 10N-30N
 export  IGRD=384
-export  JGRD=324
+export  JGRD=192
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
@@ -140,8 +140,8 @@ export  RDELX=9000.
 export  RDELY=9000.
 export  RCENLAT=20.0
 export  RCENLON=140.0
-export  RLFTGRD=176.0
-export  RBTMGRD=136.0
+export  RLFTGRD=183.0
+export  RBTMGRD=90.0
 ## North America domain 125W-82W 20N-55N
 #export  IGRD=324
 #export  JGRD=324

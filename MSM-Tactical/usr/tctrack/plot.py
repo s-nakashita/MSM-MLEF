@@ -6,13 +6,15 @@ from datetime import datetime, timedelta
 import sys
 plt.rcParams['font.size'] = 18
 
-datadir = Path('/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/rsm2msm9')
+wdir='rsm2msm9_himsst'
+#wdir='DATA/gfs/rda'
+datadir = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/{wdir}')
 figdir = datadir / 'fig'
 if not figdir.exists():
     figdir.mkdir(parents=True)
 
 sdate = datetime(2022,8,28,0)
-edate = datetime(2022,9,1,0)
+edate = datetime(2022,8,29,0)
 dt = timedelta(hours=24)
 tcnum = 11
 if len(sys.argv) > 1:
@@ -26,7 +28,7 @@ if len(sys.argv) > 3:
 
 ## best track
 yyyy = sdate.strftime("%Y")
-fbst = Path(f'/Users/nakashita/mnt/dandelion/data/tctrack/{yyyy}/bst{yyyy[2:]}{tcnum:02d}.txt')
+fbst = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yyyy[2:]}{tcnum:02d}.txt')
 try:
     bsttrack = np.loadtxt(fbst)
 except FileNotFoundError:
@@ -55,40 +57,57 @@ slpbst = bsttrack[:,6]
 lonsel = []
 latsel = []
 btime = []
+xticks = []
 for i in range(bsttrack.shape[0]):
     btime.append(datetime(int(bsttrack[i,0]),int(bsttrack[i,1]),\
         int(bsttrack[i,2]),int(bsttrack[i,3])))
     if int(bsttrack[i,3])==0:
         lonsel.append(lonbst[i]);latsel.append(latbst[i])
+        xticks.append(datetime(int(bsttrack[i,0]),int(bsttrack[i,1]),\
+        int(bsttrack[i,2]),int(bsttrack[i,3])))
 ax.plot(lonbst,latbst,c='k',lw=2.0,\
     transform=ccrs.PlateCarree(),label='best track')
 ax.plot(lonsel,latsel,marker='o',c='k',lw=0.0,\
     transform=ccrs.PlateCarree())
 ax2.plot(btime,slpbst,c='k',lw=3.0,label='best track')
+ax2.set_xticks(xticks)
 
 cmap = plt.get_cmap('tab10')
 icol = 0
 while sdate <= edate:
-    tfile = datadir / sdate.strftime('%Y%m%d%H') / Path(f'track{tcnum:02d}.txt')
-    try:
-        track = np.loadtxt(tfile)
-    except FileNotFoundError:
-        print(f"not found {tfile}")
-        continue
-    time = []
-    for i in range(track.shape[0]):
-        time.append(datetime(int(track[i,0]),int(track[i,1]),\
-        int(track[i,2]),int(track[i,3])))
-    lonc = track[:,4]
-    latc = track[:,5]
-    slpc = track[:,6]
-    ax.plot(lonc,latc,c=cmap(icol),lw=2.0,\
-        transform=ccrs.PlateCarree(),label=sdate.strftime('%HZ%d%b'))
-    ax.plot(lonc[::6],latc[::6],marker='o',c=cmap(icol),lw=0.0,\
-        transform=ccrs.PlateCarree())
-    ax2.plot(time,slpc,c=cmap(icol),lw=3.0,label=sdate.strftime('%HZ%d%b'))
+    for wdir, style in zip(['rsm2msm9','rsm2msm9_himsst'],\
+        ['solid','dashed']):
+    #for wdir, style in zip(['DATA/gfs/rda'],['solid','dashed']):
+        datadir = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/{wdir}')
+        tfile = datadir / sdate.strftime('%Y%m%d%H') / Path(f'track{tcnum:02d}.txt')
+        try:
+            track = np.loadtxt(tfile)
+        except FileNotFoundError:
+            print(f"not found {tfile}")
+            continue
+        time = []
+        for i in range(track.shape[0]):
+            time.append(datetime(int(track[i,0]),int(track[i,1]),\
+            int(track[i,2]),int(track[i,3])))
+        lonc = track[:,4]
+        latc = track[:,5]
+        slpc = track[:,6]
+        if style=='solid':
+            ax.plot(lonc,latc,c=cmap(icol),lw=2.0,ls=style,\
+            transform=ccrs.PlateCarree(),label=sdate.strftime('%HZ%d%b'))
+            ax.plot(lonc[::6],latc[::6],marker='o',c=cmap(icol),lw=0.0,\
+            transform=ccrs.PlateCarree())
+            ax2.plot(time,slpc,c=cmap(icol),lw=3.0,ls=style,\
+            label=sdate.strftime('%HZ%d%b'))
+        else:
+            ax.plot(lonc,latc,c=cmap(icol),lw=2.0,ls=style,\
+            transform=ccrs.PlateCarree())
+            ax.plot(lonc[::6],latc[::6],marker='o',c=cmap(icol),lw=0.0,\
+            transform=ccrs.PlateCarree())
+            ax2.plot(time,slpc,c=cmap(icol),lw=3.0,ls=style)
     icol+=1
     sdate+=dt
+ax2.grid()
 ax.legend()
 ax2.legend()
 plt.setp(ax2.get_xticklabels(),rotation=30,ha="right")

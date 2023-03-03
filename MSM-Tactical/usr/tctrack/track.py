@@ -49,6 +49,7 @@ if len(sys.argv) > 8:
 lon = np.loadtxt("rlon.txt")
 lat = np.loadtxt("rlat.txt")
 dx,dy = mpcalc.lat_lon_grid_deltas(lon,lat)
+##print(f"latitude:{lat}");print(f"longitude:{lon}")#;exit()
 
 ### 2214 : Nanmador
 tstart = datetime(2022, 9, 14, 3)
@@ -65,7 +66,7 @@ fguess = {
 yyyy = t0.strftime("%Y")
 yy = yyyy[2:]
 lbst=False
-fbst=f"/Users/nakashita/mnt/dandelion/data/tctrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
+fbst=f"/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
 try:
     bsttrack = np.loadtxt(fbst)
 except FileNotFoundError:
@@ -112,15 +113,14 @@ while t0 <= t0max:
     latpre = lat0
     slppre = slp0
     ### initialize
-    #paramlist = ['MSLP','RV10','GPH850','RV850','GPH700','RV700']
-    paramlist = ['MSLP','GPH850','RV850','WC850']
+    #paramlist = ['MSLP','RV10','WC10','GPH850','RV850','WC850','GPH700','RV700','WC700']
+    paramlist = ['MSLP','GPH850','RV850']
     for ft in range(f0,endhour+inchour,inchour):
         fdict = dict()
         # read binary file
         buf = np.fromfile(f"r_pgb.f{ft:02d}.grd",dtype=">f4").reshape(-1,nlat,nlon)
         i=0
         slpdata = buf[i,:,:]
-        #print(f"latitude:{lat}");print(f"longitude:{lon}")#;exit()
         slp = xr.DataArray(slpdata, coords=[lat,lon],\
          dims=['latitude','longitude'], \
          attrs={'name':'Mean Sea Level Pressure','units':'hPa'})
@@ -220,9 +220,9 @@ while t0 <= t0max:
             #dlon=dlat=5
             #lonw=int(np.ceil(np.min(lon)));lone=int(np.floor(np.max(lon)))
             #lats=int(np.ceil(np.min(lat)));latn=int(np.floor(np.max(lat)))
-            dlon=dlat=1
-            lonw=int(lon0-5);lone=int(lon0+5)
-            lats=int(lat0-5);latn=int(lat0+5)
+            dlon=dlat=3
+            lonw=int(lon0-15);lone=int(lon0+15)
+            lats=int(lat0-15);latn=int(lat0+15)
             ax.set_xticks(list(range(lonw,lone+dlon,dlon)),crs=ccrs.PlateCarree())
             ax.set_yticks(list(range(lats,latn+dlat,dlat)),crs=ccrs.PlateCarree())
             #ax.set_extent([np.min(lon),np.max(lon),np.min(lat),np.max(lat)], \
