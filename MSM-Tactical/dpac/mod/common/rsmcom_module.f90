@@ -248,7 +248,7 @@ module rsmcom_module
   subroutine clean_rsmparm
     implicit none
 
-    deallocate(rlon,rlat,sig,sigh,mapf)
+    deallocate(rlon,rlat,sig,sigh,mapf,varnames)
   end subroutine clean_rsmparm
 !
 ! ensemble mean

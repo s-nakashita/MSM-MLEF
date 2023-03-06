@@ -48,6 +48,18 @@ program spectra
   print*, nonhyd
   print*, sigh(1:nlev+1)
   print*, sig (1:nlev)
+  dtmin=nint(fhour)*60
+  date1(1)=idate(4)
+  date1(2)=idate(2)
+  date1(3)=idate(3)
+  date1(4)=idate(1)
+  date1(5)=0
+  call ndate(date1,dtmin,date2)
+  idate(4)=date2(1)
+  idate(2)=date2(2)
+  idate(3)=date2(3)
+  idate(1)=date2(4)
+  iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   allocate( v3dg(nlon,nlat,nlev,nv3d) )
   allocate( v2dg(nlon,nlat,nv2d) ) !not used
   
@@ -94,6 +106,7 @@ program spectra
   allocate( v3dp(nlon,nlat,nlev,nv3d) )
   allocate( v2dp(nlon,nlat,nv2d) ) !not used
   !! consistency check
+  call clean_rsmparm
   call set_rsmparm(inf2)
   dtmin=nint(fhour)*60
   date1(1)=idate(4)

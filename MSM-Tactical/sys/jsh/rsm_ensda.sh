@@ -421,7 +421,7 @@ if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLE $DA_MEAN || exit 6
   PREPBASE=T
 fi
-if [ $DA_MEAN = T ]; then
+if [ $CYCLEDA -ge 1 ] && [ $DA_MEAN = T ]; then
 mem=1
 else
 mem=0

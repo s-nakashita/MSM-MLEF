@@ -143,6 +143,7 @@ program profile
   allocate( v3dp(nlon,nlat,nlev,nv3d) )
   allocate( v2dp(nlon,nlat,nv2d) ) !not used
   !! consistency check
+  call clean_rsmparm
   call set_rsmparm(inf2)
   dtmin=nint(fhour)*60
   date1(1)=idate(4)
