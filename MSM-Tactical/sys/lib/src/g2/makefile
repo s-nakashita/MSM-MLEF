@@ -47,6 +47,19 @@ ARFLAGS=$(ARFLAGS_R)
 #ARFLAGS=
 
 #--------------------------------------
+# The following was used for nagfor on macosx arm64
+# DEFS=-DMACOS
+# FC=nagfor
+# CC=gcc
+# INCDIR=-I../../incmod
+# MODDIR=../../incmod/g2_4
+## FFLAGS=-O3 -g -J$(MODDIR) -fallow-argument-mismatch
+# FFLAGS=-O3 -g
+# CFLAGS=-O2 -g $(DEFS) $(INCDIR)
+## CPP=cpp -P -C
+# ARFLAGS=
+#
+#--------------------------------------
 # The following was used for F90 on LINUX
 #
 # DEFS=-DLINUXF90
@@ -72,11 +85,11 @@ ARFLAGS=$(ARFLAGS_R)
 #--------------------------------------
 # The following was used for GFORTRAN on LINUX
 #
-
- DEFS=-DLINUX
+# DEFS=-DLINUX
+ DEFS=-DMACOS
  FC=gfortran
  CC=gcc
- INCDIR=-I/opt/local/include -I../../incmod
+ INCDIR=-I../../incmod
  MODDIR=../../incmod/g2_4
 # FFLAGS=-O3 -g -J$(MODDIR) -fallow-argument-mismatch
  FFLAGS=-O3 -g -fallow-argument-mismatch

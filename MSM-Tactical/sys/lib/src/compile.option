@@ -21,13 +21,13 @@ elif [ $MACHINE = mac_gfortran ]; then
    export CPP="cpp -P -C"
 #  export CC=cc
 #  export FC=gfortran
-   export CC="gcc -fPIC"
+   export CC="cc -fPIC"
    export FC="gfortran -fPIC"
-   export FFLAGS_4=" -fno-range-check -fconvert=big-endian -fallow-argument-mismatch "
-   export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian -fno-range-check -fallow-argument-mismatch "
-   export FFLAGS_d=" -fdefault-real-8 -fconvert=big-endian -fno-range-check -fallow-argument-mismatch "
+   export FFLAGS_4=" -fconvert=big-endian "
+   export FFLAGS_8=" -fdefault-integer-8 -fdefault-real-8 -fconvert=big-endian "
+   export FFLAGS_d=" -fdefault-real-8 -fconvert=big-endian "
    export ARFLAGS_R="  "
-   export CFLAGS_R=" -g -DMACOS "
+   export CFLAGS_R=" -DMACOS "
    export DEFS=-DMACOS
 
 elif [ $MACHINE = mac_intel ]; then
@@ -42,6 +42,21 @@ elif [ $MACHINE = mac_intel ]; then
    export ARFLAGS_R="  "
    export CFLAGS_R=" -O3 -DMACOS "
    export DEFS=-DMACOS
+
+elif [ $MACHINE = mac_nagfor ]; then
+
+######### Mac NAG FORTRAN compiler for ARM64 #######
+   export CPP="cpp -P -C"
+   export CC=cc
+   export FC=nagfor
+   export FFLAGS_4=" -O3 -convert=big_endian "
+   export FFLAGS_8=" -O3 -i8 -r8 -convert=big_endian "
+   export FFLAGS_d=" -O3 -r8 -convert=big_endian "
+   export ARFLAGS_R="  "
+#   export CFLAGS_R=" -O3 -DMACOS "
+#   export DEFS=-DMACOS
+   export CFLAGS_R=" -O3 -DLINUXF90 "
+   export DEFS=-DLINUXF90
 
 elif [ $MACHINE = linux_intel ]; then
 

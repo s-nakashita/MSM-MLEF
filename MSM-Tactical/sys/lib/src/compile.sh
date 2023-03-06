@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+
 # compile options for ibm_xlf, linux_intel, linux_pgi, linux_gfortran, mac_intel
 #                     mac_gfortran
 #export MACHINE=linux_intel
@@ -21,7 +21,6 @@ fi
 
 if [ $cflag = 1 ]; then
   cd $LIBPATH/src/zlib-1.2.3
-  make clean
   ./configure --prefix=$LIBPATH 
   make
   make install
@@ -90,8 +89,8 @@ fi
 if [ $cflag = 1 ]; then
   mkdir -p $LIBPATH/incmod/g2_4
   cd g2
-  make
-  make install
+  gmake
+  gmake install
   cd ..
 fi
 
