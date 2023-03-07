@@ -122,6 +122,53 @@ elif [ $MACHINE = mac_intel ]; then
    export F_FLAG='-convert big_endian -auto '
 
 # -----------------------------------------------------------------------
+elif [ $MACHINE = mac_nagfor ]; then
+
+######### Mac mini NAG FORTRAN compiler for ARM64 #######
+
+   export F_SUBF=f90
+
+   export C_PREP_RMTN=cpp
+   export F_COMP_RMTN='nagfor -colour'
+   export F_FLAG_RMTN='-r8 -convert=big_endian '
+   export F_LINK_RMTN='-r8 -convert=big_endian '
+   export F_LIBS_RMTN=
+
+   export C_PREP_MOVE=cpp
+   export F_COMP_MOVE='nagfor -colour'
+   export F_FLAG_MOVE='-convert=big_endian '
+   export F_LINK_MOVE='-convert=big_endian '
+   export F_LIBS_MOVE=
+
+   export C_PREP_RINP=cpp
+   export F_COMP_RINP='nagfor -colour'
+   export F_COMP_RINP90='nagfor -colour'
+   export F_FLAG_RINP='-r8 -convert=big_endian -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LINK_RINP='-r8 -convert=big_endian -I${DISKSYS}/lib/incmod/g2_4'
+   export F_LIBS_RINP=
+   export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -L/opt/local/lib -ljasper -lpng -lz'
+
+   export C_PREP_FCST=cpp
+   export F_COMP_FCST='nagfor -colour'
+   export F_COMP_FCST=mpif77
+   export F_COMP_FCST90='nagfor -colour'
+   export F_COMP_FCST90=mpif77
+   export F_FLAG_FCST='-r8 -convert=big_endian '
+   export F_LINK_FCST='-r8 -convert=big_endian '
+   export F_LIBS_FCST=
+
+   export C_PREP_POST=cpp
+   export F_COMP_POST='nagfor -colour'
+   export F_FLAG_POST='-convert=big_endian '
+   export F_LINK_POST='-convert=big_endian '
+   export F_LIBS_POST=
+
+   export C_PREP=cpp
+   export F_COMP='nagfor -colour'
+   export F_FLAG_r8='-r8 -convert=big_endian '
+   export F_FLAG='-convert=big_endian '
+
+# -----------------------------------------------------------------------
 elif [ $MACHINE = linux_intel ]; then
 
    export F_SUBF=f90

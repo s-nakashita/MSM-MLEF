@@ -29,5 +29,6 @@ C$$$
       INTEGER IRET
       INTEGER(4) JRET
       JRET=IRET
-      CALL exit(JRET)
+C      CALL exit(JRET)
+      stop IRET
       END

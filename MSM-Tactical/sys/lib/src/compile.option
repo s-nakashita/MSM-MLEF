@@ -48,15 +48,15 @@ elif [ $MACHINE = mac_nagfor ]; then
 ######### Mac NAG FORTRAN compiler for ARM64 #######
    export CPP="cpp -P -C"
    export CC=cc
-   export FC=nagfor
+   export FC="nagfor -colour"
    export FFLAGS_4=" -O3 -convert=big_endian "
    export FFLAGS_8=" -O3 -i8 -r8 -convert=big_endian "
    export FFLAGS_d=" -O3 -r8 -convert=big_endian "
    export ARFLAGS_R="  "
-#   export CFLAGS_R=" -O3 -DMACOS "
-#   export DEFS=-DMACOS
-   export CFLAGS_R=" -O3 -DLINUXF90 "
-   export DEFS=-DLINUXF90
+   export CFLAGS_R=" -O3 -DMACOS "
+   export DEFS=-DMACOS
+#   export CFLAGS_R=" -O3 -DLINUXF90 "
+#   export DEFS=-DLINUXF90
 
 elif [ $MACHINE = linux_intel ]; then
 

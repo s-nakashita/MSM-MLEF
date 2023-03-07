@@ -1,0 +1,15 @@
+LIBS=	
+W3LB=	-L../../lib -lbacio_4 -lw3_4 
+FORT=	nagfor -colour
+OPTx=	-O3 -g -convert=big_endian
+OPTN=	-O3 -mismatch -convert=big_endian #-kind=byte
+SRCS=	rpgbnawips.f ismaxmin.f
+OBJS=	rpgbnawips.o ismaxmin.o
+EXEC=	../../utl/rpgbnawips.x
+
+$(EXEC):	$(OBJS)
+	$(FORT) -o $(EXEC) $(OPTN) $(OBJS) $(W3LB) $(LIBS) 
+$(OBJS):	$(SRCS)
+	$(FORT) -c $(OPTN) $(SRCS)
+clean:
+	rm $(EXEC) $(OBJS)

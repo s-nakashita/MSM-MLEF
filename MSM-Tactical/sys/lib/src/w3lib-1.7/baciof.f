@@ -88,7 +88,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
-      CHARACTER(80) CMSG
+      CHARACTER(80) A,CMSG
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -130,6 +130,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
+      CHARACTER(80) A
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -171,6 +172,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
+      CHARACTER(80) A
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -212,6 +214,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
+      CHARACTER(80) A
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -253,6 +256,7 @@ C
 C$$$
       USE BACIO_MODULE
       CHARACTER CFN*(*)
+      CHARACTER(80) A
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6
@@ -293,6 +297,7 @@ C   LANGUAGE: FORTRAN 90
 C
 C$$$
       USE BACIO_MODULE
+      CHARACTER(80) CFN,A
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       IF(LU.LT.001.OR.LU.GT.999) THEN
         IRET=6

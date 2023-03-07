@@ -175,7 +175,7 @@ c
         write(nn,109) jmp,strlatp,dlatp
       else
         print *,' Error in projection '
-        call abort
+        stop 99
       endif
  107  format('pdef',2i5,' nps',4g14.6)
  1071 format('pdef',2i5,' sps',4g14.6)

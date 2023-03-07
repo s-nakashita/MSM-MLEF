@@ -1,5 +1,5 @@
 #!/bin/sh
-
+set -ex
 # compile options for ibm_xlf, linux_intel, linux_pgi, linux_gfortran, mac_intel
 #                     mac_gfortran
 #export MACHINE=linux_intel
@@ -47,13 +47,15 @@ if [ $cflag = 1 ]; then
   if [ $MACHINE = ibm_xlf ]; then
     export CPPFLAGS="-I/usrx/local/jpeg.6b/include"
   fi
-  cd $LIBPATH/src/jasper-1.900.1
-  make clean
-  ./configure --prefix=$LIBPATH --disable-shared
-# ./configure --prefix=$LIBPATH --enable-shared --enable_static
-# ./configure --prefix=$LIBPATH --enable-shared 
-  make
-  make install
+### cannot be configured in MacOS-arm64
+#  cd $LIBPATH/src/jasper-1.900.1
+##  make clean
+#  ./configure --prefix=$LIBPATH --disable-shared
+## ./configure --prefix=$LIBPATH --enable-shared --enable_static
+## ./configure --prefix=$LIBPATH --enable-shared 
+#  make
+#  make install
+###
   unset LDFLAGS
   unset CPPFLAGS
 
@@ -89,8 +91,8 @@ fi
 if [ $cflag = 1 ]; then
   mkdir -p $LIBPATH/incmod/g2_4
   cd g2
-  gmake
-  gmake install
+  make
+  make install
   cd ..
 fi
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -ex
 #
 #     Generate a list of object files that corresponds to the
 #     list of Fortran ( .f ) files in the current directory

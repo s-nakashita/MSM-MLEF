@@ -25,7 +25,7 @@ echo "Continuing ...... "
 DSYS=`cd .. ; pwd`
 echo $DSYS
 # this start from sys/
-cd $DSYS/lib    && pwd && echo "Clean lib*.s etc " && rm -f lib* && ls && echo " " &&\
+cd $DSYS/lib    && pwd && echo "Clean lib*.s etc " && rm -rf lib* && ls && echo " " &&\
 #cd incmod && pwd && echo "Clean incmod " && rm -rf * && ls && echo " " && \
 cd $DSYS/lib/src && pwd && echo "Configure and compile lib ...." && \
 #./compile.sh 1>compile.log 2>>compile.log && cd .. && pwd && ls && \

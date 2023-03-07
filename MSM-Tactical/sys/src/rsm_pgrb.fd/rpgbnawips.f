@@ -141,7 +141,9 @@
       print*,'before call GTMA'
       CALL GTMA                                                         
       NSIG=11                                                           
+      OPEN(NSIG,FORM='unformatted')
       NFLX=21                                                           
+      OPEN(NFLX,FORM='unformatted')
       NPGB=51                                                           
       NFGB=56                                                           
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -963,6 +965,7 @@
       PARAMETER(PLIFT=50.,SIMIN=0.040)
       REAL PKMAS(IM),THEMAS(IM),PKMAB(IM),THEMAB(IM)
       REAL DLS(KM),SLK(KM),PSK(IM)
+      REAL P,PV,TDPD,TLCL,PKLCL,THELCL
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  SELECT THE WARMEST EQUIVALENT POTENTIAL TEMPERATURE
       DO K=1,KT
@@ -1048,101 +1051,101 @@
       RETURN
       END
 
-      SUBROUTINE LIFTIX_old(IM,IX,KT,PT,PS,T,Q,TM,SLI,BLI)                  
-!$$$  SUBPROGRAM DOCUMENTATION BLOCK                                    
-!                                                                       
-!  SUBPROGRAM:    LIFTIX      COMPUTE LIFTED INDICES FROM SIGMA         
-!   PRGMMR: IREDELL          ORG: W/NMC23    DATE: 92-10-31             
-!                                                                       
-! ABSTRACT: COMPUTES BOTH THE SURFACE LIFTED INDEX AND BEST LIFTED INDEX
-!   FROM PROFILES IN CONSTANT PRESSURE THICKNESS LAYERS ABOVE GROUND.   
-!   THE SURFACE LIFTED INDEX IS COMPUTED BY RAISING THE LOWEST LAYER    
-!   TO 500 MB AND SUBTRACTING ITS PARCEL TEMPERATURE                    
-!   FROM THE ENVIRONMENT TEMPERATURE.                                   
-!   THE BEST LIFTED INDEX IS COMPUTED BY FINDING THE PARCEL             
-!   WITH THE WARMEST EQUIVALENT POTENTIAL TEMPERATURE,                  
-!   THEN RAISING IT TO 500 MB AND SUBTRACTING ITS PARCEL TEMPERATURE    
-!   FROM THE ENVIRONMENT TEMPERATURE.                                   
-!                                                                       
-! PROGRAM HISTORY LOG:                                                  
-!   92-10-31  IREDELL                                                   
-!   94-04-28  IREDELL   FIXED PARAMETERS                                
-!   94-06-03  IREDELL   RETURNED TWO INDICES                            
-!   94-07-29  IREDELL   USED CONSTANT PRESSURE THICKNESS PROFILES       
-!                                                                       
-! USAGE:    CALL LIFTIX(IM,IX,KT,PT,PS,T,Q,TM,SLI,BLI)                  
-!                                                                       
-!   INPUT ARGUMENT LIST:                                                
-!     IM       - INTEGER NUMBER OF POINTS                               
-!     IX       - INTEGER FIRST DIMENSION OF UPPER AIR DATA              
-!     KT       - INTEGER NUMBER OF LAYERS IN PROFILE                    
-!     PT       - REAL PRESSURE THICKNESS IN KPA                         
-!     PS       - REAL (IM) SURFACE PRESSURE IN KPA                      
-!     T        - REAL (IX,KT) TEMPERATURE IN K                          
-!     Q        - REAL (IX,KT) SPECIFIC HUMIDITY IN KG/KG                
-!     TM       - REAL (IM) 500 MB TEMPERATURE IN K                      
-!                                                                       
-!   OUTPUT ARGUMENT LIST:                                               
-!     SLI      - REAL (IX) SURFACE LIFTED INDEX IN K                    
-!     BLI      - REAL (IX) BEST LIFTED INDEX IN K                       
-!                                                                       
-! SUBPROGRAMS CALLED:                                                   
-!   (FPKAP)   - FUNCTION TO COMPUTE PRESSURE TO THE KAPPA               
-!   (FTDP)    - FUNCTION TO COMPUTE DEWPOINT TEMPERATURE                
-!   (FTLCL)   - FUNCTION TO COMPUTE LIFTING CONDENSATION LEVEL          
-!   (FTHE)    - FUNCTION TO COMPUTE EQUIVALENT POTENTIAL TEMPERATURE    
-!   (FTMA)    - FUNCTION TO COMPUTE MOIST ADIABAT TEMPERATURE           
-!                                                                       
-! ATTRIBUTES:                                                           
-!   LANGUAGE: CRAY FORTRAN                                              
-!                                                                       
-!$$$                                                                    
-!FPP$ EXPAND(FPKAP,FTDP,FTLCL,FTHE,FTMA)                                
-      DIMENSION PS(IM),T(IX,KT),Q(IX,KT),TM(IM),SLI(IM),BLI(IM)         
-      PARAMETER(CP= 1.0046E+3 ,RD= 2.8705E+2 ,RV= 4.6150E+2 )           
-      PARAMETER(RK=RD/CP,EPS=RD/RV,EPSM1=RD/RV-1.)                      
-      PARAMETER(PLIFT=50.)                                              
-      DIMENSION P2KMAS(IM),THEMAS(IM),P2KMAB(IM),THEMAB(IM)             
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-!  SELECT THE WARMEST EQUIVALENT POTENTIAL TEMPERATURE                  
-      DO K=1,KT                                                         
-        DO I=1,IM                                                       
-          P=PS(I)-(K-0.5)*PT                                            
-          PV=P*Q(I,K)/(EPS-EPSM1*Q(I,K))                                
-          TDPD=MAX(T(I,K)-FTDP(PV),0.)                                  
-          TLCL=FTLCL(T(I,K),TDPD)                                       
-          P2KLCL=FPKAP(P)*TLCL/T(I,K)                                   
-          THELCL=FTHE(TLCL,P2KLCL)                                      
-          IF(K.EQ.1) THEN                                               
-            P2KMAS(I)=P2KLCL                                            
-            THEMAS(I)=THELCL                                            
-            P2KMAB(I)=P2KLCL                                            
-            THEMAB(I)=THELCL                                            
-          ELSEIF(THELCL.GT.THEMAB(I)) THEN                              
-            P2KMAB(I)=P2KLCL                                            
-            THEMAB(I)=THELCL                                            
-          ENDIF                                                         
-        ENDDO                                                           
-      ENDDO                                                             
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-!  LIFT THE PARCEL TO 500 MB ALONG A DRY ADIABAT BELOW THE LCL          
-!  OR ALONG A MOIST ADIABAT ABOVE THE LCL.                              
-!  THE LIFTED INDEX IS THE ENVIRONMENT MINUS PARCEL TEMPERATURE.        
-      PLIFTK=(PLIFT/100.)**RK                                           
-      DO I=1,IM                                                         
-        IF(PS(I).GT.PLIFT) THEN                                         
-          P2KS=MIN(PLIFTK,P2KMAS(I))                                    
-          SLI(I)=TM(I)-PLIFTK/P2KS*FTMA(THEMAS(I),P2KS,QMA)             
-          P2KB=MIN(PLIFTK,P2KMAB(I))                                    
-          BLI(I)=TM(I)-PLIFTK/P2KB*FTMA(THEMAB(I),P2KB,QMA)             
-        ELSE                                                            
-          SLI(I)=0.                                                     
-          BLI(I)=0.                                                     
-        ENDIF                                                           
-      ENDDO                                                             
-! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-      RETURN                                                            
-      END                                                               
+!      SUBROUTINE LIFTIX_old(IM,IX,KT,PT,PS,T,Q,TM,SLI,BLI)                  
+!!$$$  SUBPROGRAM DOCUMENTATION BLOCK                                    
+!!                                                                       
+!!  SUBPROGRAM:    LIFTIX      COMPUTE LIFTED INDICES FROM SIGMA         
+!!   PRGMMR: IREDELL          ORG: W/NMC23    DATE: 92-10-31             
+!!                                                                       
+!! ABSTRACT: COMPUTES BOTH THE SURFACE LIFTED INDEX AND BEST LIFTED INDEX
+!!   FROM PROFILES IN CONSTANT PRESSURE THICKNESS LAYERS ABOVE GROUND.   
+!!   THE SURFACE LIFTED INDEX IS COMPUTED BY RAISING THE LOWEST LAYER    
+!!   TO 500 MB AND SUBTRACTING ITS PARCEL TEMPERATURE                    
+!!   FROM THE ENVIRONMENT TEMPERATURE.                                   
+!!   THE BEST LIFTED INDEX IS COMPUTED BY FINDING THE PARCEL             
+!!   WITH THE WARMEST EQUIVALENT POTENTIAL TEMPERATURE,                  
+!!   THEN RAISING IT TO 500 MB AND SUBTRACTING ITS PARCEL TEMPERATURE    
+!!   FROM THE ENVIRONMENT TEMPERATURE.                                   
+!!                                                                       
+!! PROGRAM HISTORY LOG:                                                  
+!!   92-10-31  IREDELL                                                   
+!!   94-04-28  IREDELL   FIXED PARAMETERS                                
+!!   94-06-03  IREDELL   RETURNED TWO INDICES                            
+!!   94-07-29  IREDELL   USED CONSTANT PRESSURE THICKNESS PROFILES       
+!!                                                                       
+!! USAGE:    CALL LIFTIX(IM,IX,KT,PT,PS,T,Q,TM,SLI,BLI)                  
+!!                                                                       
+!!   INPUT ARGUMENT LIST:                                                
+!!     IM       - INTEGER NUMBER OF POINTS                               
+!!     IX       - INTEGER FIRST DIMENSION OF UPPER AIR DATA              
+!!     KT       - INTEGER NUMBER OF LAYERS IN PROFILE                    
+!!     PT       - REAL PRESSURE THICKNESS IN KPA                         
+!!     PS       - REAL (IM) SURFACE PRESSURE IN KPA                      
+!!     T        - REAL (IX,KT) TEMPERATURE IN K                          
+!!     Q        - REAL (IX,KT) SPECIFIC HUMIDITY IN KG/KG                
+!!     TM       - REAL (IM) 500 MB TEMPERATURE IN K                      
+!!                                                                       
+!!   OUTPUT ARGUMENT LIST:                                               
+!!     SLI      - REAL (IX) SURFACE LIFTED INDEX IN K                    
+!!     BLI      - REAL (IX) BEST LIFTED INDEX IN K                       
+!!                                                                       
+!! SUBPROGRAMS CALLED:                                                   
+!!   (FPKAP)   - FUNCTION TO COMPUTE PRESSURE TO THE KAPPA               
+!!   (FTDP)    - FUNCTION TO COMPUTE DEWPOINT TEMPERATURE                
+!!   (FTLCL)   - FUNCTION TO COMPUTE LIFTING CONDENSATION LEVEL          
+!!   (FTHE)    - FUNCTION TO COMPUTE EQUIVALENT POTENTIAL TEMPERATURE    
+!!   (FTMA)    - FUNCTION TO COMPUTE MOIST ADIABAT TEMPERATURE           
+!!                                                                       
+!! ATTRIBUTES:                                                           
+!!   LANGUAGE: CRAY FORTRAN                                              
+!!                                                                       
+!!$$$                                                                    
+!!FPP$ EXPAND(FPKAP,FTDP,FTLCL,FTHE,FTMA)                                
+!      DIMENSION PS(IM),T(IX,KT),Q(IX,KT),TM(IM),SLI(IM),BLI(IM)         
+!      PARAMETER(CP= 1.0046E+3 ,RD= 2.8705E+2 ,RV= 4.6150E+2 )           
+!      PARAMETER(RK=RD/CP,EPS=RD/RV,EPSM1=RD/RV-1.)                      
+!      PARAMETER(PLIFT=50.)                                              
+!      DIMENSION P2KMAS(IM),THEMAS(IM),P2KMAB(IM),THEMAB(IM)             
+!! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+!!  SELECT THE WARMEST EQUIVALENT POTENTIAL TEMPERATURE                  
+!      DO K=1,KT                                                         
+!        DO I=1,IM                                                       
+!          P=PS(I)-(K-0.5)*PT                                            
+!          PV=P*Q(I,K)/(EPS-EPSM1*Q(I,K))                                
+!          TDPD=MAX(T(I,K)-FTDP(PV),0.)                                  
+!          TLCL=FTLCL(T(I,K),TDPD)                                       
+!          P2KLCL=FPKAP(P)*TLCL/T(I,K)                                   
+!          THELCL=FTHE(TLCL,P2KLCL)                                      
+!          IF(K.EQ.1) THEN                                               
+!            P2KMAS(I)=P2KLCL                                            
+!            THEMAS(I)=THELCL                                            
+!            P2KMAB(I)=P2KLCL                                            
+!            THEMAB(I)=THELCL                                            
+!          ELSEIF(THELCL.GT.THEMAB(I)) THEN                              
+!            P2KMAB(I)=P2KLCL                                            
+!            THEMAB(I)=THELCL                                            
+!          ENDIF                                                         
+!        ENDDO                                                           
+!      ENDDO                                                             
+!! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+!!  LIFT THE PARCEL TO 500 MB ALONG A DRY ADIABAT BELOW THE LCL          
+!!  OR ALONG A MOIST ADIABAT ABOVE THE LCL.                              
+!!  THE LIFTED INDEX IS THE ENVIRONMENT MINUS PARCEL TEMPERATURE.        
+!      PLIFTK=(PLIFT/100.)**RK                                           
+!      DO I=1,IM                                                         
+!        IF(PS(I).GT.PLIFT) THEN                                         
+!          P2KS=MIN(PLIFTK,P2KMAS(I))                                    
+!          SLI(I)=TM(I)-PLIFTK/P2KS*FTMA(THEMAS(I),P2KS,QMA)             
+!          P2KB=MIN(PLIFTK,P2KMAB(I))                                    
+!          BLI(I)=TM(I)-PLIFTK/P2KB*FTMA(THEMAB(I),P2KB,QMA)             
+!        ELSE                                                            
+!          SLI(I)=0.                                                     
+!          BLI(I)=0.                                                     
+!        ENDIF                                                           
+!      ENDDO                                                             
+!! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+!      RETURN                                                            
+!      END                                                               
 !-----------------------------------------------------------------------
 !FPP$ NOCONCUR R                                                        
       SUBROUTINE OMEGAW(IM,IX,KM,SI,SL,PS,PSX,PSY,D,U,V,                &
@@ -2338,20 +2341,22 @@ C     IDVT         INTEGER TRACER VARIABLE ID
 !   LANGUAGE: CRAY FORTRAN                                              
 !                                                                       
 !$$$                                                                    
+      INTEGER, PARAMETER :: sp=kind(1e0)
       PARAMETER(LEVMAX=100,NWEXT=512-(6+2*LEVMAX))                      
-      CHARACTER*32 CLABE,CLABA                                          
-!     CHARACTER*8 LABEL(4)                                          
+!      CHARACTER*32 CLABE,CLABA                                          
+      CHARACTER(LEN=8) LABEL(4)                                         
       DIMENSION IDATE(4)                                                
       DIMENSION SI(LEVMAX+1),SL(LEVMAX),SISL(2*LEVMAX+1),EXT(NWEXT)     
-      REAL*4    FHOURS,SIS(LEVMAX+1),SLS(LEVMAX),SISLS(2*LEVMAX+1),      & 
-     &          EXTS(NWEXT)
+      REAL(kind=sp) FHOURS,SIS(LEVMAX+1),SLS(LEVMAX),SISLS(2*LEVMAX+1)
+      REAL(kind=sp) EXTS(NWEXT)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !  READ AND EXTRACT HEADER RECORD                                       
       PRINT *,' RRDSGH: READ AND EXTRACT HEADER RECORD '                
       IRET=0                                                            
       REWIND NSIG                                                       
-!     READ(NSIG,END=91,ERR=92) CLABE                                    
-      READ(NSIG,END=91,ERR=92)                                          
+      READ(NSIG,END=91,ERR=92) LABEL
+!      READ(NSIG,END=91,ERR=92)                                          
+      PRINT *, LABEL
       PRINT *,' after read label '                                      
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !  READ SIGMA GRID FILE HEADER                                          
@@ -2451,7 +2456,7 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       PARAMETER(RD=2.8705E+2,RV=4.6150E+2,FVIRT=RV/RD-1.)               
       DIMENSION F(IGRD1,NFLDS,LAT2-LAT1+1)                              
       DIMENSION GR1(IGRD1*JGRD1),GR2(IGRD1*JGRD1),GR3(IGRD1*JGRD1)      
-      real*4 GR1_s(IGRD1*JGRD1),GR2_s(IGRD1*JGRD1),GR3_s(IGRD1*JGRD1)      
+      real*4 GR1_s(IGRD1*JGRD1),GR2_s(IGRD1*JGRD1),GR3_s(IGRD1*JGRD1)   
       DIMENSION CLAT(IGRD1*JGRD1),XMAP(IGRD1*JGRD1),SL(LEVS)            
       COMMON/IOINDX/ KSZ,KSD,KST,KSQ,KSPSX,KSPSY,KSU,KSV,KSPS,KSZS,       &
      &               KSZSX,KSZSY,KSPN,KSTN,KSWN,KSQC,KSQR,KSOZ,KSCL,      &
@@ -3555,7 +3560,7 @@ C     IDVT         INTEGER TRACER VARIABLE ID
               ENDIF                                                     
             ENDIF                                                       
           ENDDO                                                         
-          I1=I1+ISRCHEQ(IM-I1+1,LEFT(I1),1,.TRUE.)-1                    
+          I1=I1+ISRCHEQL(IM-I1+1,LEFT(I1),1,.TRUE.)-1                    
         ENDIF                                                           
       ENDDO                                                             
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
@@ -4755,6 +4760,9 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       INTEGER IBM(IM*JM*IBMS+1-IBMS),IPDS(100),IGDS(100),IBDS(100)      
       REAL FR(IM*JM)                                                    
       CHARACTER PDS(ILPDS)                                              
+      ! PDSENS
+      INTEGER KENS(5),KPROB(2),KCLUST(16),KMEMBR(80)
+      DIMENSION XPROB(2)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !  DETERMINE GRID PARAMETERS                                            
       PI=ACOS(-1.)                                                      
@@ -6128,7 +6136,9 @@ C     IDVT         INTEGER TRACER VARIABLE ID
 		!                                                  '                  
       RETURN                                                            
       END                                                               
-      FUNCTION ISRCHEQ(N,A,IS,VAL)
+      INTEGER FUNCTION ISRCHEQ(N,A,IS,VAL)
+      INTEGER N, IS
+      REAL A, VAL
       DIMENSION A(N)
       ISRCHEQ=N+1
       DO NN=IS,N
@@ -6139,7 +6149,21 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       ENDDO
       RETURN
       END
-      FUNCTION ISRCHNE(N,A,IS,VAL)
+      INTEGER FUNCTION ISRCHEQL(N,A,IS,VAL)
+      INTEGER N, IS
+      LOGICAL A, VAL
+      DIMENSION A(N)
+      ISRCHEQL=N+1
+      DO NN=IS,N
+      IF(( A(NN).AND.VAL ).OR.( (.NOT.A(NN)).AND.(.NOT.VAL) )) THEN
+        ISRCHEQL=NN
+        RETURN
+      ENDIF
+      ENDDO
+      RETURN
+      END
+      INTEGER FUNCTION ISRCHNE(N,A,IS,VAL)
+      INTEGER N,A,IS,VAL
       DIMENSION A(N)
       ISRCHNE=N+1
       DO NN=IS,N
@@ -6173,7 +6197,8 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       RETURN
       END
       SUBROUTINE SGL2FUL(S,F,L)
-      REAL* 4  S(L)
+      INTEGER, PARAMETER :: sp=kind(1e0)
+      REAL(kind=sp)  S(L)
       DIMENSION F(L)
       DO I=1,L
         F(I)=S(I)
@@ -6181,7 +6206,8 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       RETURN
       END
       SUBROUTINE FUL2SGL(F,S,L)
-      REAL* 4  S(L)
+      INTEGER, PARAMETER :: sp=kind(1e0)
+      REAL(kind=sp)  S(L)
       DIMENSION F(L)
       DO I=1,L
         S(I)=F(I)
@@ -6258,7 +6284,7 @@ C     IDVT         INTEGER TRACER VARIABLE ID
       real psm150,tv,dz150,surfw,surfc
       real dz(lm)
 !     real pv,pr,tdpd,tr,pk,tlcl,thelcl,twet(lm),qwet,
-      real*8 pv,pr,tdpd,tr,pk,tlcl,thelcl,twet(lm),qwet,                 &
+      double precision pv,pr,tdpd,tr,pk,tlcl,thelcl,twet(lm),qwet,                 &
      &areap4,areas8
       real con_t0c,con_rd,con_rv,con_g,con_rog,con_eps,                  &
      &con_epsm1,con_fvirt
@@ -6289,7 +6315,7 @@ C     IDVT         INTEGER TRACER VARIABLE ID
           if(p(l).ge.500.e2.and.p(l).le.pint(lm+1)-70.e2) then
 !         print*,'ha, ha.... we get here!'
             pv=p(l)*q(l)/(con_eps-con_epsm1*q(l))
-            tdpd=t(l)-ftdp(pv)
+            tdpd=t(l)-dble(ftdp(sngl(pv)))
             if(tdpd.lt.tdchk) then
               tcold=min(tcold,t(l))
               twarm=max(twarm,t(l))
@@ -6330,15 +6356,15 @@ C     IDVT         INTEGER TRACER VARIABLE ID
             dz(l)=0
           endif
           pv=p(l)*q(l)/(con_eps-con_epsm1*q(l))
-          tdpd=t(l)-ftdp(pv)
+          tdpd=t(l)-dble(ftdp(sngl(pv)))
           if(tdpd.gt.0.) then
             pr=p(l)
             tr=t(l)
-            pk=fpkap(pr/1000.0)
-            tlcl=ftlcl(tr,tdpd)
-            thelcl=fthe(tlcl,pk*tlcl/tr)
+            pk=dble(fpkap(sngl(pr)/1000.0))
+            tlcl=dble(ftlcl(sngl(tr),sngl(tdpd)))
+            thelcl=dble(fthe(sngl(tlcl),sngl(pk*tlcl/tr)))
 !           call stma(thelcl,pk,twet(l),qwet)
-            twet(l)=ftma(thelcl,pk,qwet)
+            twet(l)=dble(ftma(sngl(thelcl),sngl(pk),sngl(qwet)))
           else
             twet(l)=t(l)
           endif
@@ -6435,7 +6461,7 @@ C     IDVT         INTEGER TRACER VARIABLE ID
 !$$$
 !     implicit none
 !     integer,parameter:: nxma=151,nyma=121
-!     real*8 c1xma,c2xma,c1yma,c2yma,tbtma(nxma,nyma),
+!     double precision c1xma,c2xma,c1yma,c2yma,tbtma(nxma,nyma),
 !    &tbqma(nxma,nyma)
 
 !     real(krealfp),intent(in):: the,pk
@@ -6443,10 +6469,10 @@ C     IDVT         INTEGER TRACER VARIABLE ID
 !     integer jx,jy
 !     real(krealfp) xj,yj,ftx1,ftx2,qx1,qx2
 
-!     real*8,intent(in):: the,pk
-!     real*8,intent(out):: tma,qma
+!     double precision,intent(in):: the,pk
+!     double precision,intent(out):: tma,qma
 !     integer jx,jy
-!     real*8 xj,yj,ftx1,ftx2,qx1,qx2
+!     double precision xj,yj,ftx1,ftx2,qx1,qx2
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !     xj=min(max(c1xma+c2xma*the,1._krealfp),real(nxma,krealfp))
 !     yj=min(max(c1yma+c2yma*pk,1._krealfp),real(nyma,krealfp))
