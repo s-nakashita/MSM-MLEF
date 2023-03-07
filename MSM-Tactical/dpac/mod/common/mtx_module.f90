@@ -53,9 +53,11 @@ SUBROUTINE mtx_eigen(imode,n,a,eival,eivec,nrank_eff)
   double precision, allocatable :: work(:)
   INTEGER :: lwork
   INTEGER :: info,i,j
-  CHARACTER(len=1) :: jobz='v', uplo='u'
+  CHARACTER(len=1) :: jobz, uplo
 
   eivec8 = a
+  jobz='v'
+  uplo='u'
   IF(imode==0) THEN
     jobz='n'
   END IF

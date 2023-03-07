@@ -7,7 +7,7 @@ program calctesprd
   use read_module
   use write_module
   use norm_module, only: calc_tegrd, calc_teprof
-  use func_module, only: ndate
+  use obs_module, only: ndate
   implicit none
   ! ensemble size
   integer :: nens=10

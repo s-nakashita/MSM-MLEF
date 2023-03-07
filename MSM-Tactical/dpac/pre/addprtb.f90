@@ -8,13 +8,13 @@ program addprtb
   use read_module
   use write_module, only: write_sig, write_sfc
   use norm_module, only: calc_te, calc_te2
-  use func_module, only: ndate, calc_rh, calc_q2 !=> calc_q
+  use func_module, only: calc_rh, calc_q2 !=> calc_q
+  use obs_module, only: ndate
   implicit none
   ! for energy calculation
   !real(kind=dp), parameter :: teref=5.6d0 !rescaled total energy [J/kg/m2]
   real(kind=dp), parameter :: uscl=1.0d0,vscl=1.0d0&
                            &,thetascl=0.4d0,rhscl=5.0d-2,psscl=3.5d1
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp), parameter :: p0=1000.0d2, ptheta=rd/cp ! potential temperature
   real(kind=dp)            :: tscl,qscl,pscl,tbase,qbase
 

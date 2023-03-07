@@ -6,7 +6,6 @@ module rsmcom_module
 ! 22-08-04 SN create
 !
   use kind_module
-  use nml_module, only : filelenmax
   use phconst_module, only : rad2deg
   use read_module, only: levmax,nwext,read_header,read_sig,nfldsfc,read_sfc &
           ,nfldflx,read_flx
@@ -176,8 +175,8 @@ module rsmcom_module
       sigh(i) = si(i)
     end do
     sigh(nlev+1) = si(nlev+1)
-    write(6,'(a,f7.5,x,f7.5)') 'sig=',minval(sig),maxval(sig)
-    write(6,'(a,f7.5,x,f7.5)') 'sigh=',minval(sigh),maxval(sigh)
+    write(6,'(a,2f7.5)') 'sig=',minval(sig),maxval(sig)
+    write(6,'(a,2f7.5)') 'sigh=',minval(sigh),maxval(sigh)
 
     if(nonhyd.eq.1) then
       nv2d_sig=3
@@ -230,13 +229,13 @@ module rsmcom_module
       rlat(j) = real(sfld(k),kind=dp)*rad2deg
       k=k+nlon
     end do
-    write(6,'(a,f9.2,x,f9.2)') 'rlat=',minval(rlat),maxval(rlat)
+    write(6,'(a,2f9.2)') 'rlat=',minval(rlat),maxval(rlat)
     !rlon(W->E)
     read(nsig) (sfld(i),i=1,lngrd)
     do i=1,nlon
       rlon(i) = real(sfld(i),kind=dp)*rad2deg
     end do
-    write(6,'(a,f9.2,x,f9.2)') 'rlon=',minval(rlon),maxval(rlon)
+    write(6,'(a,2f9.2)') 'rlon=',minval(rlon),maxval(rlon)
     deallocate(sfld)
     close(nsig)
     return
@@ -248,7 +247,7 @@ module rsmcom_module
   subroutine clean_rsmparm
     implicit none
 
-    deallocate(rlon,rlat,sig,sigh,mapf,varnames)
+    deallocate(rlon,rlat,sig,sigh,mapf)
   end subroutine clean_rsmparm
 !
 ! ensemble mean
@@ -404,10 +403,10 @@ module rsmcom_module
                 ,ind_t2m,ind_q2m,ind_u10m,ind_v10m)
     v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m) = dfld(:,:,ind_t2m)
     v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m) = dfld(:,:,ind_q2m)
-    print *, 't2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))&
-                   ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))
-    print *, 'q2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))&
-                   ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))
+    !print *, 't2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))&
+    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))
+    !print *, 'q2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))&
+    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))
     close(nflx)
     deallocate(dfld)
     return

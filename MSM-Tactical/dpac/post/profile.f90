@@ -6,7 +6,7 @@ program profile
   use phconst_module
   use rsmcom_module
   use read_module
-  use func_module, only: ndate
+  use obs_module, only: ndate
   implicit none
   logical       :: lprtb=.false. ! False=>calculate for full field
   real(kind=dp) :: lonw=-999.9d0, lone=-999.9d0 ! calculation region

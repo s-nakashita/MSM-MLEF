@@ -7,7 +7,7 @@ program spectra
   use rsmcom_module
   use read_module
   use spectral_module
-  use func_module, only: ndate
+  use obs_module, only: ndate
   implicit none
   logical :: lprtb=.true. ! False=>calculate for full field
   namelist /namlst_spectra/ lprtb

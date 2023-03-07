@@ -11,11 +11,10 @@ program lmlef
   use kind_module
   use co_module
   use nml_module
-  use func_module, only: ndate
   use rsmcom_module
   use corsm_module
   use obs_module, only: obstype2, get_nobs, read_obs, write_obsout, monit_obsin, &
-          obsin_allocate, obsout_allocate, obsout_deallocate
+          obsin_allocate, obsout_allocate, obsout_deallocate, ndate
   use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy

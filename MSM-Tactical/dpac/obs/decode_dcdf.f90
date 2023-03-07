@@ -8,8 +8,7 @@ program decode_dcdf
   use kind_module
   use obs_module, only : obstype, get_nobs_dcdf, read_upper, read_synop, &
      & obsin_allocate, obs_preproc, monit_obsin, &
-     & write_obs
-  use func_module, only : ndate
+     & write_obs, ndate
 
   implicit none
   character(len=5), dimension(4), parameter :: datatype=&

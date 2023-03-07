@@ -753,7 +753,7 @@ subroutine read_sfc(iunit,igrd1,jgrd1,dfld)
   print *, 'ifld', ifld, 'nflds ', nfldsfc
   return
 5000 print *, ' error reading'
-  call abort
+  stop 99
 end subroutine read_sfc
 !======================================================================
 ! read flux file

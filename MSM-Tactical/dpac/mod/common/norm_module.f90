@@ -23,8 +23,6 @@ subroutine calc_te(u,v,t,q,ps,epsq,clat,si,nlon,nlat,kmax,te)
   real(kind=dp), intent(in) :: epsq ! weight for moist term
   real(kind=dp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: te(4)
-  ! for energy calculation
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp) :: area,coef
   integer :: igrd1, jgrd1
   integer :: n,i,j,k
@@ -72,8 +70,6 @@ subroutine calc_te2(u1,u2,v1,v2,t1,t2,q1,q2,ps1,ps2,&
   real(kind=dp), intent(in) :: epsq ! weight for moist term
   real(kind=dp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: te(4)
-  ! for energy calculation
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp) :: area,coef
   integer :: igrd1, jgrd1
   integer :: n,i,j,k
@@ -118,8 +114,6 @@ subroutine calc_tegrd(u,v,t,q,ps,epsq,clat,si,nlon,nlat,kmax,te)
   real(kind=dp), intent(in) :: epsq ! weight for moist term
   real(kind=dp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: te(:,:,:,:)
-  ! for energy calculation
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp) :: area,coef
   integer :: igrd1, jgrd1
   integer :: n,i,j,k
@@ -146,7 +140,6 @@ subroutine calc_tegrd(u,v,t,q,ps,epsq,clat,si,nlon,nlat,kmax,te)
   end do
   return
 end subroutine calc_tegrd
-
 !======================================================================
 ! calculate moist total energy profile
 !======================================================================
@@ -158,8 +151,6 @@ subroutine calc_teprof(u,v,t,q,ps,epsq,clat,si,nlon,nlat,kmax,vwgt,te)
   real(kind=dp), intent(in) :: epsq ! weight for moist term
   real(kind=dp), intent(in) :: clat(:),si(:)
   real(kind=dp), intent(out):: vwgt(kmax),te(kmax,4)
-  ! for energy calculation
-  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
   real(kind=dp) :: area,coef
   integer :: igrd1, jgrd1
   integer :: n,i,j,k

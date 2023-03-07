@@ -7,7 +7,8 @@ program addprtbbase
   use rsmcom_module
   use read_module
   use write_module, only: write_sig, write_sfc
-  use func_module, only: ndate, calc_rh, calc_q2 !=> calc_q
+  use func_module, only: calc_rh, calc_q2 !=> calc_q
+  use obs_module, only: ndate
   use spectral_module, only: spectral_init, spectral_clean, spectral_trunc
   implicit none
   real(kind=dp) :: alpha=0.0d0 !rescaled factor

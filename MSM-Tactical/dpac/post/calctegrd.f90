@@ -7,7 +7,7 @@ program calctegrd
   use read_module
   use write_module
   use norm_module, only: calc_tegrd, calc_teprof
-  use func_module, only: ndate
+  use obs_module, only: ndate
   implicit none
   logical :: lprtb=.true. ! False=>calculate for full field
   real(kind=dp) :: epsq=1.0d0 ! weight for moist term

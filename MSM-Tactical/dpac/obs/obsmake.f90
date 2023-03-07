@@ -9,9 +9,9 @@ program obsmake
   use nml_module
   use rsmcom_module
   use corsm_module
-  use func_module, only: distll_1, ndate
+  use func_module, only: distll_1
   use obs_module, only : nobstype, elem_id, obstype, &
-   &  obsin_allocate, monit_obsin, write_obs
+   &  obsin_allocate, monit_obsin, write_obs, ndate
   use obsope_module, only: obsmake_cal
   use lmlef_tools, only: init_das_lmlef
   implicit none

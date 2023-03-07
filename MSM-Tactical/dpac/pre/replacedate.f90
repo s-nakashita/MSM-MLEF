@@ -7,7 +7,7 @@ program replacedate
   use rsmcom_module
   use read_module
   use write_module, only: write_sig, write_sfc
-  use func_module, only: ndate
+  use obs_module, only: ndate
   implicit none
   real(kind=sp) :: newfhour=0.0 !new forecast hours
   integer       :: member=10 !ensemble size
