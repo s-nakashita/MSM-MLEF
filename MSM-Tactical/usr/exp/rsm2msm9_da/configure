@@ -64,13 +64,13 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=1
+export CYCLESTART=2
+export CYCLEMAX=5
 export DASTART=2
 export INCCYCLE=6 # cycle interval
-export ENDHOUR=24 # forecast length
+export ENDHOUR=6 # forecast length
 export PRTHOUR=1
-export EXTEND=1
+export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
@@ -86,7 +86,7 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=40
+export MEMBER=39
 #export MEMBER=20
 export ENSMSPR=yes
 # BGM option for base

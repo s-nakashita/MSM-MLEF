@@ -1124,13 +1124,19 @@ if(hfirst) then
       !
       ! vertical localization
       !
-      if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
+      if(obsdasort%elem(nobs_use(n)) == id_ps_obs .and. ilev > 1) then
+        ! SYNOP Ps observation for upper levels
         tmplev = LOG(obsdasort%dat(nobs_use(n)))
         dlev = ABS(tmplev - logpfm(ij,ilev))
+      else if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
+        ! SYNOP observation for upper levels
+        dlev = ABS(logpfm(ij,1) - logpfm(ij,ilev)) ! log pressure difference against model lowest level
       else if(obsdasort%elem(nobs_use(n)) < 10000) then
+        ! UPPER observation
         tmplev = LOG(obsdasort%lev(nobs_use(n)))
         dlev = ABS(tmplev - logpfm(ij,ilev))
       else
+        ! SYNOP observation for lowest level
         dlev = 0.0d0
       end if
       if(dlev > dist_zerov) CYCLE
@@ -1182,13 +1188,19 @@ else
     !
     ! vertical localization
     !
-    if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
+    if(obsdasort%elem(nobs_use(n)) == id_ps_obs .and. ilev > 1) then
+      ! SYNOP Ps observation for upper levels
       tmplev = LOG(obsdasort%dat(nobs_use(n)))
       dlev = ABS(tmplev - logpfm(ij,ilev))
+    else if(obsdasort%elem(nobs_use(n)) > 10000 .and. ilev > 1) then
+      ! SYNOP observation for upper levels
+      dlev = ABS(logpfm(ij,1) - logpfm(ij,ilev)) ! log pressure difference against model lowest level
     else if(obsdasort%elem(nobs_use(n)) < 10000) then
+      ! UPPER observation
       tmplev = LOG(obsdasort%lev(nobs_use(n)))
       dlev = ABS(tmplev - logpfm(ij,ilev))
     else
+      ! SYNOP observation for lowest level
       dlev = 0.0d0
     end if
     !

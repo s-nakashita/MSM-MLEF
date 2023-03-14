@@ -100,14 +100,16 @@ SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
-  if [ $CYCLE -gt 1 ] && [ $EXTEND -eq 1 ];then
+  if [ $CYCLE -gt 1 ];then
     PCYCLE=`expr $CYCLE - 1`
     inch=`expr $INCCYCLE \* $PCYCLE`
     SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
     export SDATE
+  fi
+  if [ $CYCLE -gt 1 ] && [ $EXTEND -eq 1 ];then
     HZ=`echo $SDATE | cut -c9-10`
     HZ=`expr $HZ`
-    if [ $HZ -ne 0 ]; then
+    if [ $HZ -ne 0 ] && [ $HZ -ne 12 ]; then
       export ENDHOUR=$INCCYCLE
     fi
   else
@@ -476,7 +478,7 @@ while [ $h -lt $FEND ]; do
   while [ $hhr -le $hx ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
-  if [ $mem -eq 0 ] || [ $PREPBASE = F ]; then
+  if [ $PREPBASE = F ]; then
        if [ do$G2R = doyes ] ; then
          ln -fs $BASEDIR/sigf$hhr rb_sigf$hhr
          ln -fs $BASEDIR/sfcf$hhr rb_sfcf$hhr

@@ -51,6 +51,8 @@ while [ $h -le $ENDHOUR ]; do
 fh=`printf '%0.2d' $h`
 rm -f *.sig.grd *.sfc.grd
 # base field
+ln -s $BASEDIR/r_sig.f$fh $DATADIR/rb_sigf$fh #control
+ln -s $BASEDIR/r_sfc.f$fh $DATADIR/rb_sfcf$fh #control
 ln -s $BASEDIR/r_sig.f$fh rb.0000.sig.grd #control
 ln -s $BASEDIR/r_sfc.f$fh rb.0000.sfc.grd #control
 # prtb field

@@ -46,7 +46,8 @@ EXEC=calctegrd
 cd $SRCDIR
 gmake ${EXEC}
 #gmake ${EXEC2}
-DATADIR=/zdata/grmsm/work/$EXPN
+#DATADIR=/zdata/grmsm/work/$EXPN
+DATADIR=$TEMP
 echo $DATADIR
 if [ ! -d $DATADIR ]; then
 echo "No such directory : $DATADIR"

@@ -51,7 +51,8 @@ echo $SDATE $ut
 dt=`expr ${ut} - ${ut0}`
 icyc=`expr $dt / $BV_H / 3600 + 1`
 echo $dt $icyc
-DATADIR=/zdata/grmsm/work/$EXPN/$SDATE
+#DATADIR=/zdata/grmsm/work/$EXPN/$SDATE
+DATADIR=$TEMP/$SDATE
 echo $DATADIR
 if [ ! -d $DATADIR ]; then
 echo "No such directory : $DATADIR"
@@ -62,10 +63,10 @@ cd $SRCDIR
 gmake ${EXEC}
 if [ $icyc -lt $DASTART ]; then
 header=${HEAD}
-meandir=${header}mean
-sprddir=${header}sprd
-#meandir=${header}m${MEMBER}mean
-#sprddir=${header}m${MEMBER}sprd
+#meandir=${header}mean
+#sprddir=${header}sprd
+meandir=${header}m${MEMBER}mean
+sprddir=${header}m${MEMBER}sprd
 else
 header=${HEAD2}
 meandir=${header}mean

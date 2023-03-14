@@ -1,12 +1,19 @@
 #!/bin/sh
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-wdir=rsm2msm9_da
+wdir=rsm2msm9_osse
 #wdir=rsm2rsm27_da
 datadir=/zdata/grmsm/work/$wdir
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=/zdata/grmsm/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
+obsdist=uniform
+if [ $obsdist = grid ];then
+	stationin=T
+else
+	stationin=F
+fi
+reg=ecs
 member=40
 truth=25
 tetype=dry
@@ -67,9 +74,9 @@ mkdir -p $wdir/tmp
 cd $wdir/tmp
 ## station
 rm -f *_station.txt
-ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.jpn.txt upper_station.txt
-cp $stadir/$yyyy/$mm/$adate.ADPSFC.jpn.txt surf_station_1.txt
-cp $stadir/$yyyy/$mm/$adate.SFCSHP.jpn.txt surf_station_2.txt
+ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
+cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
+cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
 cat surf_station_1.txt surf_station_2.txt > surf_station.txt
 rm surf_station_1.txt surf_station_2.txt
 cat <<EOF >obsmake.nml
@@ -106,10 +113,10 @@ cat <<EOF >obsmake.nml
  rmin=${rmin},
  ibuf=,
  jbuf=, 
- kint=,
+ kint=1,
  dist_obs_upper=300.0d3, 
  dist_obs_synop=100.0d3,
- stationin=T,
+ stationin=${stationin},
  station_fname='upper_station.txt','surf_station.txt',
 &end
 EOF
@@ -126,8 +133,8 @@ rm -f STDIN obsmake *.siml*.${sdate}-${edate}.dat
 ln -s obsmake.nml STDIN
 ln -s ${bindir}/obsmake obsmake
 ${RUNENV} ./obsmake #2>${logf}.err | tee ${logf}.log
-mv surf.siml.${sdate}-${edate}.dat ../surf.siml.gridalllev.${sdate}-${edate}.dat
-mv upper.siml.${sdate}-${edate}.dat ../upper${prep}.siml.gridalllev.${sdate}-${edate}.dat
+mv surf.siml.${sdate}-${edate}.dat ../surf.siml.${obsdist}.${sdate}-${edate}.dat
+mv upper.siml.${sdate}-${edate}.dat ../upper${prep}.siml.${obsdist}.${sdate}-${edate}.dat
 mv NOUT-001 ../${logf}.log
 rm -f NOUT-*
 #mv *station.txt ../

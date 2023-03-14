@@ -44,7 +44,8 @@ echo "OSSE TMEM "$OSSE $TMEM
 EXEC=calctesprd
 cd $SRCDIR
 gmake ${EXEC}
-DATADIR=/zdata/grmsm/work/$EXPN
+#DATADIR=/zdata/grmsm/work/$EXPN
+DATADIR=$TEMP
 echo $DATADIR
 if [ ! -d $DATADIR ]; then
 echo "No such directory : $DATADIR"
