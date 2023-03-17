@@ -64,11 +64,12 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=2
-export CYCLEMAX=5
-export DASTART=2
-export INCCYCLE=6 # cycle interval
-export ENDHOUR=6 # forecast length
+export CYCLESTART=0
+export CYCLEMAX=0
+export DASTART=1
+export INCCYCLE=6 # cycle interval (hours)
+export IOFFSET=24 # first guess offset (hours)
+export ENDHOUR=24 # forecast length (hours)
 export PRTHOUR=1
 export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
@@ -86,8 +87,8 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=39
-#export MEMBER=20
+export MEMBER=30
+#export MEMBER=0
 export ENSMSPR=yes
 # BGM option for base
 export TETYPE=dry
@@ -104,7 +105,7 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 export HEAD=$head
 # DA option
 export OSSE=T
-export OBSDIST=grid # observation distribution
+export OBSDIST=uniform # observation distribution
 export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0

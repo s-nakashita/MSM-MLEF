@@ -154,22 +154,22 @@ program obsmake
       !! set stations and elemend ID
       nobsmake=0
       do ielm=1,nelm
-        do ilev=1,nlayer
-          rewind(10)
-          n0=nobsmake
-          do
-            read(10,'(2f6.2)',iostat=ios) clon1, clat1
-            if(ios/=0) exit
+        rewind(10)
+        n0=nobsmake
+        do
+          read(10,'(2f6.2)',iostat=ios) clon1, clat1
+          if(ios/=0) exit
+          do ilev=1,nlayer
             nobsmake=nobsmake+1
             obs(iof)%elem(nobsmake)=elemiduse(ielm)
             obs(iof)%lon(nobsmake)=clon1
             obs(iof)%lat(nobsmake)=clat1
             obs(iof)%lev(nobsmake)=real((ilev-1)*kint+1,kind=dp)
-          end do ![read(10)]
+          end do ![ilev=1,nlayer]
+        end do ![read(10)]
 !        print *, 'obslon=',obs(iof)%lon(n0+1:nobsmake)
 !        print *, 'obslat=',obs(iof)%lat(n0+1:nobsmake)
 !        print *, 'obslev=',obs(iof)%lev(n0+1:nobsmake)
-        end do ![ilev=1,nlayer]
       end do ![ielm=1,nelm]
       
     else
@@ -196,51 +196,40 @@ program obsmake
 
       !! set stations and elemend ID
       nobsmake=0
-      do ielm=1,nelm
-        do ilev=1,nlayer
-          n0=nobsmake
-          do ilat=1+jbuf,nlat-jbuf
-            if(nobsmake.gt.n0) then
-              call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
-              if(dist1.lt.dist_obs) cycle
-            endif
-            clat1=rlat(ilat)
-            do ilon=1+ibuf,nlon-ibuf
-              if(ilon.gt.1+ibuf) then
-                call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
-                if(dist1.lt.dist_obs) cycle
-              end if
+      do ilat=1+jbuf,nlat-jbuf
+        if(ilat.gt.1+jbuf) then
+          call distll_1(0.0d0,clat1,0.0d0,rlat(ilat),dist1)
+          if(dist1.lt.dist_obs) cycle
+        endif
+        clat1=rlat(ilat)
+        do ilon=1+ibuf,nlon-ibuf
+          if(ilon.gt.1+ibuf) then
+            call distll_1(clon1,clat1,rlon(ilon),rlat(ilat),dist1)
+            if(dist1.lt.dist_obs) cycle
+          end if
+          clon1=rlon(ilon)
+          do ielm=1,nelm
+            do ilev=1,nlayer
               nobsmake=nobsmake+1
-              clon1=rlon(ilon)
-              clat1=rlat(ilat)
               obs(iof)%elem(nobsmake)=elemiduse(ielm)
               obs(iof)%lon(nobsmake)=clon1
               obs(iof)%lat(nobsmake)=clat1
               obs(iof)%lev(nobsmake)=real((ilev-1)*kint+1,kind=dp)
-            end do ![ilon]
-          end do ![ilat]
+            end do ![ilev=1,nlayer]
+          end do ![ielm=1,nelm]
+        end do ![ilon]
+      end do ![ilat]
 !        print *, 'obslon=',obs(iof)%lon(n0+1:nobsmake)
 !        print *, 'obslat=',obs(iof)%lat(n0+1:nobsmake)
 !        print *, 'obslev=',obs(iof)%lev(n0+1:nobsmake)
-        end do ![ilev=1,nlayer]
-      end do ![ielm=1,nelm]
     end if
   end do ![iof=1,obsin_num]
   sync all
 !! simulate observation
-  call obsmake_cal(obs,gues3dc,gues2dc)
-!! monitor and write output
-  if(myimage.eq.1) then
-  do iof=1,obsin_num
-    call monit_obsin(obs(iof)%nobs,obs(iof)%elem,obs(iof)%dat)
-    ofile=trim(datatype(iof))//'.siml.'//odate
-    print *, ofile
-    call write_obs(ofile,obs(iof))
-  end do
-  end if
+  call obsmake_cal(obs,gues3dc,gues2dc,datatype,odate)
   sync all
   call cpu_time(rtimer)
-  write(6,'(A,2F10.2)') '### TIMER(MONITOR):',rtimer,rtimer-rtimer00
+  write(6,'(A,2F10.2)') '### TIMER(OBSMAKE):',rtimer,rtimer-rtimer00
   rtimer00=rtimer
 
 ! finalize

@@ -1,7 +1,6 @@
 #!/bin/sh
 set -ex
-cycle=${1}
-cycleda=${2}
+cycleda=${1}
 head_bv=${HEAD:-bv}
 head_da=${HEAD2:-da}
 ## experiment parameters
@@ -10,7 +9,10 @@ member=${MEMBER:-10}
 # analysis date
 adate=${SDATE:-2022061812}
 # first guess lead time
-fhour=${INCCYCLE:-0}
+fhour=${INCCYCLE:-6}
+if [ $cycleda -eq 1 ]; then
+fhour=${IOFFSET:-$fhour}
+fi
 # model resolution
 ires=${IRES:-27}
 # observation settings

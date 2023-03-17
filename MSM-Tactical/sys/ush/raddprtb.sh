@@ -49,7 +49,8 @@ OUTDIR=$DATADIR/${head}${SIGN}${PMEM}
 if [ -s $OUTDIR/r_sigi -a -s $OUTDIR/r_sigitdt -a -s $OUTDIR/r_sfci ]; then
   echo 'Restart files exist !!'
   MEM=`expr $MEM + 1`
-  continue
+#  continue
+  exit
 fi
 mkdir -p $OUTDIR
 ##copy namelists
@@ -65,7 +66,7 @@ cp $DATADIR/rmtnvar $OUTDIR/
 MEM4=`printf '%0.4d' $MEM`
 ln -s $OUTDIR/r_sig.f00 ro.$MEM4.sig.grd
 ln -s $OUTDIR/r_sfc.f00 ro.$MEM4.sfc.grd
-if [ $CYCLE -eq 1 ]; then
+if [ $CYCLE -eq 0 ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
     cp $DATADIR/pdate.txt .
     irow=$MEM
@@ -161,7 +162,6 @@ if [ $CYCLE -eq 1 ]; then
     ln -s $DATADIR/r_sig.f00 ri.$MEM4.sig.grd
   fi
 else
-  PCYCLE=`expr $CYCLE - 1`
   fh2=$BV_H
   if [ $fh2 -lt 10 ]; then
     fh2=0$fh2

@@ -1,8 +1,8 @@
 #!/bin/sh
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-wdir=rsm2msm9_osse
-#wdir=rsm2rsm27_da
+#wdir=rsm2msm9_osse
+wdir=rsm2rsm27_da
 datadir=/zdata/grmsm/work/$wdir
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=/zdata/grmsm/work/DATA/station
@@ -21,8 +21,8 @@ idate=2022061812
 lmin=0
 rmin=0
 prep=_preprh
-nisep=5
-njsep=2
+nisep=2
+njsep=5
 ighost=1
 jghost=1
 NODE=`expr $nisep \* $njsep`
@@ -111,11 +111,11 @@ cat <<EOF >obsmake.nml
  atime=${yyyy},${imm},${idd},${ihh},0
  lmin=${lmin},
  rmin=${rmin},
- ibuf=,
- jbuf=, 
+ ibuf=10,
+ jbuf=10, 
  kint=1,
- dist_obs_upper=300.0d3, 
- dist_obs_synop=100.0d3,
+ dist_obs_upper=500.0d3, 
+ dist_obs_synop=300.0d3,
  stationin=${stationin},
  station_fname='upper_station.txt','surf_station.txt',
 &end

@@ -99,7 +99,8 @@ fi
 # base
   if [ $ANAL = F ]; then
   #  if [ $DA_MEAN = T ]; then
-      ln -s $DATADIR/$SDATE0/${header}m${MEMBER}mean/r_sig.f$fhfree r_sig.mean
+  #    ln -s $DATADIR/$SDATE0/${header}m${MEMBER}mean/r_sig.f$fhfree r_sig.mean
+      ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhfree r_sig.mean
   #  else
   #    ln -s $DATADIR/$SDATE0/r_sig.f$fhfree r_sig.mean
   #  fi

@@ -44,6 +44,7 @@ eidate=$yearend$monthend$dayend$hourend
 end_hr=`$UTLDIR/nhour $eidate $CDATE$CHOUR`
 ENDHOUR=${ENDHOUR:-$end_hr}
 INCCYCLE=${INCCYCLE:-$ENDHOUR}
+IOFFSET=${IOFFSET:-$INCCYCLE}
 EXTEND=${EXTEND:-0}
 #
 #-----------------------------------------------
@@ -91,7 +92,7 @@ RSFCSEC=`expr $sfc_freq \* 3600`;
 #-----------------------------------------------
 # start cycle
 #-----------------------------------------------
-CYCLE=${CYCLESTART:-1}
+CYCLE=${CYCLESTART:-0}
 CYCLEDA=`expr $CYCLE - $DASTART`
 if [ $CYCLEDA -lt 0 ];then
   CYCLEDA=0
@@ -100,20 +101,24 @@ SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
-  if [ $CYCLE -gt 1 ];then
-    PCYCLE=`expr $CYCLE - 1`
-    inch=`expr $INCCYCLE \* $PCYCLE`
-    SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
-    export SDATE
+  inch=$IOFFSET
+  if [ $CYCLE -gt 1 ]; then
+	  inch=`expr $inch + $INCCYCLE \* \( $CYCLE - 1 \)`
   fi
-  if [ $CYCLE -gt 1 ] && [ $EXTEND -eq 1 ];then
-    HZ=`echo $SDATE | cut -c9-10`
-    HZ=`expr $HZ`
-    if [ $HZ -ne 0 ] && [ $HZ -ne 12 ]; then
+  SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
+  export SDATE
+  if [ $CYCLE -eq 0 ]; then
+    export ENDHOUR=$IOFFSET
+  else
+    if [ $EXTEND -eq 1 ];then
+      HZ=`echo $SDATE | cut -c9-10`
+      HZ=`expr $HZ`
+      if [ $HZ -ne 0 ] && [ $HZ -ne 12 ]; then
+      export ENDHOUR=$INCCYCLE
+      fi
+    else
       export ENDHOUR=$INCCYCLE
     fi
-  else
-    export ENDHOUR=$INCCYCLE
   fi
   if [ $CYCLE -lt $DASTART ];then
     BGM=yes
@@ -203,7 +208,7 @@ if [ do$DA = doyes ]; then
     #
     #  DA
     #
-    $USHDIR/rensda.sh $CYCLE $CYCLEDA || exit 7
+    $USHDIR/rensda.sh $CYCLEDA || exit 7
     if [ do$POSTTYPE = dosync ]; then
 #      $USHDIR/rpgb_post.sh 00 || exit 5
       if [ $DA_MEAN = T ]; then
@@ -409,6 +414,10 @@ fi #doDA=doyes
 # Ensemble Forecast loop
 ########################################
 PREPBASE=F
+if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
+  $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
+  PREPBASE=T
+fi
 if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
@@ -417,10 +426,6 @@ if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdatebase.txt
   fi
   $USHDIR/raddprtbbase.sh || exit 5
-  PREPBASE=T
-fi
-if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
-  $USHDIR/rprepbase.sh $CYCLE $DA_MEAN || exit 6
   PREPBASE=T
 fi
 if [ $CYCLEDA -ge 1 ] && [ $DA_MEAN = T ]; then
@@ -617,7 +622,7 @@ done  ###### end of while forecast loop
 mem=`expr $mem + 1`
 done  ###### end of while member loop
 # ensemble mean and spread
-if [ do$ENSMSPR = doyes ]; then
+if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
   $USHDIR/rensmspr.sh $head || exit 17
 fi
 # -------- schedule job submit  ----------------

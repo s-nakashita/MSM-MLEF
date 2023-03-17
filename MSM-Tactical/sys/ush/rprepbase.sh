@@ -3,7 +3,7 @@
 # prepare base field for OSSE
 #
 set -x
-CYCLE=${1}
+CYCLEDA=${1}
 MEAN=${2}
 IDATE=${SDATE0:-2022083000} #cycle start
 IRES=${IRES:-9}
@@ -39,7 +39,7 @@ mkdir -p tmp
 cd tmp
 ln -s ${SRCDIR}/${EXEC} ${EXEC}
 
-fhbase=`expr $INCCYCLE \* \( $CYCLE - 1 \)`
+fhbase=`expr $INCCYCLE \* \( $CYCLEDA - 1 \)`
 
 h=0
 while [ $h -le $ENDHOUR ]; do

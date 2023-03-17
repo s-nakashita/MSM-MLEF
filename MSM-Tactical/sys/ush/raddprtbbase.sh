@@ -51,10 +51,15 @@ while [ $h -le $ENDHOUR ]; do
 fh=`printf '%0.2d' $h`
 rm -f *.sig.grd *.sfc.grd
 # base field
+if [ -s $DATADIR/rb_sigf$fh ]; then #OSSE, rprepbase already done
+ln -s $DATADIR/rb_sigf$fh rb.0000.sig.grd
+ln -s $DATADIR/rb_sfcf$fh rb.0000.sfc.grd
+else
 ln -s $BASEDIR/r_sig.f$fh $DATADIR/rb_sigf$fh #control
 ln -s $BASEDIR/r_sfc.f$fh $DATADIR/rb_sfcf$fh #control
 ln -s $BASEDIR/r_sig.f$fh rb.0000.sig.grd #control
 ln -s $BASEDIR/r_sfc.f$fh rb.0000.sfc.grd #control
+fi
 # prtb field
 if [ do$PSUB = doyes ]; then
   SIGN=m

@@ -70,11 +70,11 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=17
-export CYCLEMAX=17
+export CYCLESTART=3
+export CYCLEMAX=3
 export DASTART=100
 export INCCYCLE=6 # cycle interval
-export ENDHOUR=24 # forecast length
+export ENDHOUR=48 # forecast length
 export EXTEND=1 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
                 # 0:forecast stops at $INCCYCLE hour
 export PRTHOUR=1
@@ -93,15 +93,15 @@ export RUNFCST=yes
 
 # Ensemble size
 export MEMBER=40
-export MEMBER=20
+#export MEMBER=20
 export ENSMSPR=yes
 # BGM option
 export TETYPE=dry
 export SCL=
 export QADJ=yes
 export ORTH=yes
-export PSUB=yes
-export BP=wbp
+export PSUB=no
+export BP=
 export SCLBASE=
 export SCLPOW=
 head=bv${TETYPE}${SCL}${BP}
@@ -174,32 +174,32 @@ export HEAD2=$head2
 #### rsmlocation
 
 ## d01 domain 70E-170W 22S-65N
-#export  IGRD=324
-#export  JGRD=288
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=120.0
-#export  RDELX=27000.
-#export  RDELY=27000.
-#export  RCENLAT=23.5
-#export  RCENLON=120.0
-#export  RLFTGRD=133.
-#export  RBTMGRD=121.
-# d01 domain 100E-170E 10N-60N
-export  IGRD=216
-export  JGRD=216
+export  IGRD=324
+export  JGRD=288
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=120.0
 export  RDELX=27000.
 export  RDELY=27000.
-export  RCENLAT=30.0
+export  RCENLAT=23.5
 export  RCENLON=120.0
-export  RLFTGRD=59.
-export  RBTMGRD=63.
-# test dimension and shift
+export  RLFTGRD=133.
+export  RBTMGRD=121.
+# d01 domain 100E-170E 10N-60N
+#export  IGRD=216
+#export  JGRD=216
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=27000.
+#export  RDELY=27000.
+#export  RCENLAT=30.0
+#export  RCENLON=120.0
+#export  RLFTGRD=59.
+#export  RBTMGRD=63.
+## test dimension and shift
 #export  IGRD=128                             # release_test
 #export  JGRD=108                             # release_test
 #export  RLFTGRD=57.                          # release_test
