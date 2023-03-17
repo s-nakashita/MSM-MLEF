@@ -43,6 +43,7 @@ fi
 eidate=$yearend$monthend$dayend$hourend
 end_hr=`$UTLDIR/nhour $eidate $CDATE$CHOUR`
 ENDHOUR=${ENDHOUR:-$end_hr}
+ENDHOUR0=$ENDHOUR #save
 INCCYCLE=${INCCYCLE:-$ENDHOUR}
 IOFFSET=${IOFFSET:-$INCCYCLE}
 EXTEND=${EXTEND:-0}
@@ -101,12 +102,12 @@ SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
+  if [ $CYCLE -ge 1 ]; then
   inch=$IOFFSET
-  if [ $CYCLE -gt 1 ]; then
-	  inch=`expr $inch + $INCCYCLE \* \( $CYCLE - 1 \)`
-  fi
+  inch=`expr $inch + $INCCYCLE \* \( $CYCLE - 1 \)`
   SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
   export SDATE
+  fi
   if [ $CYCLE -eq 0 ]; then
     export ENDHOUR=$IOFFSET
   else
@@ -195,9 +196,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-  if [ -d ${head}000 ]; then
-    echo 'DA already done'
-  else
+#  if [ -d ${head}000 ]; then
+#    echo 'DA already done'
+#  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -210,7 +211,9 @@ if [ do$DA = doyes ]; then
     #
     $USHDIR/rensda.sh $CYCLEDA || exit 7
     if [ do$POSTTYPE = dosync ]; then
-#      $USHDIR/rpgb_post.sh 00 || exit 5
+      if [ $NODA = T ]; then
+        $USHDIR/rpgb_post.sh 00 || exit 5
+      fi
       if [ $DA_MEAN = T ]; then
       mem=mean
       else
@@ -232,7 +235,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-  fi # -d ${head}mean
+#  fi # -d ${head}mean
 else
   #
   # control
@@ -349,7 +352,7 @@ else
     elif [ $mem -lt 100 ]; then
       pmem=0$pmem
     fi
-    if [ do$PSUB = doyes ]; then
+    if [ do$BGM = doyes ] && [ do$PSUB = doyes ]; then
       pmem=m$pmem
     fi
     if [ -s ${head}${pmem}/r_sigi -a -s ${head}${pmem}/r_sigitdt -a -s ${head}${pmem}/r_sfci ] ; then
@@ -417,8 +420,8 @@ PREPBASE=F
 if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
   PREPBASE=T
-fi
-if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+#fi
+elif [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
   cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
@@ -429,13 +432,25 @@ if [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   PREPBASE=T
 fi
 if [ $CYCLEDA -ge 1 ] && [ $DA_MEAN = T ]; then
-mem=1
+mem0=1
 else
-mem=0
+mem0=0
+fi
+mem=$mem0
+if [ $OSSE = T ] && [ $NODA = T ]; then
+  mem=`expr $mem - 1`
 fi
 while [ $mem -le $MEMBER ];do
-  if [ $mem -eq 0 ]; then ## control
+  if [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ]; then
+    export ENDHOUR=$ENDHOUR0
+    cd $RUNDIR
+    if [ $IRES -lt 27 ];then
+    export BASEDIR=$base_dir
+    export BASESFCDIR=$BASEDIR
+    fi
+  elif [ $mem -eq 0 ]; then ## control
     if [ do$DA = doyes ]; then
+    export ENDHOUR=$INCCYCLE
     cd $RUNDIR/${head}000
     else
     cd $RUNDIR
@@ -445,13 +460,16 @@ while [ $mem -le $MEMBER ];do
     export BASESFCDIR=$BASEDIR
     fi
   else ## member
+    if [ do$DA = doyes ]; then
+    export ENDHOUR=$INCCYCLE
+    fi
     pmem=$mem
     if [ $pmem -lt 10 ]; then
       pmem=00$pmem
     else
       pmem=0$pmem
     fi
-    if [ do$PSUB = doyes ]; then
+    if [ do$BGM = doyes ] && [ do$PSUB = doyes ]; then
       pmem=m$pmem
     fi
     cd $RUNDIR/${head}${pmem}
@@ -483,7 +501,8 @@ while [ $h -lt $FEND ]; do
   while [ $hhr -le $hx ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
-  if [ $PREPBASE = F ]; then
+  if [ $PREPBASE = F ] || \
+	  ( [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ] ); then
        if [ do$G2R = doyes ] ; then
          ln -fs $BASEDIR/sigf$hhr rb_sigf$hhr
          ln -fs $BASEDIR/sfcf$hhr rb_sfcf$hhr
@@ -619,7 +638,7 @@ while [ $h -lt $FEND ]; do
 
   h=$hx
 done  ###### end of while forecast loop
-mem=`expr $mem + 1`
+mem=`expr 1 + $mem`
 done  ###### end of while member loop
 # ensemble mean and spread
 if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then

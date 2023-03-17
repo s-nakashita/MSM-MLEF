@@ -115,6 +115,8 @@ module nml_module
   logical, save :: obsanal_output=.false.
 ! debug
   logical, save :: debug_time=.false.
+  logical, save :: noda=.false.
+  character(filelenmax) :: noda_out_basename = 'noda.@@@@'
   namelist /param_lmlef/ &
       obsda_in, &
       obsda_in_basename, &
@@ -150,7 +152,8 @@ module nml_module
       oma_monit, &
       obsgues_output, &
       obsanal_output, &
-      debug_time
+      debug_time, &
+      noda
 !
 contains
   subroutine read_nml_ens

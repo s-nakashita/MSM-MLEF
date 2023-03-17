@@ -6,17 +6,16 @@ head_da=${HEAD2:-da}
 ## experiment parameters
 # ensemble size
 member=${MEMBER:-10}
+psub=${PSUB:-no}
 # analysis date
 adate=${SDATE:-2022061812}
 # first guess lead time
 fhour=${INCCYCLE:-6}
-if [ $cycleda -eq 1 ]; then
-fhour=${IOFFSET:-$fhour}
-fi
 # model resolution
 ires=${IRES:-27}
 # observation settings
 osse=${OSSE:-F}
+noda=${NODA:-F}
 obsdist=${OBSDIST}
 tmem=${TMEM:-0}
 single=${SINGLEOBS:-F}
@@ -72,12 +71,15 @@ if [ $single = T ];then
 fi
 #saveens=${SAVEENS:-0} #0:save all ensemble, 1:save only ctrl, mean and spread
 ## data directories
-guesdir=${RUNDIR0:-/zdata/grmsm/work/rsm2rsm27_da}
-analdir=${RUNDIR0:-$guesdir}
+guesdir=${RUNDIR0}
+analdir=${RUNDIR0}
 obsdir=${RUNDIR0}/obs
 export obsdir
+if [ $cycleda -eq 1 ]; then
+fhour=${IOFFSET:-$fhour}
+guesdir=${GUESDIR:-$RUNDIR0}
+fi
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
-#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -221,6 +223,7 @@ cat <<EOF >lmlef.nml
  obsgues_output=T,
  obsanal_output=T,
  debug_time=,
+ noda=${noda},
 &end
 EOF
 #cat lmlef.nml
@@ -247,13 +250,13 @@ fi
 if [ -f ${guesdir}/${pdate}/infl.grd ];then
   ln -s ${guesdir}/${pdate}/infl.grd .
 fi
-gmem=$member
-if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $tmem -le $member ]; then
-  gmem=`expr $member + 1`
-fi
+#gmem=$member
+#if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $tmem -le $member ]; then
+#  gmem=`expr $member + 1`
+#fi
 m=1
 em=1
-while [ $m -le $gmem ];do
+while [ $em -le $member ];do
 mem=`printf '%0.3d' $m`
 if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
 else
@@ -265,6 +268,16 @@ if [ $obsda_in = T ];then
 ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat ${obsextf}.0${mem2}.dat
 fi
 em=`expr $em + 1`
+if [ $cycleda -eq 1 ] && [ do$psub = doyes ]; then
+mem2=`printf '%0.3d' $em`
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+if [ $obsda_in = T ];then
+ln -s ${obsdir}/${adate}/${obsextf}.m0${mem}.dat ${obsextf}.0${mem2}.dat
+fi
+em=`expr $em + 1`
+fi
 fi
 m=`expr $m + 1`
 done
@@ -385,6 +398,13 @@ EOF
   done
 fi
 ### prepare forecast initial files
+if [ $noda = T ]; then
+mv noda.0000.sig.grd r_sig.f00
+mv noda.0000.sfc.grd r_sfc.f00
+cp r_sig.f00 r_sigi
+cp r_sig.f00 r_sigitdt
+cp r_sfc.f00 r_sfci
+fi 
 if [ $mean != T ]; then
 if [ -d ${head_da}000 ]; then
   rm -rf ${head_da}000

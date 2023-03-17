@@ -6,6 +6,7 @@ set -x
 CYCLEDA=${1}
 MEAN=${2}
 IDATE=${SDATE0:-2022083000} #cycle start
+IOFFSET=${IOFFSET:-6} #first guess offset
 IRES=${IRES:-9}
 INCCYCLE=${INCCYCLE:-6}
 HEADBASE=${HEAD:-bv}
@@ -23,6 +24,8 @@ fi
 EXEC=replacedate
 cd $SRCDIR
 gmake ${EXEC}
+
+IDATE=`date -j -f "%Y%m%d%H" -v+${IOFFSET}H +"%Y%m%d%H" "$IDATE"`
 BASEDIR=${BASE0}/${IDATE}
 if [ ! -d $BASEDIR ];then
   BASEDIR=${BASE1}/${IDATE}

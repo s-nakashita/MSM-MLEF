@@ -2,8 +2,9 @@
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #wdir=rsm2msm9_osse
-wdir=rsm2rsm27_da
-datadir=/zdata/grmsm/work/$wdir
+wdir=rsm2rsm27_osse
+#datadir=/zdata/grmsm/work/$wdir
+datadir=/zdata/grmsm/work/rsm2rsm27_da
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=/zdata/grmsm/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
@@ -14,10 +15,14 @@ else
 	stationin=F
 fi
 reg=ecs
-member=40
-truth=25
-tetype=dry
 idate=2022061812
+truth=25
+reg=jpn
+idate=2022083000
+truth=1
+member=40
+tetype=dry
+bp=wbp
 lmin=0
 rmin=0
 prep=_preprh
@@ -72,13 +77,13 @@ echo "luseobs="$luseobs
 wdir=${obsdir}/${adate}
 mkdir -p $wdir/tmp
 cd $wdir/tmp
-## station
-rm -f *_station.txt
-ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
-cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
-cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
-cat surf_station_1.txt surf_station_2.txt > surf_station.txt
-rm surf_station_1.txt surf_station_2.txt
+### station
+#rm -f *_station.txt
+#ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
+#cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
+#cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
+#cat surf_station_1.txt surf_station_2.txt > surf_station.txt
+#rm surf_station_1.txt surf_station_2.txt
 cat <<EOF >obsmake.nml
 &param_ens
  member=,
@@ -125,9 +130,9 @@ cat obsmake.nml
 tmem=`printf '%0.3d' $truth`
 rm -f gues.*.grd
 fh=`printf '%0.2d' $fhour`
-ln -s ${datadir}/${idate}/bv${tetype}${tmem}/r_sig.f$fh gues.0000.sig.grd
-ln -s ${datadir}/${idate}/bv${tetype}${tmem}/r_sfc.f$fh gues.0000.sfc.grd
-ln -s ${datadir}/${idate}/bv${tetype}${tmem}/r_flx.f$fh gues.0000.flx.grd
+ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sig.f$fh gues.0000.sig.grd
+ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_flx.f$fh gues.0000.flx.grd
 
 rm -f STDIN obsmake *.siml*.${sdate}-${edate}.dat
 ln -s obsmake.nml STDIN
