@@ -94,20 +94,24 @@ RSFCSEC=`expr $sfc_freq \* 3600`;
 # start cycle
 #-----------------------------------------------
 CYCLE=${CYCLESTART:-0}
-CYCLEDA=`expr $CYCLE - $DASTART`
-if [ $CYCLEDA -lt 0 ];then
+if [ $CYCLE -gt $DASTART ]; then
+  CYCLEDA=`expr $CYCLE - $DASTART`
+else
   CYCLEDA=0
 fi
 SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
+  inch=0
   if [ $CYCLE -ge 1 ]; then
   inch=$IOFFSET
   inch=`expr $inch + $INCCYCLE \* \( $CYCLE - 1 \)`
+  elif [ $CYCLE -lt 0 ]; then
+  inch=`expr $INCCYCLE \* $CYCLE`
+  fi
   SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
   export SDATE
-  fi
   if [ $CYCLE -eq 0 ]; then
     export ENDHOUR=$IOFFSET
   else
@@ -315,16 +319,16 @@ else
   #
   # BGM rescaling (ensemble)
   #
-  if [ do$BGM = doyes ] && [ $IRES -eq 27 ]; then
+  if [ do$BGM = doyes ] && [ $MEMBER -gt 0 ] && [ $IRES -eq 27 ]; then
     #rescaling
     if [ ! -s pdate.txt ]; then
-    if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ]; then
+    if [ $GLOBAL = GFS ] && [ $CYCLE -eq $CYCLESTART ]; then
       cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
       NSAMPLE=`expr $MEMBER \* 2`
       $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdate.txt || exit 6
     fi
     fi
-    $USHDIR/raddprtb.sh $CYCLE || exit 7
+    $USHDIR/raddprtb.sh $CYCLE $CYCLESTART || exit 7
     if [ do$POSTTYPE = dosync ]; then
       mem=1
       while [ $mem -le $MEMBER ];do
@@ -437,7 +441,7 @@ else
 mem0=0
 fi
 mem=$mem0
-if [ $OSSE = T ] && [ $NODA = T ]; then
+if [ $OSSE = T ] && [ $NODA = T ] && [ $CYCLEDA -eq 1 ]; then
   mem=`expr $mem - 1`
 fi
 while [ $mem -le $MEMBER ];do
@@ -659,5 +663,5 @@ if [ do$RUNFCST = doyes ] ; then
 
 fi # end of schedule job submit
 #
-CYCLE=`expr $CYCLE + 1`
+CYCLE=`expr 1 + $CYCLE`
 done #while [ CYCLE -le CYCLEMAX ]

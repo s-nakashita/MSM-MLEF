@@ -85,7 +85,7 @@ cat <<EOF >ensmspr.nml
  nens=$NENS,
 &end
 EOF
-./${EXEC} < ensmspr.nml 2>>${EXEC}.log 1>>${EXEC}.err
+./${EXEC} < ensmspr.nml 1>>${EXEC}.log 2>>${EXEC}.err
 mv r_sigm.f$fh $DATADIR/${meandir}/r_sig.f$fh
 mv r_sfcm.f$fh $DATADIR/${meandir}/r_sfc.f$fh
 mv r_flxm.f$fh $DATADIR/${meandir}/r_flx.f$fh

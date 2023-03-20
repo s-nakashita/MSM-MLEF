@@ -44,7 +44,7 @@ available_tags=" CXX F77"
 
 # ### BEGIN LIBTOOL CONFIG
 
-# Libtool was configured on host methane:
+# Libtool was configured on host cholesky:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -66,13 +66,13 @@ fast_install=needless
 
 # The host system.
 host_alias=
-host=amd64-unknown-freebsd13.0
-host_os=freebsd13.0
+host=amd64-unknown-freebsd13.1
+host_os=freebsd13.1
 
 # The build system.
 build_alias=
-build=amd64-unknown-freebsd13.0
-build_os=freebsd13.0
+build=amd64-unknown-freebsd13.1
+build_os=freebsd13.1
 
 # An echo program that does not interpret backslashes.
 echo="echo"
@@ -174,7 +174,7 @@ dlopen_self=unknown
 dlopen_self_static=unknown
 
 # Compiler flag to prevent dynamic linking.
-link_static_flag="-static"
+link_static_flag=""
 
 # Compiler flag to turn off builtin functions.
 no_builtin_flag=" -fno-builtin"
@@ -325,7 +325,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=`echo " /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../../../x86_64-portbld-freebsd13.0/lib/x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../../../x86_64-portbld-freebsd13.0/lib/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../ /lib/x86_64-portbld-freebsd13.0/10.3.0/ /lib/ /usr/lib/x86_64-portbld-freebsd13.0/10.3.0/ /usr/lib/" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
+sys_lib_search_path_spec=`echo " /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../../../x86_64-portbld-freebsd13.1/lib/x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../../../x86_64-portbld-freebsd13.1/lib/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../ /lib/x86_64-portbld-freebsd13.1/12.2.0/ /lib/ /usr/lib/x86_64-portbld-freebsd13.1/12.2.0/ /usr/lib/" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
@@ -7263,7 +7263,7 @@ disable_libs=static
 # End:
 # ### BEGIN LIBTOOL TAG CONFIG: CXX
 
-# Libtool was configured on host methane:
+# Libtool was configured on host cholesky:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -7285,13 +7285,13 @@ fast_install=needless
 
 # The host system.
 host_alias=
-host=amd64-unknown-freebsd13.0
-host_os=freebsd13.0
+host=amd64-unknown-freebsd13.1
+host_os=freebsd13.1
 
 # The build system.
 build_alias=
-build=amd64-unknown-freebsd13.0
-build_os=freebsd13.0
+build=amd64-unknown-freebsd13.1
+build_os=freebsd13.1
 
 # An echo program that does not interpret backslashes.
 echo="echo"
@@ -7544,7 +7544,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=`echo " /usr/lib/clang/11.0.1 /usr/lib" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
+sys_lib_search_path_spec=`echo " /usr/lib/clang/13.0.0 /usr/lib" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
@@ -7571,7 +7571,7 @@ include_expsyms=""
 
 # ### BEGIN LIBTOOL TAG CONFIG: F77
 
-# Libtool was configured on host methane:
+# Libtool was configured on host cholesky:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -7593,13 +7593,13 @@ fast_install=needless
 
 # The host system.
 host_alias=
-host=amd64-unknown-freebsd13.0
-host_os=freebsd13.0
+host=amd64-unknown-freebsd13.1
+host_os=freebsd13.1
 
 # The build system.
 build_alias=
-build=amd64-unknown-freebsd13.0
-build_os=freebsd13.0
+build=amd64-unknown-freebsd13.1
+build_os=freebsd13.1
 
 # An echo program that does not interpret backslashes.
 echo="echo"
@@ -7701,7 +7701,7 @@ dlopen_self=unknown
 dlopen_self_static=unknown
 
 # Compiler flag to prevent dynamic linking.
-link_static_flag="-static"
+link_static_flag=""
 
 # Compiler flag to turn off builtin functions.
 no_builtin_flag=""
@@ -7852,7 +7852,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=`echo " /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../../../x86_64-portbld-freebsd13.0/lib/x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../../../x86_64-portbld-freebsd13.0/lib/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../x86_64-portbld-freebsd13.0/10.3.0/ /usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0/../../../ /lib/x86_64-portbld-freebsd13.0/10.3.0/ /lib/ /usr/lib/x86_64-portbld-freebsd13.0/10.3.0/ /usr/lib/" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
+sys_lib_search_path_spec=`echo " /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../../../x86_64-portbld-freebsd13.1/lib/x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../../../x86_64-portbld-freebsd13.1/lib/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../x86_64-portbld-freebsd13.1/12.2.0/ /usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0/../../../ /lib/x86_64-portbld-freebsd13.1/12.2.0/ /lib/ /usr/lib/x86_64-portbld-freebsd13.1/12.2.0/ /usr/lib/" | $SED -e "s@${gcc_dir}@\${gcc_dir}@g;s@${gcc_ver}@\${gcc_ver}@g"`
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"

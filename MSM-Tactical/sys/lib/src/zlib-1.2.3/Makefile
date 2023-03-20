@@ -26,7 +26,7 @@ CFLAGS=-O3 -DUSE_MMAP
 
 LDFLAGS=-L. libz.a
 LDSHARED=gcc
-CPP=cpp -P -C
+CPP=gcc -E
 
 LIBS=libz.a
 SHAREDLIB=libz.so

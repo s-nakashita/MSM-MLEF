@@ -429,21 +429,21 @@ elif [ $MACHINE = freebsd_gfortran ]; then
 
    export F_SUBF=f90
 
-   export C_PREP_RMTN='gcc10 -E'
-   export F_COMP_RMTN=gfortran10
+   export C_PREP_RMTN='gcc -E'
+   export F_COMP_RMTN=gfortran
    export F_FLAG_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
    export F_LINK_RMTN='-O3 -fdefault-real-8 -fconvert=big-endian'
    export F_LIBS_RMTN=
 
-   export C_PREP_MOVE='gcc10 -E'
-   export F_COMP_MOVE=gfortran10
+   export C_PREP_MOVE='gcc -E'
+   export F_COMP_MOVE=gfortran
    export F_FLAG_MOVE='-O3 -fconvert=big-endian'
    export F_LINK_MOVE='-O3 -fconvert=big-endian'
    export F_LIBS_MOVE=
 
-   export C_PREP_RINP='gcc10 -E'
-   export F_COMP_RINP=gfortran10
-   export F_COMP_RINP90=gfortran10
+   export C_PREP_RINP='gcc -E'
+   export F_COMP_RINP=gfortran
+   export F_COMP_RINP90=gfortran
    export F_FLAG_RINP='-O3 -fdefault-real-8 -fconvert=big-endian -I${DISKSYS}/lib/incmod/g2_4'
    export F_LINK_RINP='-O3 -fdefault-real-8 -fconvert=big-endian'
 #   export F_FLAG_RINP='-O3 -fdefault-real-8 -I${DISKSYS}/lib/incmod/g2_4'
@@ -451,10 +451,10 @@ elif [ $MACHINE = freebsd_gfortran ]; then
 #export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng${DISKSYS}/lib/libpng12.a -lz'
    export F_LIBS_RINP='-L${DISKSYS}/lib -lg2_4 -lw3_d -lbacio_4 -ljasper -lpng -lz'
 
-   export C_PREP_FCST='gcc10 -E'
-   export F_COMP_FCST=gfortran10
+   export C_PREP_FCST='gcc -E'
+   export F_COMP_FCST=gfortran
    export F_COMP_FCST=/usr/local/mpi/openmpi/bin/mpif90
-   export F_COMP_FCST90=gfortran10
+   export F_COMP_FCST90=gfortran
    export F_COMP_FCST90=/usr/local/mpi/openmpi/bin/mpif90
 ## without mcmodel
    export F_FLAG_FCST='-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
@@ -464,14 +464,14 @@ elif [ $MACHINE = freebsd_gfortran ]; then
    export F_LINK_FCST='-O3 -fdefault-real-8 -mcmodel=large -fno-range-check -fstack-arrays -fconvert=big-endian -fallow-argument-mismatch'
    export F_LIBS_FCST=
 
-   export C_PREP_POST='gcc10 -E'
-   export F_COMP_POST=gfortran10
+   export C_PREP_POST='gcc -E'
+   export F_COMP_POST=gfortran
    export F_FLAG_POST='-O3 -fconvert=big-endian'
    export F_LINK_POST='-O3 -fconvert=big-endian'
    export F_LIBS_POST=
 
-   export C_PREP='gcc10 -E'
-   export F_COMP=gfortran10
+   export C_PREP='gcc -E'
+   export F_COMP=gfortran
    export F_FLAG_r8='-O3 -fdefault-real-8 -fconvert=big-endian -fallow-argument-mismatch'
    export F_FLAG='-g -O3 -fconvert=big-endian -fallow-argument-mismatch'
    if [ $DEBUG = yes ]; then 

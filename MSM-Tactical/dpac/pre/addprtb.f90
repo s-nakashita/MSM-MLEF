@@ -119,16 +119,12 @@ program addprtb
   !! set boundaries
   if((lonw.gt.-999.9d0).and.(lone.gt.-999.9d0)) then
     do i=1,igrd1
-      if(rlon(i).ge.lonw) then
-        ilonw=i
-        exit
-      end if
+      ilonw=i
+      if(rlon(i).ge.lonw) exit
     end do
     do i=1,igrd1
-      if(rlon(i).ge.lone) then
-        ilone=i
-        exit
-      end if
+      ilone=i
+      if(rlon(i).ge.lone) exit
     end do
   else
     ilonw=1
@@ -136,16 +132,12 @@ program addprtb
   end if
   if((lats.gt.-999.9d0).and.(latn.gt.-999.9d0)) then
     do j=1,jgrd1
-      if(rlat(j).ge.lats) then
-        jlats=j
-        exit
-      end if
+      jlats=j
+      if(rlat(j).ge.lats) exit
     end do
     do j=1,jgrd1
-      if(rlat(j).ge.latn) then
-        jlatn=j
-        exit
-      end if
+      jlatn=j
+      if(rlat(j).ge.latn) exit
     end do
   else
     jlats=1

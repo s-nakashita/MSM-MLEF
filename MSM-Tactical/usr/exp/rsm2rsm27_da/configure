@@ -19,11 +19,14 @@ fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
 export GUESDIR=$WORKUSR/$EXPN
-export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
+#export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
+export BASEDIR0=${HOME}/mnt/methane/work/gefs2rsm27_nomad
 #export BASEDIR0=$WORKUSR/DATA/gefs
 if [ $GLOBAL = GFS ];then #deterministic
-  export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad
-  export BASEDIR1=$WORKUSR/gfsp2rsm27_rda
+#  export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad
+#  export BASEDIR1=$WORKUSR/gfsp2rsm27_rda
+  export BASEDIR0=${HOME}/mnt/methane/work/gfsp2rsm27_nomad
+  export BASEDIR1=${HOME}/mnt/methane/work/gfsp2rsm27_rda
 #  export BASEDIR0=$WORKUSR/DATA/gfs
 #  export BASEDIR1=$WORKUSR/DATA/gfs/rda
 fi #deterministic
@@ -72,8 +75,8 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=1
+export CYCLESTART=-4
+export CYCLEMAX=0
 export DASTART=1
 export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval
@@ -104,8 +107,8 @@ export TETYPE=dry
 export SCL=
 export QADJ=yes
 export ORTH=yes
-export PSUB=yes
-export BP=wbp
+export PSUB=no
+export BP=
 export SCLBASE=
 export SCLPOW=
 head=bv${TETYPE}${SCL}${BP}
@@ -192,9 +195,9 @@ export HEAD2=$head2
 #export  RCENLON=120.0
 #export  RLFTGRD=133.
 #export  RBTMGRD=121.
-# d01 domain 100E-170E 10N-60N
-export  IGRD=216
-export  JGRD=216
+# d01 domain 110E-143.3E 20N-47N
+export  IGRD=96
+export  JGRD=96
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
@@ -203,8 +206,8 @@ export  RDELX=27000.
 export  RDELY=27000.
 export  RCENLAT=30.0
 export  RCENLON=120.0
-export  RLFTGRD=59.
-export  RBTMGRD=63.
+export  RLFTGRD=30.
+export  RBTMGRD=33.
 ## test dimension and shift
 #export  IGRD=128                             # release_test
 #export  JGRD=108                             # release_test

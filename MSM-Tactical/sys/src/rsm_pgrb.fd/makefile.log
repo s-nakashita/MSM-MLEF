@@ -6,6 +6,21 @@ rpgbnawips.f:4989:25:
  4989 |         CALL PDSENS(IENS,KPROB,XPROB,KCLUST,KMEMBR,ILAST,PDS)
       |                         1
 Warning: Rank mismatch in argument 'kprob' at (1) (rank-1 and scalar)
+rpgbnawips.f:4989:31:
+
+ 4989 |         CALL PDSENS(IENS,KPROB,XPROB,KCLUST,KMEMBR,ILAST,PDS)
+      |                               1
+Warning: Rank mismatch in argument 'xprob' at (1) (rank-1 and scalar)
+rpgbnawips.f:4989:37:
+
+ 4989 |         CALL PDSENS(IENS,KPROB,XPROB,KCLUST,KMEMBR,ILAST,PDS)
+      |                                     1
+Warning: Rank mismatch in argument 'kclust' at (1) (rank-1 and scalar)
+rpgbnawips.f:4989:44:
+
+ 4989 |         CALL PDSENS(IENS,KPROB,XPROB,KCLUST,KMEMBR,ILAST,PDS)
+      |                                            1
+Warning: Rank mismatch in argument 'kmembr' at (1) (rank-1 and scalar)
 rpgbnawips.f:6292:26:
 
  6292 |             tdpd=t(l)-ftdp(pv)
@@ -26,23 +41,53 @@ rpgbnawips.f:6338:17:
  6338 |             tlcl=ftlcl(tr,tdpd)
       |                 1
 Warning: Type mismatch in argument 't' at (1); passed REAL(8) to REAL(4)
+rpgbnawips.f:6338:17:
+
+ 6338 |             tlcl=ftlcl(tr,tdpd)
+      |                 1
+Warning: Type mismatch in argument 'tdpd' at (1); passed REAL(8) to REAL(4)
 rpgbnawips.f:6339:19:
 
  6339 |             thelcl=fthe(tlcl,pk*tlcl/tr)
       |                   1
 Warning: Type mismatch in argument 't' at (1); passed REAL(8) to REAL(4)
+rpgbnawips.f:6339:19:
+
+ 6339 |             thelcl=fthe(tlcl,pk*tlcl/tr)
+      |                   1
+Warning: Type mismatch in argument 'pk' at (1); passed REAL(8) to REAL(4)
 rpgbnawips.f:6341:20:
 
  6341 |             twet(l)=ftma(thelcl,pk,qwet)
       |                    1
 Warning: Type mismatch in argument 'the' at (1); passed REAL(8) to REAL(4)
+rpgbnawips.f:6341:20:
+
+ 6341 |             twet(l)=ftma(thelcl,pk,qwet)
+      |                    1
+Warning: Type mismatch in argument 'pk' at (1); passed REAL(8) to REAL(4)
+rpgbnawips.f:6341:20:
+
+ 6341 |             twet(l)=ftma(thelcl,pk,qwet)
+      |                    1
+Warning: Type mismatch in argument 'qma' at (1); passed REAL(8) to REAL(4)
 rpgbnawips.f:5051:11:
 
  5051 |         I1=ISRCHNE(LEN,MG,1,0)
       |           1
 Warning: Type mismatch in argument 'a' at (1); passed INTEGER(4) to REAL(4)
+rpgbnawips.f:5051:11:
+
+ 5051 |         I1=ISRCHNE(LEN,MG,1,0)
+      |           1
+Warning: Type mismatch in argument 'val' at (1); passed INTEGER(4) to REAL(4)
 rpgbnawips.f:3558:23:
 
  3558 |           I1=I1+ISRCHEQ(IM-I1+1,LEFT(I1),1,.TRUE.)-1
       |                       1
 Warning: Type mismatch in argument 'a' at (1); passed LOGICAL(4) to REAL(4)
+rpgbnawips.f:3558:23:
+
+ 3558 |           I1=I1+ISRCHEQ(IM-I1+1,LEFT(I1),1,.TRUE.)-1
+      |                       1
+Warning: Type mismatch in argument 'val' at (1); passed LOGICAL(4) to REAL(4)

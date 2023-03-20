@@ -56,8 +56,8 @@ checking whether gcc accepts -g... yes
 checking for gcc option to accept ISO C89... none needed
 checking for style of include used by make... GNU
 checking dependency style of gcc... gcc3
-checking build system type... x86_64-unknown-freebsd13.0
-checking host system type... x86_64-unknown-freebsd13.0
+checking build system type... x86_64-unknown-freebsd13.1
+checking host system type... x86_64-unknown-freebsd13.1
 checking for a sed that does not truncate output... /usr/bin/sed
 checking for grep that handles long lines and -e... /usr/bin/grep
 checking for egrep... /usr/bin/grep -E
@@ -95,7 +95,7 @@ checking for objdir... .libs
 checking if gcc supports -fno-rtti -fno-exceptions... no
 checking for gcc option to produce PIC... -fPIC -DPIC
 checking if gcc PIC flag -fPIC -DPIC works... yes
-checking if gcc static flag -static works... yes
+checking if gcc static flag -static works... no
 checking if gcc supports -c -o file.o... yes
 checking if gcc supports -c -o file.o... (cached) yes
 checking whether the gcc linker (/usr/local/bin/ld) supports shared libraries... yes
@@ -374,9 +374,9 @@ rm -f *.lo
 Making clean in .
 rm -rf .libs _libs
 rm -f *.lo
-checking build system type... amd64-unknown-freebsd13.0
-checking host system type... amd64-unknown-freebsd13.0
-checking target system type... amd64-unknown-freebsd13.0
+checking build system type... amd64-unknown-freebsd13.1
+checking host system type... amd64-unknown-freebsd13.1
+checking target system type... amd64-unknown-freebsd13.1
 checking for a BSD-compatible install... /usr/bin/install -c
 checking whether build environment is sane... yes
 checking for gawk... no
@@ -450,7 +450,7 @@ checking for strip... strip
 checking if gcc supports -fno-rtti -fno-exceptions... no
 checking for gcc option to produce PIC... -fPIC
 checking if gcc PIC flag -fPIC works... yes
-checking if gcc static flag -static works... yes
+checking if gcc static flag -static works... no
 checking if gcc supports -c -o file.o... yes
 checking whether the gcc linker (/usr/local/bin/ld) supports shared libraries... yes
 checking dynamic linker characteristics... no
@@ -477,24 +477,19 @@ checking whether to build shared libraries... no
 checking whether to build static libraries... yes
 checking for gfortran option to produce PIC... -fPIC
 checking if gfortran PIC flag -fPIC works... yes
-checking if gfortran static flag -static works... yes
+checking if gfortran static flag -static works... no
 checking if gfortran supports -c -o file.o... yes
 checking whether the gfortran linker (/usr/local/bin/ld) supports shared libraries... yes
 checking dynamic linker characteristics... no
 checking how to hardcode library paths into programs... immediate
-checking for X... libraries , headers 
-checking for gethostbyname... yes
-checking for connect... yes
-checking for remove... yes
-checking for shmat... yes
-checking for IceConnectionNumber in -lICE... yes
+checking for X... no
 checking whether variable-length arrays are supported... yes
 checking for jpeg_destroy in -ljpeg... yes
-checking for glutInit in -lglut... yes
-checking GL/glut.h usability... yes
-checking GL/glut.h presence... yes
-checking for GL/glut.h... yes
-checking whether OpenGL libraries and headers were detected... yes
+checking for glutInit in -lglut... no
+checking GL/glut.h usability... no
+checking GL/glut.h presence... no
+checking for GL/glut.h... no
+checking whether OpenGL libraries and headers were detected... no
 checking for main in -lm... yes
 checking for ANSI C header files... (cached) yes
 checking fcntl.h usability... yes
@@ -555,6 +550,7 @@ config.status: creating src/libjasper/ras/Makefile
 config.status: creating src/msvc/Makefile
 config.status: creating jasper.spec
 config.status: creating src/libjasper/include/jasper/jas_config.h
+config.status: src/libjasper/include/jasper/jas_config.h is unchanged
 config.status: executing depfiles commands
 Making all in src
 Making all in libjasper
@@ -761,7 +757,7 @@ mkdir .libs/libjasper.lax/libpnm.a
 rm -fr .libs/libjasper.lax/libras.a
 mkdir .libs/libjasper.lax/libras.a
 (cd .libs/libjasper.lax/libras.a && ar x /usr/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/src/jasper-1.900.1/src/libjasper/ras/.libs/libras.a)
-ar cru .libs/libjasper.a  dummy.o  .libs/libjasper.lax/libbase.a/jas_seq.o .libs/libjasper.lax/libbase.a/jas_malloc.o .libs/libjasper.lax/libbase.a/jas_getopt.o .libs/libjasper.lax/libbase.a/jas_tvp.o .libs/libjasper.lax/libbase.a/jas_iccdata.o .libs/libjasper.lax/libbase.a/jas_image.o .libs/libjasper.lax/libbase.a/jas_string.o .libs/libjasper.lax/libbase.a/jas_cm.o .libs/libjasper.lax/libbase.a/jas_stream.o .libs/libjasper.lax/libbase.a/jas_debug.o .libs/libjasper.lax/libbase.a/jas_icc.o .libs/libjasper.lax/libbase.a/jas_tmr.o .libs/libjasper.lax/libbase.a/jas_version.o .libs/libjasper.lax/libbase.a/jas_init.o  .libs/libjasper.lax/libbmp.a/bmp_enc.o .libs/libjasper.lax/libbmp.a/bmp_dec.o .libs/libjasper.lax/libbmp.a/bmp_cod.o  .libs/libjasper.lax/libjp2.a/jp2_enc.o .libs/libjasper.lax/libjp2.a/jp2_dec.o .libs/libjasper.lax/libjp2.a/jp2_cod.o  .libs/libjasper.lax/libjpc.a/jpc_util.o .libs/libjasper.lax/libjpc.a/jpc_mqdec.o .libs/libjasper.lax/libjpc.a/jpc_enc.o .libs/libjasper.lax/libjpc.a/jpc_tsfb.o .libs/libjasper.lax/libjpc.a/jpc_t2cod.o .libs/libjasper.lax/libjpc.a/jpc_t2dec.o .libs/libjasper.lax/libjpc.a/jpc_math.o .libs/libjasper.lax/libjpc.a/jpc_t1enc.o .libs/libjasper.lax/libjpc.a/jpc_mqcod.o .libs/libjasper.lax/libjpc.a/jpc_mqenc.o .libs/libjasper.lax/libjpc.a/jpc_mct.o .libs/libjasper.lax/libjpc.a/jpc_t1cod.o .libs/libjasper.lax/libjpc.a/jpc_tagtree.o .libs/libjasper.lax/libjpc.a/jpc_bs.o .libs/libjasper.lax/libjpc.a/jpc_cs.o .libs/libjasper.lax/libjpc.a/jpc_dec.o .libs/libjasper.lax/libjpc.a/jpc_t2enc.o .libs/libjasper.lax/libjpc.a/jpc_qmfb.o .libs/libjasper.lax/libjpc.a/jpc_t1dec.o  .libs/libjasper.lax/libjpg.a/jpg_dec.o .libs/libjasper.lax/libjpg.a/jpg_enc.o .libs/libjasper.lax/libjpg.a/jpg_val.o  .libs/libjasper.lax/libmif.a/mif_cod.o  .libs/libjasper.lax/libpgx.a/pgx_dec.o .libs/libjasper.lax/libpgx.a/pgx_cod.o .libs/libjasper.lax/libpgx.a/pgx_enc.o  .libs/libjasper.lax/libpnm.a/pnm_cod.o .libs/libjasper.lax/libpnm.a/pnm_dec.o .libs/libjasper.lax/libpnm.a/pnm_enc.o  .libs/libjasper.lax/libras.a/ras_cod.o .libs/libjasper.lax/libras.a/ras_dec.o .libs/libjasper.lax/libras.a/ras_enc.o 
+ar cru .libs/libjasper.a  dummy.o  .libs/libjasper.lax/libbase.a/jas_getopt.o .libs/libjasper.lax/libbase.a/jas_tvp.o .libs/libjasper.lax/libbase.a/jas_image.o .libs/libjasper.lax/libbase.a/jas_malloc.o .libs/libjasper.lax/libbase.a/jas_init.o .libs/libjasper.lax/libbase.a/jas_iccdata.o .libs/libjasper.lax/libbase.a/jas_seq.o .libs/libjasper.lax/libbase.a/jas_string.o .libs/libjasper.lax/libbase.a/jas_stream.o .libs/libjasper.lax/libbase.a/jas_version.o .libs/libjasper.lax/libbase.a/jas_tmr.o .libs/libjasper.lax/libbase.a/jas_debug.o .libs/libjasper.lax/libbase.a/jas_icc.o .libs/libjasper.lax/libbase.a/jas_cm.o  .libs/libjasper.lax/libbmp.a/bmp_dec.o .libs/libjasper.lax/libbmp.a/bmp_cod.o .libs/libjasper.lax/libbmp.a/bmp_enc.o  .libs/libjasper.lax/libjp2.a/jp2_dec.o .libs/libjasper.lax/libjp2.a/jp2_cod.o .libs/libjasper.lax/libjp2.a/jp2_enc.o  .libs/libjasper.lax/libjpc.a/jpc_t2dec.o .libs/libjasper.lax/libjpc.a/jpc_util.o .libs/libjasper.lax/libjpc.a/jpc_cs.o .libs/libjasper.lax/libjpc.a/jpc_mqcod.o .libs/libjasper.lax/libjpc.a/jpc_tsfb.o .libs/libjasper.lax/libjpc.a/jpc_t1enc.o .libs/libjasper.lax/libjpc.a/jpc_bs.o .libs/libjasper.lax/libjpc.a/jpc_mqdec.o .libs/libjasper.lax/libjpc.a/jpc_enc.o .libs/libjasper.lax/libjpc.a/jpc_math.o .libs/libjasper.lax/libjpc.a/jpc_tagtree.o .libs/libjasper.lax/libjpc.a/jpc_t2cod.o .libs/libjasper.lax/libjpc.a/jpc_t2enc.o .libs/libjasper.lax/libjpc.a/jpc_t1dec.o .libs/libjasper.lax/libjpc.a/jpc_t1cod.o .libs/libjasper.lax/libjpc.a/jpc_dec.o .libs/libjasper.lax/libjpc.a/jpc_mqenc.o .libs/libjasper.lax/libjpc.a/jpc_qmfb.o .libs/libjasper.lax/libjpc.a/jpc_mct.o  .libs/libjasper.lax/libjpg.a/jpg_enc.o .libs/libjasper.lax/libjpg.a/jpg_val.o .libs/libjasper.lax/libjpg.a/jpg_dec.o  .libs/libjasper.lax/libmif.a/mif_cod.o  .libs/libjasper.lax/libpgx.a/pgx_dec.o .libs/libjasper.lax/libpgx.a/pgx_cod.o .libs/libjasper.lax/libpgx.a/pgx_enc.o  .libs/libjasper.lax/libpnm.a/pnm_enc.o .libs/libjasper.lax/libpnm.a/pnm_cod.o .libs/libjasper.lax/libpnm.a/pnm_dec.o  .libs/libjasper.lax/libras.a/ras_enc.o .libs/libjasper.lax/libras.a/ras_cod.o .libs/libjasper.lax/libras.a/ras_dec.o 
 ranlib .libs/libjasper.a
 rm -fr .libs/libjasper.lax
 creating libjasper.la
@@ -771,9 +767,6 @@ if gcc -DHAVE_CONFIG_H -I. -I. -I../../src/libjasper/include/jasper -I../../src/
 /bin/sh ../../libtool --tag=CC --mode=link gcc  -g -O2   -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib -lpng -lz -o jasper  jasper.o ../libjasper/libjasper.la -lm  -ljpeg
 mkdir .libs
 gcc -g -O2 -o jasper jasper.o  -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib ../libjasper/.libs/libjasper.a /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/lib/libpng12.a -lz -lm -ljpeg  
-if gcc -DHAVE_CONFIG_H -I. -I. -I../../src/libjasper/include/jasper -I../../src/libjasper/include   -I/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/include -I/usrx/local/jpeg.6b/include  -g -O2 -MT jiv.o -MD -MP -MF ".deps/jiv.Tpo" -c -o jiv.o jiv.c;  then mv -f ".deps/jiv.Tpo" ".deps/jiv.Po"; else rm -f ".deps/jiv.Tpo"; exit 1; fi
-/bin/sh ../../libtool --tag=CC --mode=link gcc  -g -O2   -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib -lpng -lz -o jiv  jiv.o ../libjasper/libjasper.la -lglut -lGL -lGLU  -lSM -lICE -lX11 -lXmu -lXi -lXext -lXt -lm  -ljpeg
-gcc -g -O2 -o jiv jiv.o  -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib ../libjasper/.libs/libjasper.a /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/lib/libpng12.a -lz -lglut -lGL -lGLU -lSM -lICE -lX11 -lXmu -lXi -lXext -lXt -lm -ljpeg  
 if gcc -DHAVE_CONFIG_H -I. -I. -I../../src/libjasper/include/jasper -I../../src/libjasper/include   -I/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/include -I/usrx/local/jpeg.6b/include  -g -O2 -MT imgcmp.o -MD -MP -MF ".deps/imgcmp.Tpo" -c -o imgcmp.o imgcmp.c;  then mv -f ".deps/imgcmp.Tpo" ".deps/imgcmp.Po"; else rm -f ".deps/imgcmp.Tpo"; exit 1; fi
 /bin/sh ../../libtool --tag=CC --mode=link gcc  -g -O2   -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib -lpng -lz -o imgcmp  imgcmp.o ../libjasper/libjasper.la -lm  -ljpeg
 gcc -g -O2 -o imgcmp imgcmp.o  -L/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib ../libjasper/.libs/libjasper.a /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/lib/libpng12.a -lz -lm -ljpeg  
@@ -843,8 +836,6 @@ Making install in appl
 test -z "/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin" || /bin/sh ../../acaux/mkinstalldirs "/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin"
   /bin/sh ../../libtool --mode=install /usr/bin/install -c 'jasper' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/jasper'
 /usr/bin/install -c jasper /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/jasper
-  /bin/sh ../../libtool --mode=install /usr/bin/install -c 'jiv' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/jiv'
-/usr/bin/install -c jiv /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/jiv
   /bin/sh ../../libtool --mode=install /usr/bin/install -c 'imgcmp' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/imgcmp'
 /usr/bin/install -c imgcmp /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/imgcmp
   /bin/sh ../../libtool --mode=install /usr/bin/install -c 'imginfo' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/bin/imginfo'
@@ -858,11 +849,6 @@ mkdir -p -- /home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/share/man/man
  /usr/bin/install -c -m 644 './jasper.1' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/share/man/man1/jasper.1'
  /usr/bin/install -c -m 644 './jiv.1' '/home/nakashita/Development/grmsm/MSM-Tactical/sys/lib/share/man/man1/jiv.1'
 Making install in msvc
-ln -f clib4.h clib.h
-gcc -c  -g -DLINUX bacio.v1.3.c
-ar -rv    ../../libbacio_4.a bacio.v1.3.o
-a - bacio.v1.3.o
-rm clib.h
 gfortran -c  -fno-range-check -fconvert=big-endian -fallow-argument-mismatch baciof.f
 ar -rv    ../../libbacio_4.a baciof.o
 a - baciof.o
@@ -1312,5 +1298,662 @@ a - w3reddat.o
 a - w3tagb.o
 a - w3utcdat.o
 a - w3valdat.o
-`../../libg2_4.a' is up to date.
-`install' is up to date.
+gfortran -c -O3 -g -fallow-argument-mismatch gridtemplates.f
+ar  -ruv ../../libg2_4.a gridtemplates.o
+ar: warning: creating ../../libg2_4.a
+a - gridtemplates.o
+rm -f gridtemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch pdstemplates.f
+ar  -ruv ../../libg2_4.a pdstemplates.o
+a - pdstemplates.o
+rm -f pdstemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch drstemplates.f
+ar  -ruv ../../libg2_4.a drstemplates.o
+a - drstemplates.o
+rm -f drstemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribmod.f
+ar  -ruv ../../libg2_4.a gribmod.o
+a - gribmod.o
+rm -f gribmod.o
+gfortran -c -O3 -g -fallow-argument-mismatch realloc.f
+ar  -ruv ../../libg2_4.a realloc.o
+a - realloc.o
+rm -f realloc.o
+gfortran -c -O3 -g -fallow-argument-mismatch addfield.f
+addfield.f:310:21:
+
+  306 |         call simpack(pfld,ndpts,idrstmpl,cpack,lcpack)
+      |                     2
+......
+  310 |         call simpack(pfld(2),ndpts-1,idrstmpl,cpack,lcpack)
+      |                     1
+Warning: Element of assumed-shape or pointer array as actual argument at (1) cannot correspond to actual argument at (2)
+addfield.f:311:20:
+
+  261 |         call mkieee(coordlist,coordieee,numcoord)
+      |                    2
+......
+  311 |         call mkieee(real(pfld(1)),re00,1)  ! ensure RE(0,0) value is IEEE format
+      |                    1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (rank-1 and scalar)
+addfield.f:311:34:
+
+  261 |         call mkieee(coordlist,coordieee,numcoord)
+      |                              2    
+......
+  311 |         call mkieee(real(pfld(1)),re00,1)  ! ensure RE(0,0) value is IEEE format
+      |                                  1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (rank-1 and scalar)
+addfield.f:424:26:
+
+  262 |         call sbytes(cgrib,coordieee,iofst,32,0,numcoord)
+      |                          2
+......
+  424 |         call sbytes(cgrib,intbmap,iofst,1,0,ngrdpts)    ! Store BitMap
+      |                          1
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (INTEGER(4)/REAL(4)).
+ar  -ruv ../../libg2_4.a addfield.o
+a - addfield.o
+rm -f addfield.o
+gfortran -c -O3 -g -fallow-argument-mismatch addgrid.f
+ar  -ruv ../../libg2_4.a addgrid.o
+a - addgrid.o
+rm -f addgrid.o
+gfortran -c -O3 -g -fallow-argument-mismatch addlocal.f
+ar  -ruv ../../libg2_4.a addlocal.o
+a - addlocal.o
+rm -f addlocal.o
+gfortran -c -O3 -g -fallow-argument-mismatch getfield.f
+getfield.f:622:26:
+
+  622 |         call gbytes(cgrib,coordieee,iofst,32,0,numcoord)
+      |                          1
+......
+  806 |         call gbytes(cgrib,intbmap,iofst,1,0,ngpts)
+      |                          2
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (REAL(4)/INTEGER(4)).
+getfield.f:298:24:
+
+  298 |             call rdieee(ieee,fld(1),1)
+      |                        1
+......
+  623 |         call rdieee(coordieee,coordlist,numcoord)
+      |                    2    
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (INTEGER(4)/REAL(4)).
+ar  -ruv ../../libg2_4.a getfield.o
+a - getfield.o
+rm -f getfield.o
+gfortran -c -O3 -g -fallow-argument-mismatch gb_info.f
+ar  -ruv ../../libg2_4.a gb_info.o
+a - gb_info.o
+rm -f gb_info.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_getfld.f
+ar  -ruv ../../libg2_4.a gf_getfld.o
+a - gf_getfld.o
+rm -f gf_getfld.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_free.f
+ar  -ruv ../../libg2_4.a gf_free.o
+a - gf_free.o
+rm -f gf_free.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack1.f
+ar  -ruv ../../libg2_4.a gf_unpack1.o
+a - gf_unpack1.o
+rm -f gf_unpack1.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack2.f
+ar  -ruv ../../libg2_4.a gf_unpack2.o
+a - gf_unpack2.o
+rm -f gf_unpack2.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack3.f
+ar  -ruv ../../libg2_4.a gf_unpack3.o
+a - gf_unpack3.o
+rm -f gf_unpack3.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack4.f
+ar  -ruv ../../libg2_4.a gf_unpack4.o
+a - gf_unpack4.o
+rm -f gf_unpack4.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack5.f
+ar  -ruv ../../libg2_4.a gf_unpack5.o
+a - gf_unpack5.o
+rm -f gf_unpack5.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack6.f
+ar  -ruv ../../libg2_4.a gf_unpack6.o
+a - gf_unpack6.o
+rm -f gf_unpack6.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack7.f
+gf_unpack7.f:90:23:
+
+   80 |         call simunpack(cgrib(ipos),lensec-5,idrstmpl,ndpts,fld)
+      |                                                           2
+......
+   90 |      &                 fld(2))
+      |                       1
+Warning: Element of assumed-shape or pointer array as actual argument at (1) cannot correspond to actual argument at (2)
+ar  -ruv ../../libg2_4.a gf_unpack7.o
+a - gf_unpack7.o
+rm -f gf_unpack7.o
+gfortran -c -O3 -g -fallow-argument-mismatch gettemplates.f
+ar  -ruv ../../libg2_4.a gettemplates.o
+a - gettemplates.o
+rm -f gettemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch getlocal.f
+ar  -ruv ../../libg2_4.a getlocal.o
+a - getlocal.o
+rm -f getlocal.o
+gfortran -c -O3 -g -fallow-argument-mismatch getdim.f
+ar  -ruv ../../libg2_4.a getdim.o
+a - getdim.o
+rm -f getdim.o
+gfortran -c -O3 -g -fallow-argument-mismatch getpoly.f
+ar  -ruv ../../libg2_4.a getpoly.o
+a - getpoly.o
+rm -f getpoly.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribcreate.f
+ar  -ruv ../../libg2_4.a gribcreate.o
+a - gribcreate.o
+rm -f gribcreate.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribend.f
+ar  -ruv ../../libg2_4.a gribend.o
+a - gribend.o
+rm -f gribend.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribinfo.f
+ar  -ruv ../../libg2_4.a gribinfo.o
+a - gribinfo.o
+rm -f gribinfo.o
+gfortran -c -O3 -g -fallow-argument-mismatch mkieee.f
+ar  -ruv ../../libg2_4.a mkieee.o
+a - mkieee.o
+rm -f mkieee.o
+gfortran -c -O3 -g -fallow-argument-mismatch rdieee.f
+ar  -ruv ../../libg2_4.a rdieee.o
+a - rdieee.o
+rm -f rdieee.o
+gfortran -c -O3 -g -fallow-argument-mismatch simpack.f
+ar  -ruv ../../libg2_4.a simpack.o
+a - simpack.o
+rm -f simpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch simunpack.f
+ar  -ruv ../../libg2_4.a simunpack.o
+a - simunpack.o
+rm -f simunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch cmplxpack.f
+ar  -ruv ../../libg2_4.a cmplxpack.o
+a - cmplxpack.o
+rm -f cmplxpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch compack.f
+ar  -ruv ../../libg2_4.a compack.o
+a - compack.o
+rm -f compack.o
+gfortran -c -O3 -g -fallow-argument-mismatch misspack.f
+ar  -ruv ../../libg2_4.a misspack.o
+a - misspack.o
+rm -f misspack.o
+gfortran -c -O3 -g -fallow-argument-mismatch pack_gp.f
+ar  -ruv ../../libg2_4.a pack_gp.o
+a - pack_gp.o
+rm -f pack_gp.o
+gfortran -c -O3 -g -fallow-argument-mismatch reduce.f
+ar  -ruv ../../libg2_4.a reduce.o
+a - reduce.o
+rm -f reduce.o
+gfortran -c -O3 -g -fallow-argument-mismatch comunpack.f
+ar  -ruv ../../libg2_4.a comunpack.o
+a - comunpack.o
+rm -f comunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch specpack.f
+ar  -ruv ../../libg2_4.a specpack.o
+a - specpack.o
+rm -f specpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch specunpack.f
+specunpack.f:59:21:
+
+   48 |       call rdieee(ieee,ref,1)
+      |                  2   
+......
+   59 |          call rdieee(cpack,unpk,Ts)          ! read IEEE unpacked floats
+      |                     1
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (CHARACTER(1)/INTEGER(4)).
+specunpack.f:59:27:
+
+   48 |       call rdieee(ieee,ref,1)
+      |                       2    
+......
+   59 |          call rdieee(cpack,unpk,Ts)          ! read IEEE unpacked floats
+      |                           1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (scalar and rank-1)
+ar  -ruv ../../libg2_4.a specunpack.o
+a - specunpack.o
+rm -f specunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch jpcpack.f
+ar  -ruv ../../libg2_4.a jpcpack.o
+a - jpcpack.o
+rm -f jpcpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch jpcunpack.f
+ar  -ruv ../../libg2_4.a jpcunpack.o
+a - jpcunpack.o
+rm -f jpcunpack.o
+gcc -c -O2 -g -DLINUX -I../../incmod enc_jpeg2000.c
+ar  -ruv ../../libg2_4.a enc_jpeg2000.o
+a - enc_jpeg2000.o
+rm -f enc_jpeg2000.o
+gcc -c -O2 -g -DLINUX -I../../incmod dec_jpeg2000.c
+ar  -ruv ../../libg2_4.a dec_jpeg2000.o
+a - dec_jpeg2000.o
+rm -f dec_jpeg2000.o
+gfortran -c -O3 -g -fallow-argument-mismatch pngpack.f
+ar  -ruv ../../libg2_4.a pngpack.o
+a - pngpack.o
+rm -f pngpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch pngunpack.f
+ar  -ruv ../../libg2_4.a pngunpack.o
+a - pngunpack.o
+rm -f pngunpack.o
+gcc -c -O2 -g -DLINUX -I../../incmod enc_png.c
+ar  -ruv ../../libg2_4.a enc_png.o
+a - enc_png.o
+rm -f enc_png.o
+gcc -c -O2 -g -DLINUX -I../../incmod dec_png.c
+ar  -ruv ../../libg2_4.a dec_png.o
+a - dec_png.o
+rm -f dec_png.o
+gcc -c -O2 -g -DLINUX -I../../incmod mova2i.c
+ar  -ruv ../../libg2_4.a mova2i.o
+a - mova2i.o
+rm -f mova2i.o
+gfortran -c -O3 -g -fallow-argument-mismatch gbytesc.f
+ar  -ruv ../../libg2_4.a gbytesc.o
+a - gbytesc.o
+rm -f gbytesc.o
+gfortran -c -O3 -g -fallow-argument-mismatch skgb.f
+ar  -ruv ../../libg2_4.a skgb.o
+a - skgb.o
+rm -f skgb.o
+gfortran -c -O3 -g -fallow-argument-mismatch ixgb2.f
+ar  -ruv ../../libg2_4.a ixgb2.o
+a - ixgb2.o
+rm -f ixgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch getg2i.f
+ar  -ruv ../../libg2_4.a getg2i.o
+a - getg2i.o
+rm -f getg2i.o
+gfortran -c -O3 -g -fallow-argument-mismatch getg2ir.f
+ar  -ruv ../../libg2_4.a getg2ir.o
+a - getg2ir.o
+rm -f getg2ir.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2s.f
+ar  -ruv ../../libg2_4.a getgb2s.o
+a - getgb2s.o
+rm -f getgb2s.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2r.f
+ar  -ruv ../../libg2_4.a getgb2r.o
+a - getgb2r.o
+rm -f getgb2r.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2l.f
+ar  -ruv ../../libg2_4.a getgb2l.o
+a - getgb2l.o
+rm -f getgb2l.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2.f
+ar  -ruv ../../libg2_4.a getgb2.o
+a - getgb2.o
+rm -f getgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2p.f
+ar  -ruv ../../libg2_4.a getgb2p.o
+a - getgb2p.o
+rm -f getgb2p.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2rp.f
+ar  -ruv ../../libg2_4.a getgb2rp.o
+a - getgb2rp.o
+rm -f getgb2rp.o
+gfortran -c -O3 -g -fallow-argument-mismatch putgb2.f
+ar  -ruv ../../libg2_4.a putgb2.o
+a - putgb2.o
+rm -f putgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch g2grids.f
+ar  -ruv ../../libg2_4.a g2grids.o
+a - g2grids.o
+rm -f g2grids.o
+gfortran -c -O3 -g -fallow-argument-mismatch params.f
+ar  -ruv ../../libg2_4.a params.o
+a - params.o
+rm -f params.o
+gfortran -c -O3 -g -fallow-argument-mismatch params_ecmwf.f
+ar  -ruv ../../libg2_4.a params_ecmwf.o
+a - params_ecmwf.o
+rm -f params_ecmwf.o
+gfortran -c -O3 -g -fallow-argument-mismatch getidx.f
+ar  -ruv ../../libg2_4.a getidx.o
+a - getidx.o
+rm -f getidx.o
+gfortran -c -O3 -g -fallow-argument-mismatch gdt2gds.f
+ar  -ruv ../../libg2_4.a gdt2gds.o
+a - gdt2gds.o
+rm -f gdt2gds.o
+gfortran -c -O3 -g -fallow-argument-mismatch gridtemplates.f
+ar  -ruv ../../libg2_4.a gridtemplates.o
+r - gridtemplates.o
+rm -f gridtemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch pdstemplates.f
+ar  -ruv ../../libg2_4.a pdstemplates.o
+r - pdstemplates.o
+rm -f pdstemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch drstemplates.f
+ar  -ruv ../../libg2_4.a drstemplates.o
+r - drstemplates.o
+rm -f drstemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribmod.f
+ar  -ruv ../../libg2_4.a gribmod.o
+r - gribmod.o
+rm -f gribmod.o
+gfortran -c -O3 -g -fallow-argument-mismatch realloc.f
+ar  -ruv ../../libg2_4.a realloc.o
+r - realloc.o
+rm -f realloc.o
+gfortran -c -O3 -g -fallow-argument-mismatch addfield.f
+addfield.f:310:21:
+
+  306 |         call simpack(pfld,ndpts,idrstmpl,cpack,lcpack)
+      |                     2
+......
+  310 |         call simpack(pfld(2),ndpts-1,idrstmpl,cpack,lcpack)
+      |                     1
+Warning: Element of assumed-shape or pointer array as actual argument at (1) cannot correspond to actual argument at (2)
+addfield.f:311:20:
+
+  261 |         call mkieee(coordlist,coordieee,numcoord)
+      |                    2
+......
+  311 |         call mkieee(real(pfld(1)),re00,1)  ! ensure RE(0,0) value is IEEE format
+      |                    1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (rank-1 and scalar)
+addfield.f:311:34:
+
+  261 |         call mkieee(coordlist,coordieee,numcoord)
+      |                              2    
+......
+  311 |         call mkieee(real(pfld(1)),re00,1)  ! ensure RE(0,0) value is IEEE format
+      |                                  1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (rank-1 and scalar)
+addfield.f:424:26:
+
+  262 |         call sbytes(cgrib,coordieee,iofst,32,0,numcoord)
+      |                          2
+......
+  424 |         call sbytes(cgrib,intbmap,iofst,1,0,ngrdpts)    ! Store BitMap
+      |                          1
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (INTEGER(4)/REAL(4)).
+ar  -ruv ../../libg2_4.a addfield.o
+r - addfield.o
+rm -f addfield.o
+gfortran -c -O3 -g -fallow-argument-mismatch addgrid.f
+ar  -ruv ../../libg2_4.a addgrid.o
+r - addgrid.o
+rm -f addgrid.o
+gfortran -c -O3 -g -fallow-argument-mismatch addlocal.f
+ar  -ruv ../../libg2_4.a addlocal.o
+r - addlocal.o
+rm -f addlocal.o
+gfortran -c -O3 -g -fallow-argument-mismatch getfield.f
+getfield.f:622:26:
+
+  622 |         call gbytes(cgrib,coordieee,iofst,32,0,numcoord)
+      |                          1
+......
+  806 |         call gbytes(cgrib,intbmap,iofst,1,0,ngpts)
+      |                          2
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (REAL(4)/INTEGER(4)).
+getfield.f:298:24:
+
+  298 |             call rdieee(ieee,fld(1),1)
+      |                        1
+......
+  623 |         call rdieee(coordieee,coordlist,numcoord)
+      |                    2    
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (INTEGER(4)/REAL(4)).
+ar  -ruv ../../libg2_4.a getfield.o
+r - getfield.o
+rm -f getfield.o
+gfortran -c -O3 -g -fallow-argument-mismatch gb_info.f
+ar  -ruv ../../libg2_4.a gb_info.o
+r - gb_info.o
+rm -f gb_info.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_getfld.f
+ar  -ruv ../../libg2_4.a gf_getfld.o
+r - gf_getfld.o
+rm -f gf_getfld.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_free.f
+ar  -ruv ../../libg2_4.a gf_free.o
+r - gf_free.o
+rm -f gf_free.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack1.f
+ar  -ruv ../../libg2_4.a gf_unpack1.o
+r - gf_unpack1.o
+rm -f gf_unpack1.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack2.f
+ar  -ruv ../../libg2_4.a gf_unpack2.o
+r - gf_unpack2.o
+rm -f gf_unpack2.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack3.f
+ar  -ruv ../../libg2_4.a gf_unpack3.o
+r - gf_unpack3.o
+rm -f gf_unpack3.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack4.f
+ar  -ruv ../../libg2_4.a gf_unpack4.o
+r - gf_unpack4.o
+rm -f gf_unpack4.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack5.f
+ar  -ruv ../../libg2_4.a gf_unpack5.o
+r - gf_unpack5.o
+rm -f gf_unpack5.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack6.f
+ar  -ruv ../../libg2_4.a gf_unpack6.o
+r - gf_unpack6.o
+rm -f gf_unpack6.o
+gfortran -c -O3 -g -fallow-argument-mismatch gf_unpack7.f
+gf_unpack7.f:90:23:
+
+   80 |         call simunpack(cgrib(ipos),lensec-5,idrstmpl,ndpts,fld)
+      |                                                           2
+......
+   90 |      &                 fld(2))
+      |                       1
+Warning: Element of assumed-shape or pointer array as actual argument at (1) cannot correspond to actual argument at (2)
+ar  -ruv ../../libg2_4.a gf_unpack7.o
+r - gf_unpack7.o
+rm -f gf_unpack7.o
+gfortran -c -O3 -g -fallow-argument-mismatch gettemplates.f
+ar  -ruv ../../libg2_4.a gettemplates.o
+r - gettemplates.o
+rm -f gettemplates.o
+gfortran -c -O3 -g -fallow-argument-mismatch getlocal.f
+ar  -ruv ../../libg2_4.a getlocal.o
+r - getlocal.o
+rm -f getlocal.o
+gfortran -c -O3 -g -fallow-argument-mismatch getdim.f
+ar  -ruv ../../libg2_4.a getdim.o
+r - getdim.o
+rm -f getdim.o
+gfortran -c -O3 -g -fallow-argument-mismatch getpoly.f
+ar  -ruv ../../libg2_4.a getpoly.o
+r - getpoly.o
+rm -f getpoly.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribcreate.f
+ar  -ruv ../../libg2_4.a gribcreate.o
+r - gribcreate.o
+rm -f gribcreate.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribend.f
+ar  -ruv ../../libg2_4.a gribend.o
+r - gribend.o
+rm -f gribend.o
+gfortran -c -O3 -g -fallow-argument-mismatch gribinfo.f
+ar  -ruv ../../libg2_4.a gribinfo.o
+r - gribinfo.o
+rm -f gribinfo.o
+gfortran -c -O3 -g -fallow-argument-mismatch mkieee.f
+ar  -ruv ../../libg2_4.a mkieee.o
+r - mkieee.o
+rm -f mkieee.o
+gfortran -c -O3 -g -fallow-argument-mismatch rdieee.f
+ar  -ruv ../../libg2_4.a rdieee.o
+r - rdieee.o
+rm -f rdieee.o
+gfortran -c -O3 -g -fallow-argument-mismatch simpack.f
+ar  -ruv ../../libg2_4.a simpack.o
+r - simpack.o
+rm -f simpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch simunpack.f
+ar  -ruv ../../libg2_4.a simunpack.o
+r - simunpack.o
+rm -f simunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch cmplxpack.f
+ar  -ruv ../../libg2_4.a cmplxpack.o
+r - cmplxpack.o
+rm -f cmplxpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch compack.f
+ar  -ruv ../../libg2_4.a compack.o
+r - compack.o
+rm -f compack.o
+gfortran -c -O3 -g -fallow-argument-mismatch misspack.f
+ar  -ruv ../../libg2_4.a misspack.o
+r - misspack.o
+rm -f misspack.o
+gfortran -c -O3 -g -fallow-argument-mismatch pack_gp.f
+ar  -ruv ../../libg2_4.a pack_gp.o
+r - pack_gp.o
+rm -f pack_gp.o
+gfortran -c -O3 -g -fallow-argument-mismatch reduce.f
+ar  -ruv ../../libg2_4.a reduce.o
+r - reduce.o
+rm -f reduce.o
+gfortran -c -O3 -g -fallow-argument-mismatch comunpack.f
+ar  -ruv ../../libg2_4.a comunpack.o
+r - comunpack.o
+rm -f comunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch specpack.f
+ar  -ruv ../../libg2_4.a specpack.o
+r - specpack.o
+rm -f specpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch specunpack.f
+specunpack.f:59:21:
+
+   48 |       call rdieee(ieee,ref,1)
+      |                  2   
+......
+   59 |          call rdieee(cpack,unpk,Ts)          ! read IEEE unpacked floats
+      |                     1
+Warning: Type mismatch between actual argument at (1) and actual argument at (2) (CHARACTER(1)/INTEGER(4)).
+specunpack.f:59:27:
+
+   48 |       call rdieee(ieee,ref,1)
+      |                       2    
+......
+   59 |          call rdieee(cpack,unpk,Ts)          ! read IEEE unpacked floats
+      |                           1
+Warning: Rank mismatch between actual argument at (1) and actual argument at (2) (scalar and rank-1)
+ar  -ruv ../../libg2_4.a specunpack.o
+r - specunpack.o
+rm -f specunpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch jpcpack.f
+ar  -ruv ../../libg2_4.a jpcpack.o
+r - jpcpack.o
+rm -f jpcpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch jpcunpack.f
+ar  -ruv ../../libg2_4.a jpcunpack.o
+r - jpcunpack.o
+rm -f jpcunpack.o
+gcc -c -O2 -g -DLINUX -I../../incmod enc_jpeg2000.c
+ar  -ruv ../../libg2_4.a enc_jpeg2000.o
+r - enc_jpeg2000.o
+rm -f enc_jpeg2000.o
+gcc -c -O2 -g -DLINUX -I../../incmod dec_jpeg2000.c
+ar  -ruv ../../libg2_4.a dec_jpeg2000.o
+r - dec_jpeg2000.o
+rm -f dec_jpeg2000.o
+gfortran -c -O3 -g -fallow-argument-mismatch pngpack.f
+ar  -ruv ../../libg2_4.a pngpack.o
+r - pngpack.o
+rm -f pngpack.o
+gfortran -c -O3 -g -fallow-argument-mismatch pngunpack.f
+ar  -ruv ../../libg2_4.a pngunpack.o
+r - pngunpack.o
+rm -f pngunpack.o
+gcc -c -O2 -g -DLINUX -I../../incmod enc_png.c
+ar  -ruv ../../libg2_4.a enc_png.o
+r - enc_png.o
+rm -f enc_png.o
+gcc -c -O2 -g -DLINUX -I../../incmod dec_png.c
+ar  -ruv ../../libg2_4.a dec_png.o
+r - dec_png.o
+rm -f dec_png.o
+gcc -c -O2 -g -DLINUX -I../../incmod mova2i.c
+ar  -ruv ../../libg2_4.a mova2i.o
+r - mova2i.o
+rm -f mova2i.o
+gfortran -c -O3 -g -fallow-argument-mismatch gbytesc.f
+ar  -ruv ../../libg2_4.a gbytesc.o
+r - gbytesc.o
+rm -f gbytesc.o
+gfortran -c -O3 -g -fallow-argument-mismatch skgb.f
+ar  -ruv ../../libg2_4.a skgb.o
+r - skgb.o
+rm -f skgb.o
+gfortran -c -O3 -g -fallow-argument-mismatch ixgb2.f
+ar  -ruv ../../libg2_4.a ixgb2.o
+r - ixgb2.o
+rm -f ixgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch getg2i.f
+ar  -ruv ../../libg2_4.a getg2i.o
+r - getg2i.o
+rm -f getg2i.o
+gfortran -c -O3 -g -fallow-argument-mismatch getg2ir.f
+ar  -ruv ../../libg2_4.a getg2ir.o
+r - getg2ir.o
+rm -f getg2ir.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2s.f
+ar  -ruv ../../libg2_4.a getgb2s.o
+r - getgb2s.o
+rm -f getgb2s.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2r.f
+ar  -ruv ../../libg2_4.a getgb2r.o
+r - getgb2r.o
+rm -f getgb2r.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2l.f
+ar  -ruv ../../libg2_4.a getgb2l.o
+r - getgb2l.o
+rm -f getgb2l.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2.f
+ar  -ruv ../../libg2_4.a getgb2.o
+r - getgb2.o
+rm -f getgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2p.f
+ar  -ruv ../../libg2_4.a getgb2p.o
+r - getgb2p.o
+rm -f getgb2p.o
+gfortran -c -O3 -g -fallow-argument-mismatch getgb2rp.f
+ar  -ruv ../../libg2_4.a getgb2rp.o
+r - getgb2rp.o
+rm -f getgb2rp.o
+gfortran -c -O3 -g -fallow-argument-mismatch putgb2.f
+ar  -ruv ../../libg2_4.a putgb2.o
+r - putgb2.o
+rm -f putgb2.o
+gfortran -c -O3 -g -fallow-argument-mismatch g2grids.f
+ar  -ruv ../../libg2_4.a g2grids.o
+r - g2grids.o
+rm -f g2grids.o
+gfortran -c -O3 -g -fallow-argument-mismatch params.f
+ar  -ruv ../../libg2_4.a params.o
+r - params.o
+rm -f params.o
+gfortran -c -O3 -g -fallow-argument-mismatch params_ecmwf.f
+ar  -ruv ../../libg2_4.a params_ecmwf.o
+r - params_ecmwf.o
+rm -f params_ecmwf.o
+gfortran -c -O3 -g -fallow-argument-mismatch getidx.f
+ar  -ruv ../../libg2_4.a getidx.o
+r - getidx.o
+rm -f getidx.o
+gfortran -c -O3 -g -fallow-argument-mismatch gdt2gds.f
+ar  -ruv ../../libg2_4.a gdt2gds.o
+r - gdt2gds.o
+rm -f gdt2gds.o
+mkdir -p ../../incmod/g2_4
+mv *.mod ../../incmod/g2_4

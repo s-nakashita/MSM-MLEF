@@ -131,7 +131,7 @@
 #define VERSION "1.900.1"
 
 /* Define to 1 if the X Window System is missing or not being used. */
-/* #undef X_DISPLAY_MISSING */
+#define X_DISPLAY_MISSING 1
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */

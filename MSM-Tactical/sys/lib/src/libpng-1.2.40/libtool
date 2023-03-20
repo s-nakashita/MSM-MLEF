@@ -2,7 +2,7 @@
 
 # libtool - Provide generalized library-building support services.
 # Generated automatically by config.status (libpng) 1.2.40
-# Libtool was configured on host methane:
+# Libtool was configured on host cholesky:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 #   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005,
@@ -80,13 +80,13 @@ fast_install=needless
 
 # The host system.
 host_alias=
-host=x86_64-unknown-freebsd13.0
-host_os=freebsd13.0
+host=x86_64-unknown-freebsd13.1
+host_os=freebsd13.1
 
 # The build system.
 build_alias=
-build=x86_64-unknown-freebsd13.0
-build_os=freebsd13.0
+build=x86_64-unknown-freebsd13.1
+build_os=freebsd13.1
 
 # A BSD- or MS-compatible name lister.
 NM="/usr/local/bin/nm -B"
@@ -240,7 +240,7 @@ finish_eval=""
 hardcode_into_libs=no
 
 # Compile-time system search path for libraries.
-sys_lib_search_path_spec="/usr/local/lib/gcc10/gcc/x86_64-portbld-freebsd13.0/10.3.0 /usr/local/x86_64-portbld-freebsd13.0/lib /usr/local/lib/gcc10 /lib /usr/lib"
+sys_lib_search_path_spec="/usr/local/lib/gcc12/gcc/x86_64-portbld-freebsd13.1/12.2.0 /usr/local/x86_64-portbld-freebsd13.1/lib /usr/local/lib/gcc12 /lib /usr/lib"
 
 # Run-time system search path for libraries.
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
@@ -281,7 +281,7 @@ wl="-Wl,"
 pic_flag=" -fPIC -DPIC"
 
 # Compiler flag to prevent dynamic linking.
-link_static_flag="-static"
+link_static_flag=""
 
 # Does compiler simultaneously support -c and -o options?
 compiler_c_o="yes"

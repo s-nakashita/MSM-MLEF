@@ -4,6 +4,7 @@
 #
 set -ex
 CYCLE=${1:-$CYCLE}
+CYCLESTART=${2:-$CYCLESTART}
 BV_H=${INCCYCLE:-6}
 TETYPE=${TETYPE}
 SCL=${SCL}
@@ -66,7 +67,7 @@ cp $DATADIR/rmtnvar $OUTDIR/
 MEM4=`printf '%0.4d' $MEM`
 ln -s $OUTDIR/r_sig.f00 ro.$MEM4.sig.grd
 ln -s $OUTDIR/r_sfc.f00 ro.$MEM4.sfc.grd
-if [ $CYCLE -eq 0 ]; then
+if [ $CYCLE -eq $CYCLESTART ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
     cp $DATADIR/pdate.txt .
     irow=$MEM
