@@ -52,10 +52,14 @@
 ! terrain
       jpdt2(8)=3
       jpdt3(8)=5
+!! ps
+!      jpdt2(9)=3
+!      jpdt3(9)=0
 !
       jpdt13=int(plevels)
 !
 !
+!      do n=1,nfld-2
       do n=1,nfld-1
       do k=1,kdim
          lugi=0
@@ -168,6 +172,36 @@
             write(6,*) 'iret= ',iret
             out(:,1,8)=0.0
          endif
+!! tested by SN 27/03/23 for ps
+!! Set GRIB2 field identification values to search for
+!         jpdt(1)=jpdt2(9)
+!         jpdt(2)=jpdt3(9)
+!         jpdt(10)=1
+!         jpdt(11)=0
+!         jpdt(12)=0              
+!
+!! Get field from file
+!         call getgb2(ifile,lugi,j,jdisc,jids,jpdtn,jpdt,jgdtn,jgdt,     &
+!     &            unpack,kk,gfld,iret)
+!
+!! Process field ...
+!         if (iret.eq.0) then
+!            if (ijmax.eq.gfld%ngrdpts) then
+!               out(:,1,9)=gfld%fld
+!            else
+!               write(6,*) 'grib projection donot fit rscomloc'
+!               call abort
+!            endif
+!           idate(4)=gfld%idsect(6)
+!           idate(2)=gfld%idsect(7)
+!           idate(3)=gfld%idsect(8)
+!           idate(1)=gfld%idsect(9)
+!           fhour=gfld%ipdtmpl(9)
+!         else
+!            write(6,*) 'cannot find var ',jpdt2(9),jpdt3(9)
+!            write(6,*) 'iret= ',iret
+!            out(:,1,9)=0.0
+!         endif
 ! Free memory when done with field
       call gf_free(gfld)
  
