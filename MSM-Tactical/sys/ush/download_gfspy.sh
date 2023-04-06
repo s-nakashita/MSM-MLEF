@@ -54,14 +54,7 @@ PARAMS='CLWMR/HGT/O3MR/R H/TMP/U GRD/V GRD/LAND/TSOIL/T CDC/SOILW/ICEC/WEASD'
 else
 PARAMS='CLWMR/HGT/O3MR/SPF H/TMP/U GRD/V GRD/LAND/TSOIL/T CDC/SOILW/ICEC/WEASD'
 fi
-#if [ $fend -lt 100 ]; then fend=0$fend; fi
-#tarf=gfs.0p25.${SDATE}.f000-${fend}.grib2.tar
-#if [ ! -f $tarf ]
-tarfiles=`ls *.tar`
-echo $tarfiles
-if [ ! -z "$tarfiles" ] && [ -z "$PRODUCT" ]
-then
-else
+if [ ! -z "$PRODUCT" ]; then
 cat << EOF > download.py
 import sys
 sys.path.append('${DISK}/rda-apps-clients/')

@@ -8,16 +8,17 @@ datadir=/zdata/grmsm/work/rsm2rsm27_da
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=/zdata/grmsm/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-obsdist=uniform
-if [ $obsdist = grid ];then
-	stationin=T
-else
+obsdist=single
+if [ $obsdist = uniform ];then
 	stationin=F
+else
+	stationin=T
 fi
-reg=ecs
-idate=2022061812
-truth=25
-reg=jpn
+#reg=ecs
+#idate=2022061812
+#truth=25
+reg=single
+#reg=27
 idate=2022083000
 truth=1
 member=40
@@ -34,8 +35,10 @@ NODE=`expr $nisep \* $njsep`
 RUNENV="mpiexec -n ${NODE} "
 echo $RUNENV
 
-#fhour=6
-for fhour in $(seq 0 6 24);do
+fs=0
+fe=0
+fi=6
+for fhour in $(seq $fs $fi $fe);do
 adate=`date -j -f "%Y%m%d%H" -v+${fhour}H +"%Y%m%d%H" "${idate}"`
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -78,12 +81,18 @@ wdir=${obsdir}/${adate}
 mkdir -p $wdir/tmp
 cd $wdir/tmp
 ### station
-#rm -f *_station.txt
-#ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
-#cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
-#cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
-#cat surf_station_1.txt surf_station_2.txt > surf_station.txt
-#rm surf_station_1.txt surf_station_2.txt
+if [ $stationin = T ]; then
+rm -f *_station.txt
+ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
+if [ $obsdist = grid ]; then
+cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
+cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
+cat surf_station_1.txt surf_station_2.txt > surf_station.txt
+rm surf_station_1.txt surf_station_2.txt
+else
+cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station.txt
+fi
+fi
 cat <<EOF >obsmake.nml
 &param_ens
  member=,

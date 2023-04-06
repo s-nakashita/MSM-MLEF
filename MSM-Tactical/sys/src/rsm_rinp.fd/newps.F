@@ -129,8 +129,8 @@
      &     (i-1)/igrd1+1, 'i=',mod(i,igrd1)
          if( psnew(i).eq.ps(i) ) then
               icount = icount + 1
-         else
-!         print *,'  gz gzold ps psnew ',hold(i),hnew(i),ps(i),psnew(i)
+         else if( hnew(i).gt.4000. ) then
+         print *,'  gzold gznew psold psnew ',hold(i),hnew(i),ps(i),psnew(i)
          endif
 8100     continue
 !

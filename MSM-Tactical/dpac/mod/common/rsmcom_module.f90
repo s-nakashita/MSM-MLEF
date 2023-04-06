@@ -435,6 +435,7 @@ module rsmcom_module
     sl=0.0
     si(1:nlev+1) = sigh
     sl(1:nlev) = sig
+    ext=0.0
     ext(1) = real(iwav1,kind=sp)
     ext(2) = real(jwav1,kind=sp)
     ext(3) = real(igrd1,kind=sp)

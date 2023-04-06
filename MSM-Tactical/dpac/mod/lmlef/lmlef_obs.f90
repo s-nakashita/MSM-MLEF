@@ -254,14 +254,14 @@ subroutine set_lmlef_obs
         end if
       end do
     end if
-    if(abs(obsda%hxf(n)) > gross_error*obsda%err(n)) then !gross error
-      if(debug_obs) then
-        write(6,'(2i6,a3,es10.2,a4,es10.2,a3,f8.2)') &
-        n, obsda%elem(n), 'y', obsda%dat(n), 'dep', &
-        abs(obsda%hxf(n)), '>', gross_error*obsda%err(n)
-      end if
-      obsda%qc(n) = iqc_gross_err
-    end if
+!!debug    if(abs(obsda%hxf(n)) > gross_error*obsda%err(n)) then !gross error
+!!debug      if(debug_obs) then
+!!debug        write(6,'(2i6,a3,es10.2,a4,es10.2,a3,f8.2)') &
+!!debug        n, obsda%elem(n), 'y', obsda%dat(n), 'dep', &
+!!debug        abs(obsda%hxf(n)), '>', gross_error*obsda%err(n)
+!!debug      end if
+!!debug      obsda%qc(n) = iqc_gross_err
+!!debug    end if
   end do
 !$OMP END PARALLEL DO
 

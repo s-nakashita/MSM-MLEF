@@ -88,7 +88,7 @@ module obs_module
   & (/'  U','  V','  T','  Q',' RH',' Ps',&
   &   'T2m',' Td',' Wd',' Ws'/)
   real(kind=dp),parameter,public :: obserr(nobstype) = &
-  & (/1.0d0,1.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
+  & (/3.0d0,3.0d0,1.0d0,1.0d-3,1.0d-1,1.0d2,&
   &   1.0d0,2.0d0,10.0d0,1.0d0/)
   ! mandatory levels
   real(kind=dp),parameter,public :: plevfix(25) = &

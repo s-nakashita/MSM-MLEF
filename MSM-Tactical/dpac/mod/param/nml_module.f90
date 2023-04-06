@@ -117,6 +117,7 @@ module nml_module
   logical, save :: debug_time=.false.
   logical, save :: noda=.false.
   character(filelenmax) :: noda_out_basename = 'noda.@@@@'
+
   namelist /param_lmlef/ &
       obsda_in, &
       obsda_in_basename, &

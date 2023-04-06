@@ -417,11 +417,12 @@ fi #doDA=doyes
 # Ensemble Forecast loop
 ########################################
 PREPBASE=F
-if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
+if [ $CYCLEDA -gt 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
   PREPBASE=T
 #fi
-elif [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+elif [ do$BGM = doyes ] && [ do$BP = dowbp ] \
+	&& [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
   if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
   cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
@@ -441,13 +442,11 @@ if [ $OSSE = T ] && [ $NODA = T ]; then
   mem=`expr $mem - 1`
 fi
 while [ $mem -le $MEMBER ];do
-  if [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ]; then
+  if [ $mem -lt $mem0 ]; then ## noda
     export ENDHOUR=$ENDHOUR0
     cd $RUNDIR
-    if [ $IRES -lt 27 ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
-    fi
   elif [ $mem -eq 0 ]; then ## control
     if [ do$DA = doyes ]; then
     export ENDHOUR=$INCCYCLE
@@ -455,10 +454,8 @@ while [ $mem -le $MEMBER ];do
     else
     cd $RUNDIR
     fi
-    if [ $IRES -lt 27 ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
-    fi
   else ## member
     if [ do$DA = doyes ]; then
     export ENDHOUR=$INCCYCLE
@@ -641,7 +638,7 @@ done  ###### end of while forecast loop
 mem=`expr 1 + $mem`
 done  ###### end of while member loop
 # ensemble mean and spread
-if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
+if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ] && [ do$RUNFCST = yes ] ; then
   $USHDIR/rensmspr.sh $head || exit 17
 fi
 # -------- schedule job submit  ----------------
