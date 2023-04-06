@@ -258,8 +258,8 @@ m=1
 em=1
 while [ $em -le $member ];do
 mem=`printf '%0.3d' $m`
-if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
-else
+#if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
+#else
 mem2=`printf '%0.3d' $em`
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
@@ -278,7 +278,7 @@ ln -s ${obsdir}/${adate}/${obsextf}.m0${mem}.dat ${obsextf}.0${mem2}.dat
 fi
 em=`expr $em + 1`
 fi
-fi
+#fi
 m=`expr $m + 1`
 done
 rm -f STDIN lmlef

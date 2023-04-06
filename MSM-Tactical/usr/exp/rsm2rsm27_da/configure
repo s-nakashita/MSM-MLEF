@@ -18,7 +18,7 @@ else
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export GUESDIR=$WORKUSR/$EXPN
+export GUESDIR=$TEMP
 #export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
 export BASEDIR0=${HOME}/mnt/methane/work/gefs2rsm27_nomad
 #export BASEDIR0=$WORKUSR/DATA/gefs
@@ -64,7 +64,7 @@ export NCLDB=1
 export NCLD=1
 export GTOPO30=yes
 export CHGTLEV=no 
-export SLRFIX=yes 
+#export SLRFIX=yes 
 export BGF=1                    # CDELX ~= BGF * RDELX
 export MBC=yes 
 export LBC=no 
@@ -75,10 +75,10 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=-4
-export CYCLEMAX=0
+export CYCLESTART=1
+export CYCLEMAX=1
 export DASTART=1
-export NODA=F # free run for OSSE
+export NODA=T # free run for OSSE
 export INCCYCLE=6 # cycle interval
 export IOFFSET=24 # first guess offset
 export ENDHOUR=24 # forecast length
@@ -87,7 +87,7 @@ export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
 export PRTHOUR=1
 export INCBASE=3
 export INCHOUR=3
-export TIMESTEP=90
+export TIMESTEP=60
 export IMDLPHY=1
 #export NEWMTN=.FALSE.
 export CLIM=0
@@ -119,7 +119,6 @@ export HEAD=$head
 # DA option
 export OSSE=T
 export TMEM=25 # truth member
-export TMEM=1 # truth member
 export OBSDIST=uniform
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0

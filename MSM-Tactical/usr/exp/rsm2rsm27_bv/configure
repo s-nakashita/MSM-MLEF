@@ -14,15 +14,16 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}gfs         #output top directory
+   export TEMP=$WORKUSR/${EXPN}gfs+ps         #output top directory
 fi
 GLOBAL=${GLOBAL:-GEFS}
 if [ "$MEM" = "000" ];then #control
   export RUNDIR=$TEMP/$SDATE
   export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000
   if [ $GLOBAL = GFS ];then #deterministic
-    export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
-    export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
+    #export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
+    #export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}
+    export BASEDIR=$WORKUSR/gfsp2rsm27_rda+ps/${SDATE}
   fi #deterministic
 elif [ $CYCLE -eq 0 -o do$BV != doyes ];then #downscaling
   export RUNDIR=$TEMP/$SDATE/${MEM} #MEMBER

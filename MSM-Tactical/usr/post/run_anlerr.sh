@@ -59,12 +59,13 @@ cd $DATADIR/tmp
 ln -s ${SRCDIR}/${EXEC} ${EXEC}
 #ln -s ${SRCDIR}/${EXEC2} ${EXEC2}
 
-tmem=`printf '%0.3d' $TMEM`
-truth=${HEAD}${tmem}
-echo $truth
+TRUEDIR=$WORKUSR/rsm2rsm27_truth
+echo $TRUEDIR
+#tmem=`printf '%0.3d' $TMEM`
+#truth=${HEAD}${tmem}
+#echo $truth
 fhtrue=0
 icyc=$CYCLESTART
-#icyc=1
 SDATE=$SDATE0
 if [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`
@@ -80,7 +81,7 @@ if [ $fhtrue -gt 24 ]; then
   break
 fi
 echo $SDATE
-if [ $ANAL = F ] || [ $icyc -lt $DASTART ]; then
+if [ $icyc -lt $DASTART ]; then
 header=${HEAD}
 if [ $DA_MEAN = T ]; then
 header=${HEAD}m${MEMBER}
@@ -88,9 +89,13 @@ fi
 else
 header=${HEAD2}
 fi
-echo $header $truth
+echo $ANAL $header $truth
 fh=0
+if [ $ANAL = F ]; then
 end_hour=$ENDHOUR
+else
+end_hour=$INCCYCLE
+fi
 inc_h=$PRTHOUR
 echo $end_hour $inc_h
 #exit
@@ -104,15 +109,16 @@ if [ $fhtrue -lt 10 ]; then
   fhtrue=0$fhtrue
 fi
   nsig=11
-  ln -s $DATADIR/$SDATE0/$truth/r_sig.f$fhtrue fort.$nsig
+  #ln -s $DATADIR/$SDATE0/$truth/r_sig.f$fhtrue fort.$nsig
+  ln -s $TRUEDIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
 # experiment
   nsig=`expr $nsig + 1`
   if [ $ANAL = F ]; then
-  if [ $DA_MEAN = T ]; then
-  ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
-  else
+#  if [ $DA_MEAN = T ]; then
+#  ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
+#  else
   ln -s $DATADIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
-  fi
+#  fi
   else
   if [ $DA_MEAN = T ]; then
   ln -s $DATADIR/$SDATE/${header}mean/r_sig.f$fh fort.$nsig #c
@@ -124,19 +130,6 @@ fi
     fi
   fi
   fi
-  if [ $IRES -eq 27 ];then
-cat <<EOF >NAMELIST
-&NAMLST_PRTB
- lprtb=T,
- epsq=,
- lonw=110.0,
- lone=153.0,
- lats=15.0,
- latn=47.0,
- kmax=42,
-&END
-EOF
-  else
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
@@ -148,22 +141,21 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
-  fi
   rm te.grd teprof.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 
 #  cat te.dat
 #  ./${EXEC2} < NAMELIST 1>>${EXEC2}.log 2>&1 || exit 9 
   head -n 5 teprof.dat
   if [ $ANAL = F ]; then
-    if [ $DA_MEAN = T ];then
-#      mv te.dat $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.dat #c
-      mv te.grd $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.grd
-      mv teprof.dat $DATADIR/${SDATE0}/${header}mean/teprof-err${fhtrue}h.dat
-    else
-#      mv te.dat $DATADIR/${SDATE0}/te-err${fhtrue}h.dat #c
+#    if [ $DA_MEAN = T ];then
+##      mv te.dat $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.dat #c
+#      mv te.grd $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.grd
+#      mv teprof.dat $DATADIR/${SDATE0}/${header}mean/teprof-err${fhtrue}h.dat
+#    else
+##      mv te.dat $DATADIR/${SDATE0}/te-err${fhtrue}h.dat #c
       mv te.grd $DATADIR/${SDATE0}/te-err${fhtrue}h.grd
       mv teprof.dat $DATADIR/${SDATE0}/teprof-err${fhtrue}h.dat
-    fi
+#    fi
   else
     if [ $DA_MEAN = T ];then
 #      mv te.dat $DATADIR/${SDATE}/${header}mean/te-err${fh}h.dat #c

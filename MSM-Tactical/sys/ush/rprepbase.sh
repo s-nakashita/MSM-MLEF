@@ -2,7 +2,7 @@
 #
 # prepare base field for OSSE
 #
-set -x
+set -ex
 CYCLEDA=${1}
 MEAN=${2}
 IDATE=${SDATE0:-2022083000} #cycle start
@@ -41,13 +41,15 @@ rm -rf tmp
 mkdir -p tmp
 cd tmp
 ln -s ${SRCDIR}/${EXEC} ${EXEC}
-
+set +e
 fhbase=`expr $INCCYCLE \* \( $CYCLEDA - 1 \)`
-
+set -e
 h=0
 while [ $h -le $ENDHOUR ]; do
 fh=`printf '%0.2d' $h`
+set +e
 hold=`expr $h + $fhbase`
+set -e
 fhold=`printf '%0.2d' $hold`
 rm -f fort.*
 if [ $MEAN != T ]; then
@@ -60,8 +62,8 @@ MEM=1
 while [ $MEM -le $MEMBER ]; do
 PMEM=`printf '%0.3d' $MEM` #prtb member
 if [ $IRES -eq 27 ]; then
-ln -s $BASEDIR/r_sig.f$fhold ri.0${PMEM}.sig.grd
-ln -s $BASEDIR/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
+#ln -s $BASEDIR/r_sig.f$fhold ri.0${PMEM}.sig.grd
+#ln -s $BASEDIR/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
 else
 ln -s $BASEDIR/${HEADBASE}${PMEM}/r_sig.f$fhold ri.0${PMEM}.sig.grd
 ln -s $BASEDIR/${HEADBASE}${PMEM}/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
@@ -74,6 +76,8 @@ if [ $IRES -eq 27 ]; then
 cat <<EOF >namelist
 &namlst_replace
  newfhour=0.0,
+ offset=${fhbase}.0,
+ prtbbase=F,
  member=${MEMBER},
  mean=${MEAN},
 &end
@@ -82,6 +86,8 @@ else
 cat <<EOF >namelist
 &namlst_replace
  newfhour=${h}.0,
+ offset=,
+ prtbbase=T,
  member=${MEMBER},
  mean=${MEAN},
 &end

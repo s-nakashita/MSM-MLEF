@@ -10,9 +10,11 @@ program replacedate
   use obs_module, only: ndate
   implicit none
   real(kind=sp) :: newfhour=0.0 !new forecast hours
+  real(kind=sp) :: offset=0.0   !(for GFS) previous forecast hours
   integer       :: member=10 !ensemble size
+  logical       :: prtbbase=.true.
   logical       :: mean=.false.
-  namelist /namlst_replace/ newfhour,member,mean
+  namelist /namlst_replace/ newfhour,offset,member,prtbbase,mean
   ! input files' units (base, prtb)
   character(len=15) :: file_basename='r_.@@@@.LEV.grd'
   character(len=15) :: filename
@@ -74,8 +76,9 @@ program replacedate
   allocate( dumlat(jgrd1), dumlon(igrd1) )
 
   ! calculate new idate and fhour
-  print *,'before ', idate(4),idate(2),idate(3),idate(1),'+',nint(fhour)
-  dhour = fhour - newfhour
+  print *,'before ', idate(4),idate(2),idate(3),idate(1),'+',nint(fhour) &
+          & ,'(+',nint(offset),')'
+  dhour = fhour - newfhour + offset
   dtmin=nint(dhour)*60
   date1(1)=idate(4)
   date1(2)=idate(2)
@@ -88,9 +91,16 @@ program replacedate
   idate(3)=date2(3)
   idate(1)=date2(4)
   print *,'after ', idate(4),idate(2),idate(3),idate(1),'+',nint(newfhour)
+  if(.not.prtbbase) then
+    open(nisig,file=filename,form='unformatted',access='sequential',action='read')
+    call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sig,&
+    dfld,dummapf,dumlat,dumlon)
+    close(nisig)
+  end if
 
   ! member
   do while( im<=member )
+    if(prtbbase) then
     filename=file_basename
     write(filename(1:2),'(a2)') 'ri'
     write(filename(4:7),'(i4.4)') im
@@ -100,6 +110,7 @@ program replacedate
     call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sig,&
     dfld,dummapf,dumlat,dumlon)
     close(nisig)
+    end if
     filename=file_basename
     write(filename(1:2),'(a2)') 'ro'
     write(filename(4:7),'(i4.4)') im
@@ -119,7 +130,7 @@ program replacedate
   else
     im=0
   end if
-  do while (im<=member)
+  if(.not.prtbbase) then
     filename=file_basename
     write(filename(1:2),'(a2)') 'ri'
     write(filename(4:7),'(i4.4)') im
@@ -128,6 +139,18 @@ program replacedate
     open(nisfc,file=filename,form='unformatted',access='sequential',action='read')
     call read_sfc(nisfc,igrd1,jgrd1,dfld)
     close(nisfc)
+  end if
+  do while (im<=member)
+    if(prtbbase) then
+    filename=file_basename
+    write(filename(1:2),'(a2)') 'ri'
+    write(filename(4:7),'(i4.4)') im
+    write(filename(9:11),'(a3)') 'sfc'
+    write(6,'(2a)') 'input= ',filename
+    open(nisfc,file=filename,form='unformatted',access='sequential',action='read')
+    call read_sfc(nisfc,igrd1,jgrd1,dfld)
+    close(nisfc)
+    end if
     filename=file_basename
     write(filename(1:2),'(a2)') 'ro'
     write(filename(4:7),'(i4.4)') im

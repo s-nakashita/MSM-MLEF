@@ -1,4 +1,4 @@
-      subroutine extrap(lsig,lmtn)
+      subroutine extrap(lsig,lmtn,lp2r)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:  extrap
@@ -12,6 +12,7 @@
 !   input argument list:
 !     lsig      - logical variable for new sigma or not
 !     lmtn      - logical variable for new terrain or not
+!     lp2r      - logical variable for input is pressure levels or not
 !
 !   output argument list:
 !
@@ -47,6 +48,7 @@
       parameter(idimt=ijdimo)
 !
       common /hydrid/ siin3d(ijdimi,levs+1),slin3d(ijdimi,levs)
+      common /ps_gfs/ zold(ijdimi,levs)
 !
 !  blank commons
 !
@@ -91,7 +93,7 @@
       common/comvet/si  (kdimpo),sl  (kdimo),del  (kdimo),               &
      &               ci (kdimpo),cl  (kdimo),rpi  (kdimmo)
 !
-      logical lsig,lmtn
+      logical lsig,lmtn,lp2r
 !
 !-----------------------------------------------------------------------
 !  water vapor functions
@@ -146,7 +148,12 @@
        call maxmin(q,idimt,1,1,1,' ps ')
 !
       if( lmtn ) then
+        if( lp2r ) then
+          call maxmin(zold,idimt,kdimi,1,kdimi,' zold')
+          call newps_gfs(idimt,kdimi,te,q,zold,gz,gzo,qo,siin3d)
+        else
           call newps(idimt,kdimi,te,q,gz,gzo,qo,siin3d)
+        endif
       else
         do 300 i = 1, idimt
         qo(i)=q(i)

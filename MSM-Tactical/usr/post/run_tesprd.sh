@@ -84,7 +84,11 @@ header=${HEAD2}
 fi
 echo $header $truth
 fh=0
+if [ $ANAL = F ]; then
 end_hour=$ENDHOUR
+else
+end_hour=$INCCYCLE
+fi
 inc_h=$PRTHOUR
 echo $end_hour $inc_h
 #exit
@@ -136,19 +140,6 @@ fi
   fi
   MEM=`expr $MEM + 1`
   done
-  if [ $IRES -eq 27 ];then
-cat <<EOF >NAMELIST
-&NAMLST_PRTB
- nens=${MEMBER},
- epsq=,
- lonw=110.0,
- lone=153.0,
- lats=15.0,
- latn=47.0,
- kmax=42,
-&END
-EOF
-  else
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  nens=${MEMBER},
@@ -160,25 +151,18 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
-  fi
 #  ./${EXEC} < NAMELIST || exit 9 #1>>${EXEC}.log 2>&1
 #  cat te.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 
   head -n 5 teprof.dat
   if [ $ANAL = F ]; then
-#      mv te.dat $DATADIR/${SDATE0}/te-sprd${fhfree}h.dat #c
-      mv te.grd $DATADIR/${SDATE0}/te-sprd${fhfree}h.grd
-      mv teprof.dat $DATADIR/${SDATE0}/teprof-sprd${fhfree}h.dat
+#    mv te.dat $DATADIR/${SDATE0}/te-sprd${fhfree}h.dat #c
+    mv te.grd $DATADIR/${SDATE0}/${HEAD}sprd/te-sprd${fhfree}h.grd
+    mv teprof.dat $DATADIR/${SDATE0}/${HEAD}sprd/teprof-sprd${fhfree}h.dat
   else
-    if [ $header = $HEAD ];then
-#      mv te.dat $DATADIR/${SDATE}/te-sprd${fh}h.dat
-      mv te.grd $DATADIR/${SDATE}/te-sprd${fh}h.grd
-      mv teprof.dat $DATADIR/${SDATE}/teprof-sprd${fh}h.dat
-    else
-#      mv te.dat $DATADIR/${SDATE}/${header}sprd/te-sprd${fh}h.dat
-      mv te.grd $DATADIR/${SDATE}/${header}sprd/te-sprd${fh}h.grd
-      mv teprof.dat $DATADIR/${SDATE}/${header}sprd/teprof-sprd${fh}h.dat
-    fi
+#    mv te.dat $DATADIR/${SDATE}/${header}sprd/te-sprd${fh}h.dat
+    mv te.grd $DATADIR/${SDATE}/${header}sprd/te-sprd${fh}h.grd
+    mv teprof.dat $DATADIR/${SDATE}/${header}sprd/teprof-sprd${fh}h.dat
   fi
   fh=`expr $fh + $inc_h`
   fhfree=`expr $fhfree + $inc_h`

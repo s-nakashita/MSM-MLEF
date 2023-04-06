@@ -1,4 +1,4 @@
-FC=gfortran10
+FC=gfortran
 LD=$(FC)
 FFLAGS=-O2 -fconvert=big-endian
 LDFLAGS=-L${PWD}/../../sys/lib
@@ -18,18 +18,21 @@ EXECFLX=read_flx
 
 $(EXECSIG):	kind_module.o phconst_module.o func_module.o read_module.o $(OBJSIG)
 	$(LD) $(LDFLAGS) -o $(EXECSIG) $^ $(LIBS)
+	rm *.o *.mod
 
 $(OBJSIG):	$(SRCSIG)
 	$(FC) $(FFLAGS) -c $(SRCSIG)
 
 $(EXECSFC):	$(OBJSFC)
 	$(LD) $(LDFLAGS) -o $(EXECSFC) $(OBJSFC) $(LIBS)
+	rm *.o *.mod
 
 $(OBJSFC):	$(SRCSFC)
 	$(FC) $(FFLAGS) -c $(SRCSFC)
 
 $(EXECFLX):	$(OBJFLX)
 	$(LD) $(LDFLAGS) -o $(EXECFLX) $(OBJFLX) $(LIBS)
+	rm *.o *.mod
 
 $(OBJFLX):	$(SRCFLX)
 	$(FC) $(FFLAGS) -c $(SRCFLX)

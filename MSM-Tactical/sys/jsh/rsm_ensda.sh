@@ -112,6 +112,11 @@ while [ $CYCLE -le $CYCLEMAX ];do
   fi
   SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
   export SDATE
+  syear=`echo $SDATE |cut -c1-4`          ## starting year
+  smonth=`echo $SDATE |cut -c5-6`         ## starting month
+  sday=`echo $SDATE |cut -c7-8`           ## starting day
+  CHOUR=`echo $SDATE |cut -c9-10`         ## starting hour
+  CDATE=$syear$smonth$sday
   if [ $CYCLE -eq 0 ]; then
     export ENDHOUR=$IOFFSET
   else
@@ -567,8 +572,8 @@ while [ $h -lt $FEND ]; do
     else
     echo "Ensemble forecast member $mem starting from hour $h..." >>stdout
     fi
-    #timeout 1800 $USHDIR/rfcst.sh $hx || exit 10
-    $USHDIR/rfcst.sh $hx || exit 10
+    timeout 300 $USHDIR/rfcst.sh $hx || exit 10
+    #$USHDIR/rfcst.sh $hx || exit 10
 
     if [ do$LAMMPI = doyes ]; then
        lamclean

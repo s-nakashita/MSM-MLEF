@@ -14,16 +14,18 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
    #export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_nomad
+   export TEMP=$WORKUSR/${EXPN}_nomad_gfsz
    mkdir -p $TEMP
 fi
-export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
+#export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
+export BASEDIR=${HOME}/mnt/methane/work/DATA/gfs/${SDATE}
 #export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
 
-export RDA=yes            # use RDA historical data
+export RDA=no            # use RDA historical data
 if [ $RDA = yes ];then
-export TEMP=$WORKUSR/${EXPN}_rda
-export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
+export TEMP=$WORKUSR/${EXPN}_rda_gfsz
+#export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
+export BASEDIR=${HOME}/mnt/methane/work/DATA/gfs/rda/${SDATE}
 fi
 # --------------- machine/compile options ----------------
 # compile options with machine dependent can be
@@ -56,7 +58,7 @@ export FCST=no
 # --------------- run option --------------------
 export ENDHOUR=120 
 #export ENDHOUR=48                                # release_test
-#export ENDHOUR=24                                # release_test
+export ENDHOUR=12                                # release_test
 export CLIM=1
 export POSTTYPE=sync
 export RUNRMTN=yes
@@ -102,8 +104,9 @@ export  CLAT2=70
 export  CLON1=60 
 export  CLON2=200
 export  LEVS=47
-export  LEVS=33            # modified
+#export  LEVS=33            # modified
 export  PGBRES=0.25        # 0.50 or 0.25
+#export  PGBRES=0.50        # 0.50 or 0.25
 export  INCBASE=3        # 3 or 6 hours
 export  INCHOUR=$INCBASE
 export  CIGRD=$(echo "($CLON2-($CLON1))/$PGBRES" | bc)
