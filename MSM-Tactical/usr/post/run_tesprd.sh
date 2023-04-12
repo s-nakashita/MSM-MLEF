@@ -14,6 +14,8 @@ SRCDIR=${MSMDIR}/dpac/build/post
 if [ $IRES -eq 27 ]; then
 EXPN=rsm2rsm27_da
 #SDATE0=2022061000
+elif [ $IRES -eq 18 ]; then
+EXPN=rsm2rsm18_da
 elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018

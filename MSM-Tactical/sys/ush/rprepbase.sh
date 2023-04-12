@@ -61,9 +61,9 @@ fi
 MEM=1
 while [ $MEM -le $MEMBER ]; do
 PMEM=`printf '%0.3d' $MEM` #prtb member
-if [ $IRES -eq 27 ]; then
-#ln -s $BASEDIR/r_sig.f$fhold ri.0${PMEM}.sig.grd
-#ln -s $BASEDIR/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
+if [ $IRES -gt 9 ]; then
+ln -s $BASEDIR/r_sig.f$fhold ri.0${PMEM}.sig.grd
+ln -s $BASEDIR/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
 else
 ln -s $BASEDIR/${HEADBASE}${PMEM}/r_sig.f$fhold ri.0${PMEM}.sig.grd
 ln -s $BASEDIR/${HEADBASE}${PMEM}/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
@@ -72,7 +72,7 @@ fi
 MEM=`expr $MEM + 1`
 done #while MEM -le MEMBER
 ### set namelist
-if [ $IRES -eq 27 ]; then
+if [ $IRES -gt 9 ]; then
 cat <<EOF >namelist
 &namlst_replace
  newfhour=0.0,

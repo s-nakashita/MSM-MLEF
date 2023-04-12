@@ -2,9 +2,11 @@
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #wdir=rsm2msm9_osse
-wdir=rsm2rsm27_osse
+#wdir=rsm2rsm27_osse
+wdir=rsm2rsm18_osse
 #datadir=/zdata/grmsm/work/$wdir
-datadir=/zdata/grmsm/work/rsm2rsm27_truth
+#datadir=/zdata/grmsm/work/rsm2rsm27_truth
+datadir=/zdata/grmsm/work/rsm2rsm18_truth
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=${HOME}/mnt/methane/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs

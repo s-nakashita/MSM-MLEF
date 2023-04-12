@@ -16,8 +16,8 @@ head=${HEAD:-bv$TETYPE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/dpac/build/pre
 DATA=${RUNDIR0:-/zdata/grmsm/work/dpac/rsm27}
-BASE0=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
-BASE1=${BASEDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
+BASE0=${PRTBDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
+BASE1=${PRTBDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
 DATADIR=$DATA/$SDATE
 if [ ! -d $DATADIR ]; then
   echo "No such directory : $DATADIR"
@@ -105,11 +105,12 @@ if [ $CYCLE -eq $CYCLESTART ]; then
       fi
     else
       if [ do$C2R = doyes ] ; then
-        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
-        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+        cp $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        cp $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
       fi
     fi
-    $USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    #$USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    $USHDIR/rinp.sh $NEST $hhr > rinp.log 2>&1 || exit 10
     MEM4=`expr 2 \* $MEM - 1`
     MEM4=`printf '%0.4d' $MEM4`
     cp r_sigi ../ri.$MEM4.sig.grd
@@ -145,11 +146,12 @@ if [ $CYCLE -eq $CYCLESTART ]; then
       fi
     else
       if [ do$C2R = doyes ] ; then
-        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
-        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+        cp $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        cp $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
       fi
     fi
-    $USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    #$USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    $USHDIR/rinp.sh $NEST $hhr > rinp.log 2>&1 || exit 10
     MEM4=`expr 2 \* $MEM`
     MEM4=`printf '%0.4d' $MEM4`
     cp r_sigi ../ri.$MEM4.sig.grd

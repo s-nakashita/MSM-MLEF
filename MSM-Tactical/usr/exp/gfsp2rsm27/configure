@@ -21,7 +21,7 @@ fi
 export BASEDIR=${HOME}/mnt/methane/work/DATA/gfs/${SDATE}
 #export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
 
-export RDA=no            # use RDA historical data
+export RDA=yes            # use RDA historical data
 if [ $RDA = yes ];then
 export TEMP=$WORKUSR/${EXPN}_rda_gfsz
 #export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
@@ -57,8 +57,8 @@ export FCST=no
 
 # --------------- run option --------------------
 export ENDHOUR=120 
-#export ENDHOUR=48                                # release_test
-export ENDHOUR=12                                # release_test
+export ENDHOUR=24                                # release_test
+#export ENDHOUR=12                                # release_test
 export CLIM=1
 export POSTTYPE=sync
 export RUNRMTN=yes
@@ -104,7 +104,9 @@ export  CLAT2=70
 export  CLON1=60 
 export  CLON2=200
 export  LEVS=47
-#export  LEVS=33            # modified
+if [ do$RDA = doyes ]; then
+export  LEVS=33            # modified
+fi
 export  PGBRES=0.25        # 0.50 or 0.25
 #export  PGBRES=0.50        # 0.50 or 0.25
 export  INCBASE=3        # 3 or 6 hours

@@ -147,7 +147,7 @@ RUNDIR=$RUNDIR0/$SDATE
 base_dir=$BASEDIR0/$SDATE
 if [ ! -d $base_dir ];then
 base_dir=$BASEDIR1/$SDATE
-if [ ! -d $base_dir ];then
+if [ $OSSE = F ] && [ ! -d $base_dir ];then
 echo 'Cannot find boundary data '$base_dir
 exit 1
 fi
@@ -324,7 +324,7 @@ else
   #
   # BGM rescaling (ensemble)
   #
-  if [ do$BGM = doyes ] && [ $MEMBER -gt 0 ] && [ $IRES -eq 27 ]; then
+  if [ do$BGM = doyes ] && [ $MEMBER -gt 0 ] && [ $IRES -gt 9 ]; then
     #rescaling
     if [ ! -s pdate.txt ]; then
     if [ $GLOBAL = GFS ] && [ $CYCLE -eq $CYCLESTART ]; then
@@ -430,7 +430,7 @@ if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
   PREPBASE=T
 #fi
-elif [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+elif [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -gt 9 ]; then
   if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
   cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
@@ -453,7 +453,7 @@ while [ $mem -le $MEMBER ];do
   if [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ]; then
     export ENDHOUR=$ENDHOUR0
     cd $RUNDIR
-    if [ $IRES -lt 27 ];then
+    if [ $IRES -le 9 ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
     fi
@@ -464,7 +464,7 @@ while [ $mem -le $MEMBER ];do
     else
     cd $RUNDIR
     fi
-    if [ $IRES -lt 27 ];then
+    if [ $IRES -le 9 ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
     fi
@@ -486,7 +486,7 @@ while [ $mem -le $MEMBER ];do
     #  export BASEDIR=${base_dir}/${pmem}
     #  export BASESFCDIR=$BASEDIR
     #fi
-    if [ $IRES -lt 27 ];then
+    if [ $IRES -le 9 ];then
     export BASEDIR=${base_dir}/${HEAD}${pmem}
     export BASESFCDIR=$BASEDIR
     fi

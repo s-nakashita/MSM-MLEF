@@ -10,7 +10,7 @@ if [ $# -lt 3 ]; then
 fi
 SDATE=${1}
 IRES=${2}
-ENDHOUR=${3}
+ENDHOUR=${3:-24}
 MEM=${4}
 if [ $IRES -eq 27 ]; then
 ICLD=0 #hydrostatic
@@ -28,6 +28,11 @@ DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs/$SDATE/$MEM
 fi
 #DATADIR=/zdata/grmsm/work/rsm2rsm27_bv/$SDATE/bvm${MEM}_a5
 fi
+elif [ $IRES -eq 18 ]; then
+ICLD=0
+#DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
+#DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_preprh.siml30.uniform.scl.iter3.l300.v4.rs90.000
 elif [ $IRES -eq 9 ]; then
 ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
@@ -50,6 +55,10 @@ else
 echo "Invalid resolution. Specify 27, 9 or 3."
 exit 2
 fi
+if [ ! -d $DATADIR ]; then
+echo "no such directory, "$DATADIR
+exit 3
+fi
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
 EXEC=read_sig
@@ -65,7 +74,7 @@ cat <<EOF >read_sig.nml
 EOF
 fh=0
 end_hour=$ENDHOUR
-inc_h=3
+inc_h=1
 rm -f fort.*
 rm ${EXEC}.log
 while [ $fh -le $end_hour ]; do

@@ -14,6 +14,8 @@ SRCDIR=${MSMDIR}/dpac/build/post
 if [ $IRES -eq 27 ]; then
 EXPN=rsm2rsm27_da
 #SDATE0=2022061000
+elif [ $IRES -eq 18 ]; then
+EXPN=rsm2rsm18_da
 elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018
@@ -59,11 +61,16 @@ cd $DATADIR/tmp
 ln -s ${SRCDIR}/${EXEC} ${EXEC}
 #ln -s ${SRCDIR}/${EXEC2} ${EXEC2}
 
+if [ $IRES -eq 27 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm27_truth
+elif [ $IRES -eq 18 ]; then
+TRUEDIR=$WORKUSR/rsm2rsm18_truth
+fi
 echo $TRUEDIR
 #tmem=`printf '%0.3d' $TMEM`
 #truth=${HEAD}${tmem}
 #echo $truth
+fhtruemax=48
 fhtrue=0
 icyc=$CYCLESTART
 SDATE=$SDATE0
@@ -77,7 +84,7 @@ if [ $ANAL = T ] && [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`
   fhtrue=`expr $icycp \* $INCCYCLE`
 fi
-if [ $fhtrue -gt 24 ]; then
+if [ $fhtrue -gt $fhtruemax ]; then
   break
 fi
 echo $SDATE
@@ -179,7 +186,7 @@ EOF
   if [ $ANAL = F ] && [ $fh -eq $end_hour ]; then
     break
   fi
-if [ $fhtrue -gt 24 ]; then
+if [ $fhtrue -gt $fhtruemax ]; then
   break
 fi
 done #fh
