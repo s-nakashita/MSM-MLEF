@@ -1,29 +1,29 @@
 #!/bin/sh
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-#wdir=rsm2msm9_osse
-wdir=rsm2rsm27_osse
+#wdir=rsm2rsm27_osse
+#wdir=rsm2rsm18_osse
+wdir=rsm2msm9_osse
 #datadir=/zdata/grmsm/work/$wdir
-datadir=/zdata/grmsm/work/rsm2rsm27_da
+#datadir=/zdata/grmsm/work/rsm2rsm27_truth
+#datadir=/zdata/grmsm/work/rsm2rsm18_truth
+datadir=/zdata/grmsm/work/rsm2msm9_truth
 obsdir=/zdata/grmsm/work/$wdir/obs
-stadir=/zdata/grmsm/work/DATA/station
+stadir=${HOME}/mnt/methane/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-obsdist=single
-if [ $obsdist = uniform ];then
-	stationin=F
-else
+obsdist=uniform_ez
+if [ $obsdist = grid ];then
 	stationin=T
+else
+	stationin=F
 fi
 #reg=ecs
-#idate=2022061812
-#truth=25
-reg=single
-#reg=27
-idate=2022083000
-truth=1
+reg=jpn
+idate=2022061812
+truth=25
 member=40
 tetype=dry
-bp=wbp
+bp=
 lmin=0
 rmin=0
 prep=_preprh
@@ -35,10 +35,7 @@ NODE=`expr $nisep \* $njsep`
 RUNENV="mpiexec -n ${NODE} "
 echo $RUNENV
 
-fs=0
-fe=0
-fi=6
-for fhour in $(seq $fs $fi $fe);do
+for fhour in $(seq 0 6 24);do
 adate=`date -j -f "%Y%m%d%H" -v+${fhour}H +"%Y%m%d%H" "${idate}"`
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`
@@ -80,18 +77,14 @@ echo "luseobs="$luseobs
 wdir=${obsdir}/${adate}
 mkdir -p $wdir/tmp
 cd $wdir/tmp
-### station
 if [ $stationin = T ]; then
+### station
 rm -f *_station.txt
 ln -s $stadir/$yyyy/$mm/$adate.ADPUPA.$reg.txt upper_station.txt
-if [ $obsdist = grid ]; then
 cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station_1.txt
 cp $stadir/$yyyy/$mm/$adate.SFCSHP.$reg.txt surf_station_2.txt
 cat surf_station_1.txt surf_station_2.txt > surf_station.txt
 rm surf_station_1.txt surf_station_2.txt
-else
-cp $stadir/$yyyy/$mm/$adate.ADPSFC.$reg.txt surf_station.txt
-fi
 fi
 cat <<EOF >obsmake.nml
 &param_ens
@@ -125,11 +118,11 @@ cat <<EOF >obsmake.nml
  atime=${yyyy},${imm},${idd},${ihh},0
  lmin=${lmin},
  rmin=${rmin},
- ibuf=10,
- jbuf=10, 
+ ibuf=1,
+ jbuf=1, 
  kint=1,
- dist_obs_upper=500.0d3, 
- dist_obs_synop=300.0d3,
+ dist_obs_upper=200.0d3, 
+ dist_obs_synop=100.0d3,
  stationin=${stationin},
  station_fname='upper_station.txt','surf_station.txt',
 &end
@@ -139,9 +132,12 @@ cat obsmake.nml
 tmem=`printf '%0.3d' $truth`
 rm -f gues.*.grd
 fh=`printf '%0.2d' $fhour`
-ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sig.f$fh gues.0000.sig.grd
-ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sfc.f$fh gues.0000.sfc.grd
-ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_flx.f$fh gues.0000.flx.grd
+#ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sig.f$fh gues.0000.sig.grd
+#ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_sfc.f$fh gues.0000.sfc.grd
+#ln -s ${datadir}/${idate}/bv${tetype}${bp}${tmem}/r_flx.f$fh gues.0000.flx.grd
+ln -s ${datadir}/${idate}/r_sig.f$fh gues.0000.sig.grd
+ln -s ${datadir}/${idate}/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${datadir}/${idate}/r_flx.f$fh gues.0000.flx.grd
 
 rm -f STDIN obsmake *.siml*.${sdate}-${edate}.dat
 ln -s obsmake.nml STDIN

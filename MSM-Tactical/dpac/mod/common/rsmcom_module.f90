@@ -180,7 +180,7 @@ module rsmcom_module
 
     if(nonhyd.eq.1) then
       nv2d_sig=3
-      nv2d=nv2d_sig+nv2d_sfc+nv2d_flx
+      nv2d=nv2d_sig+nv2d_sfc!+nv2d_flx
       nv3d=nv3d_hyd+nv3d_nonhyd
       write(6,*) 'model version is nonhydrostatic'
       allocate( varnames(nv3d+nv2d) )
@@ -189,7 +189,7 @@ module rsmcom_module
               '    Pn','    Tn','    Wn','    GZ','    Ps','    Wb'/)
     else
       nv2d_sig=2
-      nv2d=nv2d_sig+nv2d_sfc+nv2d_flx
+      nv2d=nv2d_sig+nv2d_sfc!+nv2d_flx
       nv3d=nv3d_hyd
       write(6,*) 'model version is hydrostatic'
       allocate( varnames(nv3d+nv2d) )
@@ -198,10 +198,10 @@ module rsmcom_module
               '    GZ','    Ps'/)
     end if
     varnames(nv3d+nv2d_sig+1:nv3d+nv2d_sig+nv2d_sfc) = varnames_sfc
-    varnames(nv3d+nv2d_sig+nv2d_sfc+1:) = (/'   T2m','   Q2m'/)
+!    varnames(nv3d+nv2d_sig+nv2d_sfc+1:) = (/'   T2m','   Q2m'/)
     nlevall=nv3d*nlev+nv2d
-!    nskip=2+(nlevall-nv2d_sfc)!+3
-    nskip=2+(nlevall-nv2d_sfc-nv2d_flx)!+3
+    nskip=2+(nlevall-nv2d_sfc)!+3
+!    nskip=2+(nlevall-nv2d_sfc-nv2d_flx)!+3
     allocate( sfld(lngrd) )
     rewind(nsig)
     do i=1,nskip
@@ -392,22 +392,22 @@ module rsmcom_module
     end do
     close(nsfc)
 
-    deallocate( dfld )
-    allocate( dfld(igrd1,jgrd1,nfldflx) )
-    call search_fileunit(nflx)
-    clev='flx'
-    filename=trim(cfile)//'.'//clev//filesuffix
-    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsfc
-    open(nflx,file=filename,access='sequential',form='unformatted',action='read')
-    call read_flx(nflx,igrd1,jgrd1,dfld,ids,iparam,fhr,zhr&
-                ,ind_t2m,ind_q2m,ind_u10m,ind_v10m)
-    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m) = dfld(:,:,ind_t2m)
-    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m) = dfld(:,:,ind_q2m)
-    !print *, 't2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))&
-    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))
-    !print *, 'q2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))&
-    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))
-    close(nflx)
+!    deallocate( dfld )
+!    allocate( dfld(igrd1,jgrd1,nfldflx) )
+!    call search_fileunit(nflx)
+!    clev='flx'
+!    filename=trim(cfile)//'.'//clev//filesuffix
+!    write(6,'(3a,i3)') 'open file ',trim(filename),' unit=',nsfc
+!    open(nflx,file=filename,access='sequential',form='unformatted',action='read')
+!    call read_flx(nflx,igrd1,jgrd1,dfld,ids,iparam,fhr,zhr&
+!                ,ind_t2m,ind_q2m,ind_u10m,ind_v10m)
+!    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m) = dfld(:,:,ind_t2m)
+!    v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m) = dfld(:,:,ind_q2m)
+!    !print *, 't2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))&
+!    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_t2m))
+!    !print *, 'q2m ',maxval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))&
+!    !               ,minval(v2dg(:,:,nv2d_sig+nv2d_sfc+iv2d_q2m))
+!    close(nflx)
     deallocate(dfld)
     return
   end subroutine read_restart
@@ -435,7 +435,6 @@ module rsmcom_module
     sl=0.0
     si(1:nlev+1) = sigh
     sl(1:nlev) = sig
-    ext=0.0
     ext(1) = real(iwav1,kind=sp)
     ext(2) = real(jwav1,kind=sp)
     ext(3) = real(igrd1,kind=sp)

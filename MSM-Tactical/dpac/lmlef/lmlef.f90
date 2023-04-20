@@ -31,8 +31,8 @@ program lmlef
   real(kind=dp),allocatable :: gues2d(:,:,:,:)[:]   !ensemble
   real(kind=dp),allocatable :: anal3d(:,:,:,:,:)[:] !ensemble
   real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
-  real(kind=dp),allocatable :: noda3dc(:,:,:,:)[:]  !free-run
-  real(kind=dp),allocatable :: noda2dc(:,:,:)[:]    !free-run
+  real(kind=dp),allocatable :: noda3dc(:,:,:,:)[:]  !free run
+  real(kind=dp),allocatable :: noda2dc(:,:,:)[:]    !free run
   real(kind=dp) :: rtimer00,rtimer
   integer,dimension(5) :: fdate,adate !year,month,day,hour,minutes
   integer :: iymdh
@@ -266,14 +266,14 @@ program lmlef
   fhour=0.0
   iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   print *, 'analysis date ', iymdh, '+', nint(fhour)
-  !
-  ! write analysis
-  !
   if(noda) then
     call file_member_replace(0,noda_out_basename,guesf)
     call write_cntl(guesf,noda3dc,noda2dc)
     sync all
   end if
+  !
+  ! write analysis
+  !
   if(.not.mean) then
     call file_member_replace(0,anal_out_basename,analf)
     call write_cntl(analf,anal3dc,anal2dc)

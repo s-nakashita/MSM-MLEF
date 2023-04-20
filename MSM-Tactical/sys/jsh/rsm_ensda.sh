@@ -47,6 +47,7 @@ ENDHOUR0=$ENDHOUR #save
 INCCYCLE=${INCCYCLE:-$ENDHOUR}
 IOFFSET=${IOFFSET:-$INCCYCLE}
 EXTEND=${EXTEND:-0}
+DANEST=${DANEST:-F}
 #
 #-----------------------------------------------
 # determine model run parameters
@@ -94,20 +95,29 @@ RSFCSEC=`expr $sfc_freq \* 3600`;
 # start cycle
 #-----------------------------------------------
 CYCLE=${CYCLESTART:-0}
-CYCLEDA=`expr $CYCLE - $DASTART`
-if [ $CYCLEDA -lt 0 ];then
+if [ $CYCLE -gt $DASTART ]; then
+  CYCLEDA=`expr $CYCLE - $DASTART`
+else
   CYCLEDA=0
 fi
 SDATE0=$SDATE
 export SDATE0
 while [ $CYCLE -le $CYCLEMAX ];do
   export CYCLE
+  inch=0
   if [ $CYCLE -ge 1 ]; then
   inch=$IOFFSET
   inch=`expr $inch + $INCCYCLE \* \( $CYCLE - 1 \)`
+  elif [ $CYCLE -lt 0 ]; then
+  inch=`expr $INCCYCLE \* $CYCLE`
+  fi
   SDATE=`${UTLDIR}/ndate $inch ${SDATE0}`
   export SDATE
-  fi
+  syear=`echo $SDATE |cut -c1-4`          ## starting year
+  smonth=`echo $SDATE |cut -c5-6`         ## starting month
+  sday=`echo $SDATE |cut -c7-8`           ## starting day
+  CHOUR=`echo $SDATE |cut -c9-10`         ## starting hour
+  CDATE=$syear$smonth$sday
   if [ $CYCLE -eq 0 ]; then
     export ENDHOUR=$IOFFSET
   else
@@ -138,7 +148,7 @@ RUNDIR=$RUNDIR0/$SDATE
 base_dir=$BASEDIR0/$SDATE
 if [ ! -d $base_dir ];then
 base_dir=$BASEDIR1/$SDATE
-if [ ! -d $base_dir ];then
+if [ $OSSE = F ] && [ ! -d $base_dir ];then
 echo 'Cannot find boundary data '$base_dir
 exit 1
 fi
@@ -196,9 +206,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}000 ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -235,7 +245,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}mean
+  fi # -d ${head}mean
 else
   #
   # control
@@ -315,16 +325,16 @@ else
   #
   # BGM rescaling (ensemble)
   #
-  if [ do$BGM = doyes ] && [ $IRES -eq 27 ]; then
+  if [ do$BGM = doyes ] && [ $MEMBER -gt 0 ] && [ $IRES -gt 9 ]; then
     #rescaling
     if [ ! -s pdate.txt ]; then
-    if [ $GLOBAL = GFS ] && [ $CYCLE -eq 1 ]; then
+    if [ $GLOBAL = GFS ] && [ $CYCLE -eq $CYCLESTART ]; then
       cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
       NSAMPLE=`expr $MEMBER \* 2`
       $PYENV $UTLDIR/random_sample.py $SAMPLETXT $NSAMPLE > pdate.txt || exit 6
     fi
     fi
-    $USHDIR/raddprtb.sh $CYCLE || exit 7
+    $USHDIR/raddprtb.sh $CYCLE $CYCLESTART || exit 7
     if [ do$POSTTYPE = dosync ]; then
       mem=1
       while [ $mem -le $MEMBER ];do
@@ -417,12 +427,11 @@ fi #doDA=doyes
 # Ensemble Forecast loop
 ########################################
 PREPBASE=F
-if [ $CYCLEDA -gt 1 ] && [ $OSSE = T ]; then
+if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
   $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
   PREPBASE=T
 #fi
-elif [ do$BGM = doyes ] && [ do$BP = dowbp ] \
-	&& [ $GLOBAL = GFS ] && [ $IRES -eq 27 ]; then
+elif [ do$BP = dowbp ] && [ $GLOBAL = GFS ] && [ $IRES -gt 9 ]; then
   if [ ! -s pdatebase.txt ]; then
   # Base field perturbation
   cp $DISKUSR/exp/$EXPN/$SAMPLETXT .
@@ -438,15 +447,17 @@ else
 mem0=0
 fi
 mem=$mem0
-if [ $OSSE = T ] && [ $NODA = T ]; then
+if [ $OSSE = T ] && [ $NODA = T ] && [ $CYCLEDA -eq 1 ]; then
   mem=`expr $mem - 1`
 fi
 while [ $mem -le $MEMBER ];do
-  if [ $mem -lt $mem0 ]; then ## noda
+  if [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ]; then
     export ENDHOUR=$ENDHOUR0
     cd $RUNDIR
+    if [ $DANEST = T ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
+    fi
   elif [ $mem -eq 0 ]; then ## control
     if [ do$DA = doyes ]; then
     export ENDHOUR=$INCCYCLE
@@ -454,8 +465,10 @@ while [ $mem -le $MEMBER ];do
     else
     cd $RUNDIR
     fi
+    if [ $DANEST = T ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
+    fi
   else ## member
     if [ do$DA = doyes ]; then
     export ENDHOUR=$INCCYCLE
@@ -474,7 +487,7 @@ while [ $mem -le $MEMBER ];do
     #  export BASEDIR=${base_dir}/${pmem}
     #  export BASESFCDIR=$BASEDIR
     #fi
-    if [ $IRES -lt 27 ];then
+    if [ $DANEST = T ];then
     export BASEDIR=${base_dir}/${HEAD}${pmem}
     export BASESFCDIR=$BASEDIR
     fi
@@ -560,8 +573,8 @@ while [ $h -lt $FEND ]; do
     else
     echo "Ensemble forecast member $mem starting from hour $h..." >>stdout
     fi
-    #timeout 1800 $USHDIR/rfcst.sh $hx || exit 10
-    $USHDIR/rfcst.sh $hx || exit 10
+    timeout 300 $USHDIR/rfcst.sh $hx || exit 10
+    #$USHDIR/rfcst.sh $hx || exit 10
 
     if [ do$LAMMPI = doyes ]; then
        lamclean
@@ -638,8 +651,40 @@ done  ###### end of while forecast loop
 mem=`expr 1 + $mem`
 done  ###### end of while member loop
 # ensemble mean and spread
-if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ] && [ do$RUNFCST = yes ] ; then
+if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
   $USHDIR/rensmspr.sh $head || exit 17
+fi
+# save ensemble member or not
+if [ do$SAVEENS = dono ] && [ $MEMBER -gt 0 ]; then
+  mem=1
+  while [ $mem -le $MEMBER ];do
+    pmem=$mem
+    if [ $pmem -lt 10 ]; then
+      pmem=00$pmem
+    else
+      pmem=0$pmem
+    fi
+    if [ do$BGM = doyes ] && [ do$PSUB = doyes ]; then
+      pmem=m$pmem
+    fi
+    cd $RUNDIR/${head}${pmem}
+    hs=$PRTHOUR
+    while [ $hs -lt $ENDHOUR ];do
+      if [ $hs -lt 10 ];then hs=0$hs;fi
+      if [ $IOUTNHR -eq 1 ]; then
+      rm r_sig.f$hs
+      rm r_sfc.f$hs
+      rm r_flx.f$hs
+      else
+      rm r_sigf${hs}:*
+      rm r_sfcf${hs}:*
+      rm r_flxf${hs}:*
+      fi
+      hs=`expr $hs + $PRTHOUR`
+    done
+    cd -
+    mem=`expr 1 + $mem`
+  done
 fi
 # -------- schedule job submit  ----------------
 if [ do$RUNFCST = doyes ] ; then
@@ -656,5 +701,5 @@ if [ do$RUNFCST = doyes ] ; then
 
 fi # end of schedule job submit
 #
-CYCLE=`expr $CYCLE + 1`
+CYCLE=`expr 1 + $CYCLE`
 done #while [ CYCLE -le CYCLEMAX ]
