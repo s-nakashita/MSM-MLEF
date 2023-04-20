@@ -142,17 +142,31 @@ fi
   fi
   MEM=`expr $MEM + 1`
   done
+if [ $IRES -eq 18 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  nens=${MEMBER},
  epsq=,
- lonw=,
- lone=,
- lats=,
- latn=,
+ lonw=115,
+ lone=133,
+ lats=26,
+ latn=38,
  kmax=42,
 &END
 EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ nens=${MEMBER},
+ epsq=,
+ lonw=118.5,
+ lone=129.5,
+ lats=28.5,
+ latn=37.5,
+ kmax=42,
+&END
+EOF
+fi
 #  ./${EXEC} < NAMELIST || exit 9 #1>>${EXEC}.log 2>&1
 #  cat te.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 

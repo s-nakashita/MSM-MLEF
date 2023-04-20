@@ -30,17 +30,23 @@ fi
 fi
 elif [ $IRES -eq 18 ]; then
 ICLD=0
-#DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
 #DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_preprh.siml30.uniform.scl.iter3.l300.v4.rs90.000
+#DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_preprh.siml30.uniform.scl.iter3.l400.v4.rs90.000
 elif [ $IRES -eq 9 ]; then
 ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
-if [ "$MEM" = "000" ]; then
-DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE
-else
-DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE/$MEM
+#DATADIR=/zdata/grmsm/work/rsm2msm9_truth/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2msm9_osse/$SDATE
+if [ ! -z $MEM ]; then
+DATADIR=/zdata/grmsm/work/rsm2msm9_osse/$SDATE/bvdry$MEM
+#DATADIR=/zdata/grmsm/work/rsm2msm9_osse/$SDATE/da_preprh.siml30.uniform.scl.iter1.l100.v4.rs90.$MEM
 fi
+#if [ "$MEM" = "000" ]; then
+#DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE
+#else
+#DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE/$MEM
+#fi
 elif [ $IRES -eq 3 ]; then
 ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
@@ -72,7 +78,8 @@ cat <<EOF >read_sig.nml
  icld=${ICLD},
 &end
 EOF
-fh=0
+#fh=0
+fh=$ENDHOUR
 end_hour=$ENDHOUR
 inc_h=1
 rm -f fort.*

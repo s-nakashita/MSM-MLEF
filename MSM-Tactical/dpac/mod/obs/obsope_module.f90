@@ -42,6 +42,8 @@ contains
     real(kind=dp), allocatable :: wk2d(:,:)[:]
     integer, allocatable :: iwk2d(:,:)[:]
     integer :: is,ie,js,je
+    integer, dimension(1) :: kk
+    integer :: k
 !!! for single point observation
     logical :: single_use=.true.
     real(kind=dp) :: lonb,latb
@@ -119,7 +121,9 @@ contains
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
+          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          k=kk(1)
+          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           ! horizontal domain check
           if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
              .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
@@ -301,6 +305,8 @@ contains
     real(kind=dp) :: ri,rj,rk
     integer :: im, n, nn
     integer, allocatable :: tmpqc(:)
+    integer, dimension(1) :: kk
+    integer :: k
 !!! for single point observation
     real(kind=dp) :: lonb,latb
     real(kind=dp) :: hxf,dep
@@ -351,7 +357,9 @@ contains
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          obsout%err(nobsout)  = obserr(uid_obs(obsin(iof)%elem(n)))
+          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          k=kk(1)
+          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           call phys2ijk(p_full,obsin(iof)%elem(n),&
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout))
@@ -521,6 +529,8 @@ contains
     real(kind=dp) :: tmplev, tmperr
     real(kind=dp), allocatable :: wk(:,:)[:]
     integer :: is,ie,js,je
+    integer,dimension(1) :: kk
+    integer :: k
 !!! for single point observation
     real(kind=dp) :: lonb,latb
     real(kind=dp) :: hxf,dep
@@ -580,7 +590,6 @@ contains
         else !myimage
 !debug          print '(2I5,2F10.2)',n, obsin(iof)%elem(n),&
 !debug                  obsin(iof)%lon(n), obsin(iof)%lat(n)
-          tmperr  = obserr(uid_obs(obsin(iof)%elem(n)))
           tmplev  = 500.0d2 !Pa, dummy
           call phys2ijk(p_full,obsin(iof)%elem(n),&
            &  obsin(iof)%lon(n),obsin(iof)%lat(n),tmplev, &
@@ -589,11 +598,16 @@ contains
           if(obsin(iof)%elem(n).lt.10000) then !upper
             rk=obsin(iof)%lev(n)
             call itpl_2d(p_full(:,:,nint(rk)),ri,rj,wk(n,1))
+            kk = minloc(abs(wk(n,1)-plevfix))
+            k = kk(1)
           else !synop
             call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,wk(n,1))
             rk=wk(n,1)
+            k=1
           end if
-          print '(3I6,3F10.2)',myimage, n, obsin(iof)%elem(n), ri,rj,rk
+          tmperr  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          print '(3I6,3F10.2,ES10.2)', &
+                  myimage, n, obsin(iof)%elem(n), ri,rj,rk,tmperr
 !debug          print '(2I5,2F10.2)',n, obsin(iof)%elem(n), obsin(iof)%lev(n),wk(n,1)
           if(tmpqc.ne.iqc_good) then
             wk(n,2)=undef

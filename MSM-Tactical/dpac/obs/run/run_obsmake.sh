@@ -1,16 +1,17 @@
 #!/bin/sh
 set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-#wdir=rsm2msm9_osse
 #wdir=rsm2rsm27_osse
-wdir=rsm2rsm18_osse
+#wdir=rsm2rsm18_osse
+wdir=rsm2msm9_osse
 #datadir=/zdata/grmsm/work/$wdir
 #datadir=/zdata/grmsm/work/rsm2rsm27_truth
-datadir=/zdata/grmsm/work/rsm2rsm18_truth
+#datadir=/zdata/grmsm/work/rsm2rsm18_truth
+datadir=/zdata/grmsm/work/rsm2msm9_truth
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=${HOME}/mnt/methane/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-obsdist=uniform
+obsdist=uniform_ez
 if [ $obsdist = grid ];then
 	stationin=T
 else
@@ -120,7 +121,7 @@ cat <<EOF >obsmake.nml
  ibuf=1,
  jbuf=1, 
  kint=1,
- dist_obs_upper=300.0d3, 
+ dist_obs_upper=200.0d3, 
  dist_obs_synop=100.0d3,
  stationin=${stationin},
  station_fname='upper_station.txt','surf_station.txt',

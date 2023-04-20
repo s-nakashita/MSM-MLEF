@@ -47,6 +47,7 @@ ENDHOUR0=$ENDHOUR #save
 INCCYCLE=${INCCYCLE:-$ENDHOUR}
 IOFFSET=${IOFFSET:-$INCCYCLE}
 EXTEND=${EXTEND:-0}
+DANEST=${DANEST:-F}
 #
 #-----------------------------------------------
 # determine model run parameters
@@ -205,9 +206,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}000 ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -244,7 +245,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}mean
+  fi # -d ${head}mean
 else
   #
   # control
@@ -453,7 +454,7 @@ while [ $mem -le $MEMBER ];do
   if [ $mem -lt $mem0 ] && [ $OSSE = T ] && [ $NODA = T ]; then
     export ENDHOUR=$ENDHOUR0
     cd $RUNDIR
-    if [ $IRES -le 9 ];then
+    if [ $DANEST = T ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
     fi
@@ -464,7 +465,7 @@ while [ $mem -le $MEMBER ];do
     else
     cd $RUNDIR
     fi
-    if [ $IRES -le 9 ];then
+    if [ $DANEST = T ];then
     export BASEDIR=$base_dir
     export BASESFCDIR=$BASEDIR
     fi
@@ -486,7 +487,7 @@ while [ $mem -le $MEMBER ];do
     #  export BASEDIR=${base_dir}/${pmem}
     #  export BASESFCDIR=$BASEDIR
     #fi
-    if [ $IRES -le 9 ];then
+    if [ $DANEST = T ];then
     export BASEDIR=${base_dir}/${HEAD}${pmem}
     export BASESFCDIR=$BASEDIR
     fi
@@ -652,6 +653,38 @@ done  ###### end of while member loop
 # ensemble mean and spread
 if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
   $USHDIR/rensmspr.sh $head || exit 17
+fi
+# save ensemble member or not
+if [ do$SAVEENS = dono ] && [ $MEMBER -gt 0 ]; then
+  mem=1
+  while [ $mem -le $MEMBER ];do
+    pmem=$mem
+    if [ $pmem -lt 10 ]; then
+      pmem=00$pmem
+    else
+      pmem=0$pmem
+    fi
+    if [ do$BGM = doyes ] && [ do$PSUB = doyes ]; then
+      pmem=m$pmem
+    fi
+    cd $RUNDIR/${head}${pmem}
+    hs=$PRTHOUR
+    while [ $hs -lt $ENDHOUR ];do
+      if [ $hs -lt 10 ];then hs=0$hs;fi
+      if [ $IOUTNHR -eq 1 ]; then
+      rm r_sig.f$hs
+      rm r_sfc.f$hs
+      rm r_flx.f$hs
+      else
+      rm r_sigf${hs}:*
+      rm r_sfcf${hs}:*
+      rm r_flxf${hs}:*
+      fi
+      hs=`expr $hs + $PRTHOUR`
+    done
+    cd -
+    mem=`expr 1 + $mem`
+  done
 fi
 # -------- schedule job submit  ----------------
 if [ do$RUNFCST = doyes ] ; then

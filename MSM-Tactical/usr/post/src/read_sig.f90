@@ -26,7 +26,9 @@ program readsig
   real(kind=dp) :: si(levmax+1), sl(levmax)
   real(kind=sp) :: fhour, ext(nwext) 
   integer :: icld=1 !1=include 3D physics, 0=not include
-  namelist /namlst_cld/ icld
+  integer :: ioutnhr=1 !output interval units: 1=hour 0=second
+  integer :: psec=0 !(for ioutnhr=0) interval seconds
+  namelist /namlst_cld/ icld,ioutnhr,psec
   ! components of ext
   integer :: iwav1,jwav1,igrd1,jgrd1,levs,nfldx,proj,nonhyd
   real(kind=sp) :: rtruth, rorient, rcenlat, rcenlon, rgrdlft, rgrdbtm, &
@@ -48,7 +50,7 @@ program readsig
   call read_header(iunit,icld,label,idate,fhour,si,sl,ext,nflds)
   print '(4a8)', label
   iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
-  print *, 'posting date ', iymdh, '+', nint(fhour)
+  print *, 'posting date ', iymdh, '+', nint(fhour), ' hours'
   iwav1 = int(ext(1)); jwav1 = int(ext(2))
   igrd1 = int(ext(3)); jgrd1 = int(ext(4))
   levs  = int(ext(5)); nfldx = int(ext(6))
@@ -205,9 +207,11 @@ program readsig
   end if
   close(ounit)
   print *, 'end write output'
+!  if(ioutnhr.eq.1) then
   print *, 'generate control file'
   call genctl(cunit,igrd1,jgrd1,levs,proj,idate,fhour,&
 &             clat,clon,nonhyd,icld)
+!  end if
   stop
 contains
   subroutine genctl(nctl,igrd1,jgrd1,levs,proj,idate,fhour,&

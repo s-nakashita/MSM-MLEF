@@ -7,7 +7,7 @@ CYCLEDA=${1}
 MEAN=${2}
 IDATE=${SDATE0:-2022083000} #cycle start
 IOFFSET=${IOFFSET:-6} #first guess offset
-IRES=${IRES:-9}
+DANEST=${DANEST:-F}
 INCCYCLE=${INCCYCLE:-6}
 HEADBASE=${HEAD:-bv}
 HEADDA=${HEAD2:-da}
@@ -61,7 +61,7 @@ fi
 MEM=1
 while [ $MEM -le $MEMBER ]; do
 PMEM=`printf '%0.3d' $MEM` #prtb member
-if [ $IRES -gt 9 ]; then
+if [ $DANEST = F ]; then
 ln -s $BASEDIR/r_sig.f$fhold ri.0${PMEM}.sig.grd
 ln -s $BASEDIR/r_sfc.f$fhold ri.0${PMEM}.sfc.grd
 else
@@ -72,12 +72,11 @@ fi
 MEM=`expr $MEM + 1`
 done #while MEM -le MEMBER
 ### set namelist
-if [ $IRES -gt 9 ]; then
+if [ $DANEST = F ]; then
 cat <<EOF >namelist
 &namlst_replace
  newfhour=0.0,
  offset=${fhbase}.0,
- prtbbase=F,
  member=${MEMBER},
  mean=${MEAN},
 &end
@@ -87,7 +86,6 @@ cat <<EOF >namelist
 &namlst_replace
  newfhour=${h}.0,
  offset=,
- prtbbase=T,
  member=${MEMBER},
  mean=${MEAN},
 &end

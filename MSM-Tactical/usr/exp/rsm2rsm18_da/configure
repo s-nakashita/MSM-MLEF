@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/rsm2rsm18_osse
+#   export TEMP=$WORKUSR/rsm2rsm18_osse
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
@@ -102,6 +102,7 @@ export RUNFCST=yes
 #export MEMBER=40
 export MEMBER=30
 export ENSMSPR=yes
+#export SAVEENS=no
 # BGM option
 export TETYPE=dry
 export SCL=
@@ -117,9 +118,9 @@ head=bv${TETYPE}${SCL}${BP}
 #fi #q adjustment
 export HEAD=$head
 # DA option
-export OSSE=T
+export OSSE=F
 export TMEM=25 # truth member
-export OBSDIST=uniform
+export OBSDIST=uniform_ezd
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
@@ -137,7 +138,7 @@ export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=5
+export MAXITER=3
 export HLOC=200 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%

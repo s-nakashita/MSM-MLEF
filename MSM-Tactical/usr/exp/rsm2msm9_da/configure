@@ -18,7 +18,8 @@ else
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export BASEDIR0=$WORKUSR/rsm2rsm27_da
+#export BASEDIR0=$WORKUSR/rsm2rsm18_osse #BGM
+export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad_gfsz #OSSE base
 export IRES=9
 
 # --------------- compile options ----------------
@@ -64,9 +65,10 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=0
-export CYCLEMAX=0
+export CYCLESTART=1
+export CYCLEMAX=5
 export DASTART=1
+export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval (hours)
 export IOFFSET=24 # first guess offset (hours)
 export ENDHOUR=24 # forecast length (hours)
@@ -105,7 +107,8 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 export HEAD=$head
 # DA option
 export OSSE=T
-export OBSDIST=uniform # observation distribution
+export DANEST=F
+export OBSDIST=uniform_ez # observation distribution
 export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
@@ -124,8 +127,8 @@ export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=1
-export HLOC=200 #km
+export MAXITER=3
+export HLOC=150 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
@@ -168,35 +171,35 @@ export HEAD2=$head2
 
 #### rsmlocation
 
-## d02 domain 110E-150E 16N-46N
-#export  IGRD=384
-#export  JGRD=324
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=140.0
-#export  RDELX=9000.
-#export  RDELY=9300.
-#export  RCENLAT=35.0
-#export  RCENLON=130.0
-#export  RLFTGRD=183.0
-#export  RBTMGRD=190.0
 # d02 domain 118.5E-135E 22N-36N
-export  IGRD=144
-export  JGRD=144
+export  IGRD=128
+export  JGRD=128
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=140.0
 export  RDELX=9000.
 export  RDELY=9000.
-export  RCENLAT=35.0
-export  RCENLON=125.0
-export  RLFTGRD=58.0
-export  RBTMGRD=131.0
-# d01 domain 70E-170W 22S-65N
-export  CIGRD=324
-export  CJGRD=288
+export  RCENLAT=30.0
+export  RCENLON=120.0
+export  RLFTGRD=30.0
+export  RBTMGRD=33.0
+# d01 domain 110E-143.3E 20N-47N (rsm2rsm18 for BGM)
+#export  CIGRD=96
+#export  CJGRD=96
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=18000.
+#export  CDELY=18000.
+#export  CCENLAT=30.0
+#export  CCENLON=120.0
+#export  CLFTGRD=30.
+#export  CBTMGRD=33.
+## base field from running RSM (gfsp2rsm27 for OSSE)
+export  CIGRD=384 
+export  CJGRD=324
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
@@ -205,34 +208,21 @@ export  CDELX=27000.
 export  CDELY=27000.
 export  CCENLAT=23.5
 export  CCENLON=120.0
-export  CLFTGRD=133.
-export  CBTMGRD=121.
-## d02 domain 110E-150E 16N-46N
-#export  IGRD=324
-#export  JGRD=288
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=140.0
-#export  RDELX=9000.
-#export  RDELY=9300.
-#export  RCENLAT=35.0
-#export  RCENLON=130.0
-#export  RLFTGRD=176.0
-#export  RBTMGRD=145.0
-## d01 domain 100E-170E 10N-60N
-#export  CIGRD=216
-#export  CJGRD=216
+export  CLFTGRD=163.
+export  CBTMGRD=139.
+## d01 domain 70E-170W 22S-65N (rsm2rsm27)
+#export  CIGRD=324
+#export  CJGRD=288
 #export  LEVS=42
 #export  CPROJ=0.
 #export  CTRUTH=45.0
 #export  CORIENT=120.0
 #export  CDELX=27000.
 #export  CDELY=27000.
-#export  CCENLAT=30.0
+#export  CCENLAT=23.5
 #export  CCENLON=120.0
-#export  CLFTGRD=59.
-#export  CBTMGRD=63.
+#export  CLFTGRD=133.
+#export  CBTMGRD=121.
 
 #
 # load default configure file

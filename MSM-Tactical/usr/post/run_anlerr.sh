@@ -63,14 +63,18 @@ ln -s ${SRCDIR}/${EXEC} ${EXEC}
 
 if [ $IRES -eq 27 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm27_truth
+fhtruemax=24
 elif [ $IRES -eq 18 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm18_truth
+fhtruemax=48
+elif [ $IRES -eq 9 ]; then
+TRUEDIR=$WORKUSR/rsm2msm9_truth
+fhtruemax=24
 fi
 echo $TRUEDIR
 #tmem=`printf '%0.3d' $TMEM`
 #truth=${HEAD}${tmem}
 #echo $truth
-fhtruemax=48
 fhtrue=0
 icyc=$CYCLESTART
 SDATE=$SDATE0
@@ -137,17 +141,31 @@ fi
     fi
   fi
   fi
+if [ $IRES -eq 18 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
  epsq=,
- lonw=,
- lone=,
- lats=,
- latn=,
+ lonw=115,
+ lone=133,
+ lats=26,
+ latn=38,
  kmax=42,
 &END
 EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ lprtb=T,
+ epsq=,
+ lonw=118.5,
+ lone=129.5,
+ lats=28.5,
+ latn=37.5,
+ kmax=42,
+&END
+EOF
+fi
   rm te.grd teprof.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 
 #  cat te.dat

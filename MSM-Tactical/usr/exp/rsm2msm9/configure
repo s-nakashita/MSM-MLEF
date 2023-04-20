@@ -15,7 +15,7 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
 #   export TEMP=$WORKUSR/${EXPN}          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_gfsz
+   export TEMP=$WORKUSR/${EXPN}_truth
 fi
 #export BASEDIR=$WORKUSR/rsm2rsm27/${SDATE}
 if [ do$MEM = do ];then
@@ -72,15 +72,15 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export ENDHOUR=12 
+export ENDHOUR=48 
 #from gfsp2rsm27
 export INCBASE=3
 export INCHOUR=3
-export PRTHOUR=3
+#export PRTHOUR=3
 ##from rsm2rsm27
 #export INCBASE=1
 #export INCHOUR=1
-#export PRTHOUR=1
+export PRTHOUR=1
 export TIMESTEP=30
 export IMDLPHY=1                # 1: run model physics, 0: off
 export CLIM=0
@@ -92,18 +92,31 @@ export RUNFCST=yes
 
 #### rsmlocation
 # d02 domain 118.5E-135E 22N-36N
-export  IGRD=144
-export  JGRD=144
+export  IGRD=128
+export  JGRD=128
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=140.0
 export  RDELX=9000.
 export  RDELY=9000.
-export  RCENLAT=35.0
-export  RCENLON=125.0
-export  RLFTGRD=98.0
-export  RBTMGRD=81.0
+export  RCENLAT=30.0
+export  RCENLON=120.0
+export  RLFTGRD=30.0
+export  RBTMGRD=33.0
+## d02 domain 118.5E-135E 22N-36N
+#export  IGRD=144
+#export  JGRD=144
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=140.0
+#export  RDELX=9000.
+#export  RDELY=9000.
+#export  RCENLAT=35.0
+#export  RCENLON=125.0
+#export  RLFTGRD=98.0
+#export  RBTMGRD=81.0
 
 ## d02 domain 100E-142E 2N-37N
 #export  IGRD=384
