@@ -143,11 +143,13 @@
  200  continue
 !
       else if ( nproj.eq.4) then
-        if (clon1.lt.0.e0) clon1=clon1+360.0
-        if (clon2.lt.0.e0) clon2=clon2+360.0
+!        if (clon1.lt.0.e0) clon1=clon1+360.0
+!        if (clon2.lt.0.e0) clon2=clon2+360.0
         if (clon1.gt.clon2) clon2=clon2+360.0
         delx=(clon2-clon1)/(cigrd1-1)
         dely=(clat2-clat1)/(cjgrd1-1)
+        print *, 'clon1,clon2,clat1,clat2,cdelx,cdely ',&
+                clon1,clon2,clat1,clat2,cdelx,cdely
 !
         do j=1,cjgrd1
         lats = j

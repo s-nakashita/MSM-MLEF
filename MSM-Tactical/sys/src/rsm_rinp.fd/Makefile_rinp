@@ -14,7 +14,7 @@ INCLUDE_DIR     =-I.
 
 OBJ_MOD = machine.o physcons.o istack.o cnttime.o funcphys.o new_sst.o
 
-OBJ_RINP= mainrinp.o gncpus.o g2rinp.o c2rinp.o s2rinp.o rchgr.o extrap.o newps.o newsig.o \
+OBJ_RINP= mainrinp.o gncpus.o g2rinp.o c2rinp.o s2rinp.o rchgr.o extrap.o newps.o newps_gfs.o newsig.o \
 	sigset.o sg2sg.o trispl.o valts.o setlatlon.o sphpt1.o sphpt2.o rpln2i.o \
 	sphqk1.o sphqk2.o gg2rg.o g2rini.o ggtorg.o gtorini.o ggtobg.o rread.o \
 	rwrite.o gdtocc.o cctogd.o sgl2ful.o ful2sgl.o ffacosy1.o ffscosy1.o \
