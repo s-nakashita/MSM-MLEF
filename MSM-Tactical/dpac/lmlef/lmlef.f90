@@ -158,9 +158,11 @@ program lmlef
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
     call get_nobs(obsin_name(iof),6,obs(iof)%nobs)
+    if (obs(iof)%nobs.gt.0) then
     call obsin_allocate(obs(iof))
     call read_obs(obsin_name(iof),obs(iof))
     call monit_obsin(obs(iof)%nobs,obs(iof)%elem,obs(iof)%dat)
+    end if
   end do
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(READ_OBS):',rtimer,rtimer-rtimer00
@@ -198,6 +200,7 @@ program lmlef
   !
   if(obsgues_output) then
     obsout%nobs = obsdasort%nobs
+    if(obsout%nobs.gt.0) then
     call obsout_allocate(obsout,member)
     obsout%elem = obsdasort%elem
     obsout%lon  = obsdasort%lon
@@ -223,6 +226,7 @@ program lmlef
       call write_obsout(obsf,obsout,im)
     end do
     call obsout_deallocate(obsout)
+    end if
     sync all
   end if
 !
@@ -290,6 +294,7 @@ program lmlef
   !
   if(obsanal_output) then
     obsout%nobs = obsdasort%nobs
+    if(obsout%nobs.gt.0) then
     call obsout_allocate(obsout,member)
     obsout%elem = obsdasort%elem
     obsout%lon  = obsdasort%lon
@@ -315,6 +320,7 @@ program lmlef
       call write_obsout(obsf,obsout,im)
     end do
     call obsout_deallocate(obsout)
+    end if
   end if
 !
   call cpu_time(rtimer)

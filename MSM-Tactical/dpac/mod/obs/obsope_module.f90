@@ -54,11 +54,11 @@ contains
       nobsin=nobsin+obsin(iof)%nobs
     end do
     obsout%nobs = nobsin + obsout%nobs ! obsout%nobs:externally processed obs number
-    call obsout_allocate(obsout,member)
-    if(nobsin.le.0) then
+    if(obsout%nobs.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
+    call obsout_allocate(obsout,member)
 
     if(debug_obs) open(stnout,file='station_synop.txt')
     allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
@@ -125,8 +125,10 @@ contains
           k=kk(1)
           obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           ! horizontal domain check
-          if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
-             .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
+          if(    obsin(iof)%lon(n).le.rlon(1) &
+             .or.obsin(iof)%lon(n).ge.rlon(nlon)&
+             .or.obsin(iof)%lat(n).le.rlat(1) &
+             .or.obsin(iof)%lat(n).ge.rlat(nlat)) then
             if(myimage.eq.print_img) &
             write(0,'(a,2(a,f8.2))') &
             & 'warning: observation is outside of the horizontal domain ', &
@@ -316,11 +318,11 @@ contains
       nobsin=nobsin+obsin(iof)%nobs
     end do
     obsout%nobs = nobsin + obsout%nobs !obsout%nobs : externally processes obs number
-    call obsout_allocate(obsout,member)
-    if(nobsin.le.0) then
+    if(obsout%nobs.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
+    call obsout_allocate(obsout,member)
     allocate( tmpqc(nobsin) )
    
     do im=0,member

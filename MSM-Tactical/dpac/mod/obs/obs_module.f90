@@ -293,15 +293,15 @@ contains
             call ndate(tmptime,-24*60,otime) !a day before
           end if
           call nhour(atime,otime,imin)
-          if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
-                  .or.(imin.eq.lmin))then
+!          if(((lmin.ne.rmin).and.(imin.ge.lmin).and.(imin.lt.rmin))&
+!                  .or.(imin.eq.lmin))then
             if(debug) print *, 'obs time =',otime
             if(debug) print *, 'difference(minutes) =',imin
             irec=ioffset+nrec1+nrec2+nrec3+2
             read(iunit,rec=irec) ibuf2
             nloop = int(ibuf2,kind=4)
             nobs=nobs+nloop*nobstype_upper
-          end if
+!          end if
         end if
       else if(dtypename=='surf ') then
         ! use all data type except METAR(18XX)
@@ -368,6 +368,7 @@ contains
     integer :: lonb, latb
     integer :: nloop, nsort
     character(len=16) :: acc
+    character(len=8) :: sta
     integer :: n,nn,i,irec
     
     iunit=91
@@ -381,7 +382,7 @@ contains
     call obsin_allocate( tmpobs2 )
     ! start reading data
     nobsuse=0
-    nn=0
+    nn=-1
     nsort=0
     otime(1)=atime(1)
     do n=1,ndataall
@@ -391,17 +392,24 @@ contains
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
       tmplon = real(data1(3),kind=dp)*0.01d0
+      if((abs(tmplon).gt.180.0).or.(abs(tmplat).gt.90.0)) then
+        ! invalid data
+        ioffset=ioffset+nrec_data
+        cycle
+      end if
       if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
         tmplon=tmplon+360.0
       end if
-      if(nn==0) then
+      if(nn<0) then
         latb=data1(2);lonb=data1(3)
+        nn=nn+1
       end if
       if((data1(2)/=latb).or.(data1(3)/=lonb)) then
-        if(debug) then
+!        if(debug) then
           print *, 'latlon(previous) ',latb, lonb
           print *, 'latlon(current)  ',data1(2), data1(3)
-        end if
+!        end if
+        if(nn>0) then
         if(debug) print *, 'before sort ',nn
         call sortobs(nn,tmpobs)
         if(debug) print *, 'after sort ',nn
@@ -414,10 +422,12 @@ contains
         tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
         tmpobs2%dmin(nobsuse+1:nobsuse+nn) = tmpobs%dmin(1:nn)
         nobsuse=nobsuse+nn
-        if(debug) print *, 'nobsuse = ',nobsuse,'/',tmpobs%nobs
+        !if(debug)
+        print *, 'nn=',nn,' nobsuse = ',nobsuse,'/',tmpobs%nobs
+        nsort=nsort+1
+        end if
         nn=0
         latb=data1(2);lonb=data1(3)
-        nsort=nsort+1
 !        if(nsort.gt.5) exit !debug
       end if
       ! use only 3XXX data type
@@ -451,6 +461,17 @@ contains
             print *, 'dtype,lat,lon,dmin'
             print *, dtype,tmplat,tmplon,tmpdt
           end if
+          ! station number / call sign
+          irec=ioffset+nrec1+nrec2+1
+          do i=1,4
+            read(iunit,rec=irec) sta(2*i-1:2*i)
+            irec=irec+1
+          end do
+          !if ((sta(1:4)=='7KBR').or.(sta(1:4)=='7JEJ').or.(sta(1:4)=='7JJW')) then
+          !!! skip 3 ships' observations
+          !else
+          !print *, 'station ', sta
+          ! part4
           irec=ioffset+nrec1+nrec2+nrec3+1
           read(iunit,rec=irec) ibuf2
           if(debug) print *, 'sst ',real(ibuf2,kind=dp)*0.1
@@ -525,8 +546,9 @@ contains
               &  tmpdat,tmpdt)
             end if   
           end do
-        end if
-      end if
+          !end if ! skip ship obs
+        end if ! time window
+      end if ! dtype
       ioffset=ioffset+nrec_data
     end do
     if(nn>0) then
@@ -542,7 +564,8 @@ contains
       tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
       tmpobs2%dmin(nobsuse+1:nobsuse+nn) = tmpobs%dmin(1:nn)
       nobsuse=nobsuse+nn
-      if(debug) print *, 'nobsuse = ',nobsuse,'/',tmpobs%nobs
+      !if(debug)
+      print *, 'nn = ',nn,' nobsuse = ',nobsuse,'/',tmpobs%nobs
       nsort=nsort+1
     end if
     if(debug) print *, 'nsort = ',nsort
@@ -610,6 +633,11 @@ contains
       dtype = data1(1)
       tmplat = real(data1(2),kind=dp)*0.01d0
       tmplon = real(data1(3),kind=dp)*0.01d0
+      if((abs(tmplon).gt.180.0).or.(abs(tmplat).gt.90.0)) then
+        ! invalid data
+        ioffset=ioffset+nrec_data
+        cycle
+      end if
       if(tmplon.lt.0.0d0) then !-180.0<=lon<180 -> 0.0<=lon<360.0
         tmplon=tmplon+360.0
       end if
@@ -727,6 +755,7 @@ contains
               tmplon=tmplon+360.0
             end if
           end if
+          !! Ps
           irec=ioffset+nrec1+nrec2+nrec3+1
           read(iunit,rec=irec) ibuf2
           tmpelm=id_ps_obs
@@ -739,18 +768,19 @@ contains
             &  tmplat,tmplon,tmplev,&
             &  tmpdat,tmpdt)
           end if
-          irec=irec+6
-          read(iunit,rec=irec) ibuf2
-          tmpelm=id_t2m_obs
-          tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
-          if(tmpdat.gt.0) then
-            if(debug) print *, 'T2m ',tmpdat
-            nobsuse=nobsuse+1
-            call setobs(nobsuse,tmpobs,&
-            &  tmpelm,&
-            &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmpdt)
-          end if
+          !! T2m
+          !irec=irec+6
+          !read(iunit,rec=irec) ibuf2
+          !tmpelm=id_t2m_obs
+          !tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+          !if(tmpdat.gt.0) then
+          !  if(debug) print *, 'T2m ',tmpdat
+          !  nobsuse=nobsuse+1
+          !  call setobs(nobsuse,tmpobs,&
+          !  &  tmpelm,&
+          !  &  tmplat,tmplon,tmplev,&
+          !  &  tmpdat,tmpdt)
+          !end if
         end if
       end if
       ioffset=ioffset+nrec_data
