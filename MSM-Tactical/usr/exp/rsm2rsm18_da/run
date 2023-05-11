@@ -1,0 +1,18 @@
+#!/bin/sh
+#
+set -x
+export SDATE=2022061712
+export SAMPLETXT="gfs_sampledate_MJ.txt"
+#export SDATE=2022082900
+#export SAMPLETXT="gfs_sampledate_AS.txt"
+
+WDIR=${WDIR:-` pwd `}
+. ${WDIR}/configure 
+echo $ENDHOUR $BASEDIR0 $RUNDIR0
+echo $HEAD $HEAD2
+#exit
+#
+#export RUNENV='mpiexec -s all -n '${NPES}
+ export RUNENV='/usr/local/mpi/openmpi/bin/mpiexec --oversubscribe -n '${NPES}
+ export PYENV='/home/nakashita/.local/bin/python'
+$JSHDIR/rsm_ensda.sh  
