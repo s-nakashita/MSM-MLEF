@@ -3,7 +3,8 @@ set -e
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #datadir=/zdata/grmsm/work/rsm2msm9_bv
 datadir=/zdata/grmsm/work/rsm2rsm18_da
-obsdir=/zdata/grmsm/work/dpac/obs
+#obsdir=/zdata/grmsm/work/dpac/obs
+obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=0
 adate=${1:-2022061812}
