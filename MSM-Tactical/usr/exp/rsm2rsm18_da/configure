@@ -19,14 +19,13 @@ fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
 export GUESDIR=$TEMP
-#export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
-export BASEDIR0=${HOME}/mnt/methane/work/gefs2rsm27_nomad
+export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
 #export BASEDIR0=$WORKUSR/DATA/gefs
 if [ $GLOBAL = GFS ];then #deterministic
   export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad_gfsz
   export BASEDIR1=$WORKUSR/gfsp2rsm27_rda_gfsz
-  export PRTBDIR0=${HOME}/mnt/methane/work/gfsp2rsm27_nomad
-  export PRTBDIR1=${HOME}/mnt/methane/work/gfsp2rsm27_rda
+  export PRTBDIR0=$WORKUSR/gfsp2rsm27_nomad
+  export PRTBDIR1=$WORKUSR/gfsp2rsm27_rda
 #  export BASEDIR0=$WORKUSR/DATA/gfs
 #  export BASEDIR1=$WORKUSR/DATA/gfs/rda
 fi #deterministic
@@ -76,7 +75,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=1
-export CYCLEMAX=5
+export CYCLEMAX=14
 export DASTART=1
 export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval
@@ -127,12 +126,12 @@ export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
 export DA_FIXED_LEVEL=F
-export NISEP=6
-export NJSEP=4
+export NISEP=4
+export NJSEP=6
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=0
-export ROBSMIN=0
+export LOBSMIN=-30
+export ROBSMIN=30
 export SELOBS=all
 export PREP=_preprh
 export DA_MEAN=F

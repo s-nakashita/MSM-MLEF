@@ -39,7 +39,6 @@ program obsope
   rtimer00=rtimer
 
 ! read observation
-call init_das_lmlef
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
     call get_nobs(obsin_name(iof),6,obs(iof)%nobs)

@@ -3,9 +3,10 @@ set -e
 dcddir=/zdata/grmsm/work/DATA/dcd
 obsdir=/zdata/grmsm/work/dpac/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-adate=2022061812
-lmin=-60
-rmin=60
+#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/obs
+adate=${1:-2022061812}
+lmin=-30
+rmin=30
 lprep=T
 iq=2
 yyyy=`echo ${adate} | cut -c1-4`
@@ -14,9 +15,11 @@ mm=`echo ${adate} | cut -c5-6`
 dd=`echo ${adate} | cut -c7-8`
 hh=`echo ${adate} | cut -c9-10`
 echo $yyyy $mm $dd $hh
+set +e
 imm=`expr $mm + 0`
 idd=`expr $dd + 0`
 ihh=`expr $hh + 0`
+set -e
 
 wdir=${obsdir}/${adate}
 mkdir -p $wdir/tmp
@@ -42,4 +45,8 @@ tar zxvf $tarf
 
 cd ..
 mv tmp/*.dat .
+mv tmp/decode_dcdf.log .
+#for f in $(ls *.dat);do
+#  mv $f ../${f%.dat}.noship.dat
+#done
 echo "END"

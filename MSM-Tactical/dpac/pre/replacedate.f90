@@ -13,13 +13,7 @@ program replacedate
   real(kind=sp) :: offset=0.0   !(for GFS) previous forecast hours
   integer       :: member=10 !ensemble size
   logical       :: mean=.false.
-  logical       :: tint=.false. !time interpolation
-  real(kind=sp) :: fint=0.0
-  real(kind=sp) :: fbase1=0.0
-  real(kind=sp) :: fbase2=0.0
-  namelist /namlst_replace/ newfhour,offset,member,mean &
-          & ,tint,fint,fbase1,fbase2
-  real(kind=sp) :: twidth,twgt
+  namelist /namlst_replace/ newfhour,offset,member,mean
   ! input files' units (base, prtb)
   character(len=15) :: file_basename='r_.@@@@.LEV.grd'
   character(len=15) :: filename
@@ -29,7 +23,7 @@ program replacedate
   ! output file's unit
   integer :: nosig=51
   integer :: nosfc=52
-  real(kind=dp), allocatable :: dfld(:,:,:),dfld2(:,:,:)
+  real(kind=dp), allocatable :: dfld(:,:,:)
   real(kind=dp), allocatable :: dummapf(:,:,:), dumlat(:), dumlon(:)
 !  character(len=8) :: label(4)
 !  integer :: idate(4), nfldsig
@@ -46,11 +40,6 @@ program replacedate
   read(5,namlst_replace)
   write(6,namlst_replace)
 
-  if(tint) then
-    twidth=fbase2-fbase1
-    twgt=(fint-fbase1)/twidth
-    print *, 'time width=',twidth,' weight=',twgt
-  end if
 !!! get parameters
   filename=file_basename
   if(mean) then
@@ -102,7 +91,6 @@ program replacedate
   idate(1)=date2(4)
   print *,'after ', idate(4),idate(2),idate(3),idate(1),'+',nint(newfhour)
 
-  if(tint) allocate( dfld2(igrd1,jgrd1,nfldsig) )
   ! member
   do while( im<=member )
     filename=file_basename
@@ -114,19 +102,6 @@ program replacedate
     call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sig,&
     dfld,dummapf,dumlat,dumlon)
     close(nisig)
-    
-    if(tint) then
-    filename=file_basename
-    write(filename(1:2),'(a2)') 'r2'
-    write(filename(4:7),'(i4.4)') im
-    write(filename(9:11),'(a3)') 'sig'
-    write(6,'(2a)') 'input= ',filename
-    open(nisig,file=filename,form='unformatted',access='sequential',action='read')
-    call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sig,&
-    dfld2,dummapf,dumlat,dumlon)
-    dfld(:,:,2:) = (1.0 - twgt)*dfld(:,:,2:) + twgt*dfld2(:,:,2:)
-    close(nisig)
-    end if
 
     filename=file_basename
     write(filename(1:2),'(a2)') 'ro'
@@ -140,10 +115,8 @@ program replacedate
     im=im+1
   end do !im=1,member   
   deallocate( dfld )
-  if(tint) deallocate( dfld2 )
   !! surface
   allocate( dfld(igrd1,jgrd1,nfldsfc) )
-  if(tint) allocate( dfld2(igrd1,jgrd1,nfldsfc) )
   if(mean) then
     im=1
   else
@@ -159,17 +132,6 @@ program replacedate
     call read_sfc(nisfc,igrd1,jgrd1,dfld)
     close(nisfc)
 
-    if(tint) then
-    filename=file_basename
-    write(filename(1:2),'(a2)') 'r2'
-    write(filename(4:7),'(i4.4)') im
-    write(filename(9:11),'(a3)') 'sfc'
-    write(6,'(2a)') 'input= ',filename
-    open(nisfc,file=filename,form='unformatted',access='sequential',action='read')
-    call read_sfc(nisfc,igrd1,jgrd1,dfld2)
-    dfld = (1.0 - twgt)*dfld + twgt*dfld2
-    close(nisfc)
-    end if
     filename=file_basename
     write(filename(1:2),'(a2)') 'ro'
     write(filename(4:7),'(i4.4)') im
@@ -181,5 +143,4 @@ program replacedate
     im=im+1
   end do
   deallocate( dfld )
-  if(tint) deallocate( dfld2 )
 end program
