@@ -18,7 +18,7 @@
 !cc
 !...
       parameter (nfld=8)
-! z t u v rh o3 clwmr terrain
+! z t u v rh o3 clwmr terrain (ps)
       parameter (nsfcfld=13)
       parameter (imax=cigrd1, jmax=cjgrd1)
       character*8 label(4)
@@ -81,7 +81,8 @@
       namelist/namclim/iclim,fntg3c,fnzorc,fnalbc,fnvegc,fnvetc,fnsotc, &
      &                 fnmskh
       common /hydrid/ siin3d(lngrd,levs+1),slin3d(lngrd,levs)
-      common /llgz/ terr(lngrd)
+      common /llgz/ terr(lngrd) !, ps(lngrd)
+      common /ps_gfs/ zold(lngrd,levs) 
       data fntg3c/'global_tg3clim.2.6x1.5.grb'/
       data fnmskh/'global_slmask.t126.grb'/
       data fnalbc/'global_albedo4.1x1.grb'/
@@ -244,7 +245,9 @@
 ! ....................................................
         rewind nrsig
         label(1)='GFS GRIB'
+        label(2:)=''
         write(6,*) label
+! siglevels without ps
         do k=1,levs
           sl(k)=plevels(k)/plevels(1)
         enddo
@@ -266,18 +269,63 @@
         else
         call cgtorg(cg,terr,1)
         endif
+!! tested by SN 28/03/2023
+!! interpolate ps
+!        cg=cfld(:,1,9) !Pa
+!        if (abs(rproj).eq.1) then
+!        call cg2rg(cg,ps,1)
+!        else
+!        call cgtorg(cg,ps,1)
+!        endif
+!        ps=ps/100.0 !hPa
+!        print *, 'ps ', minval(ps), maxval(ps)
+!! siglevels with ps
+!        do k=1,levs
+!          do i=1,lngrd
+!            slin3d(i,k)=plevels(k)/ps(i)
+!          end do
+!        enddo
+!        siin3d(:,1)=1.0
+!        siin3d(:,levs+1)=0.0
+!        do k=2,levs
+!          siin3d(:,k)=(slin3d(:,k-1)+slin3d(:,k))/2.0
+!        enddo
+!! dummy si, sl
+!        si=0.0
+!        sl=0.0
+!        do i=1,lngrd
+!              si(:)=si(:)+siin3d(i,:)
+!              sl(:)=sl(:)+slin3d(i,:)
+!        enddo
+!        si=si/real(lngrd)
+!        sl=sl/real(lngrd)
+!
 !
         write(6,210) (idate(i),i=1,4),fhour,                             &
      &            (si(k),k=1,levs+1),(sl(k),k=1,levs)
 210     format(5x,' input date and fcst hour ',4i5,f7.1/(2x,g13.6))
 ! gz
+! tested by SN 27/03/2023
+!        cg=cfld(:,1,8)
         cg=cfld(:,1,1)
         if (abs(rproj).eq.1) then
         call cg2rg(cg,gz,1)
         else
         call cgtorg(cg,gz,1)
         endif
+! interpolate pressure height for newps_gfs modify surface pressure.
+! added by SN 06/04/2023
+        do k=1,levs
+          cg=cfld(:,k,1)
+          if (abs(rproj).eq.1) then
+          call cg2rg(cg,zold(1,k),1)
+          else
+          call cgtorg(cg,zold(1,k),1)
+          endif
+        enddo
 ! q
+! tested by SN 27/03/2023
+!        cg=log(cfld(:,1,9)/1000.0)
         cg=log(plevels(1)/10.0)
         if (abs(rproj).eq.1) then
         call cg2rg(cg,q,1)

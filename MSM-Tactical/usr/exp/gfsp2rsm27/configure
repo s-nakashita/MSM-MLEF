@@ -14,7 +14,7 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
    #export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_nomad
+   export TEMP=$WORKUSR/${EXPN}_nomad_gfsz
    mkdir -p $TEMP
 fi
 export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
@@ -22,7 +22,7 @@ export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
 
 export RDA=yes            # use RDA historical data
 if [ $RDA = yes ];then
-export TEMP=$WORKUSR/${EXPN}_rda
+export TEMP=$WORKUSR/${EXPN}_rda_gfsz
 export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
 fi
 # --------------- machine/compile options ----------------
@@ -54,9 +54,9 @@ export RINP=yes
 export FCST=no 
 
 # --------------- run option --------------------
-#export ENDHOUR=120 
+export ENDHOUR=120 
 export ENDHOUR=48                                # release_test
-export ENDHOUR=24                                # release_test
+#export ENDHOUR=12                                # release_test
 export CLIM=1
 export POSTTYPE=sync
 export RUNRMTN=yes
@@ -79,10 +79,15 @@ export  RCENLAT=23.5
 export  RCENLON=120.0
 export  RLFTGRD=163.
 export  RBTMGRD=139.
-# d01 domain 170W-40W 22S-65N
+## d01 domain 170W-40W 22S-65N
 #export  RORIENT=250.0
 #export  RCENLON=250.0
 #export  RCENLAT=39.0
+## d01 domain for mediterrenian sea
+#export  RCENLAT=39.0
+#export  RCENLON=17.0
+#export  RLFTGRD=192.
+#export  RBTMGRD=162.
 # test dimension and shift
 #export  IGRD=128                             # release_test
 #export  JGRD=108                             # release_test
@@ -97,8 +102,11 @@ export  CLAT2=70
 export  CLON1=60 
 export  CLON2=200
 export  LEVS=47
+if [ do$RDA = doyes ]; then
 export  LEVS=33            # modified
+fi
 export  PGBRES=0.25        # 0.50 or 0.25
+#export  PGBRES=0.50        # 0.50 or 0.25
 export  INCBASE=3        # 3 or 6 hours
 export  INCHOUR=$INCBASE
 export  CIGRD=$(echo "($CLON2-($CLON1))/$PGBRES" | bc)

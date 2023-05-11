@@ -320,7 +320,7 @@
 #endif
 !
       if( lsig .or. lmtn ) then
-          call extrap(lsig,lmtn)
+          call extrap(lsig,lmtn,lp2r)
       else
         do 3010 n=1,ijdimo
         qo(n) = q(n)

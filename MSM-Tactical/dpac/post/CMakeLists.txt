@@ -1,0 +1,22 @@
+cmake_minimum_required(VERSION 3.16)
+
+#set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -O2 -fconvert=big-endian")
+link_libraries(${LAPACK_LIBRARIES})
+link_directories(../../sys/lib)
+
+add_executable(ensmspr ensmspr.f90)
+target_link_libraries(ensmspr common)
+add_executable(calcte calcte.f90)
+target_link_libraries(calcte common modobs)
+add_executable(spectra spectra.f90)
+target_link_libraries(spectra common modobs)
+add_executable(similarity similarity.f90)
+target_link_libraries(similarity common)
+add_executable(calctegrd calctegrd.f90)
+target_link_libraries(calctegrd common modobs)
+add_executable(calctesprd calctesprd.f90)
+target_link_libraries(calctesprd common modobs)
+add_executable(profile profile.f90)
+target_link_libraries(profile common modobs)
+include_directories(${CMAKE_BINARY_DIR}/mod/common
+	${CMAKE_BINARY_DIR}/mod/obs)

@@ -14,6 +14,12 @@ LONMIN=${CLON1:--100}
 LONMAX=${CLON2:--50}
 LATMIN=${CLAT1:-10}
 LATMAX=${CLAT2:-60}
+#if [ $LONMIN -gt 180 ]; then
+#  LONMIN=`expr $LONMIN - 360`
+#fi
+#if [ $LONMAX -gt 180 ]; then
+#  LONMAX=`expr $LONMAX - 360`
+#fi
 
 fh=000
 fh2=00
@@ -35,15 +41,15 @@ echo "Domain northbound latitude "$LATMAX  >>$DATADIR/Domain_Info
       then
          PGBNAME=pgrb2.0p25
          FILTER=filter_gfs_0p25
-         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=gfs.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_CLWMR=on&var_HGT=on&var_ICEC=on&var_LAND=on&var_O3MR=on&var_SPFH=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos" -${OPN} pgbf$fh2
+         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos&file=gfs.t${CYC}z.${PGBNAME}.f${fh}&var_CLWMR=on&var_HGT=on&var_ICEC=on&var_LAND=on&var_O3MR=on&var_SPFH=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on&var_PRES=on&var_PRMSL=on&all_lev=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}" -${OPN} pgbf$fh2
          PGBNAME=pgrb2b.0p25
          FILTER=filter_gfs_0p25b
-         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=gfs.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_CLWMR=on&var_HGT=on&var_O3MR=on&var_SPFH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_RH=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos" -${OPN} pgbbf$fh2
+         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos&file=gfs.t${CYC}z.${PGBNAME}.f${fh}&var_CLWMR=on&var_HGT=on&var_O3MR=on&var_SPFH=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_RH=on&var_PRES=on&all_lev=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}" -${OPN} pgbbf$fh2
          cat pgbbf$fh2 >>pgbf$fh2 && rm pgbbf$fh2
       else
          FILTER=filter_gfs_0p50
          PGBNAME=pgrb2full.0p50
-         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?file=gfs.t${CYC}z.${PGBNAME}.f${fh}&all_lev=on&var_CLWMR=on&var_HGT=on&var_ICEC=on&var_LAND=on&var_O3MR=on&var_SPFH=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}&dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos" -${OPN} pgbf$fh2
+         $DTOOL "https://nomads.ncep.noaa.gov/cgi-bin/${FILTER}.pl?dir=%2Fgfs.${YMD}%2F${CYC}%2Fatmos&file=gfs.t${CYC}z.${PGBNAME}.f${fh}&var_CLWMR=on&var_HGT=on&var_ICEC=on&var_LAND=on&var_O3MR=on&var_SPFH=on&var_SOILW=on&var_TSOIL=on&var_TCDC=on&var_TMP=on&var_UGRD=on&var_VGRD=on&var_WEASD=on&var_PRES=on&var_PRMSL=on&all_lev=on&subregion=&leftlon=${LONMIN}&rightlon=${LONMAX}&toplat=${LATMAX}&bottomlat=${LATMIN}" -${OPN} pgbf$fh2
       fi
    fi
    fh=`expr $fh + $INCBASE`

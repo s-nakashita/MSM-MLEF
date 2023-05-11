@@ -12,7 +12,9 @@ export BV_H=${BV_H:-6}
 export TETYPE=${TETYPE}
 export SCL=${SCL}
 export SCLBASE=${SCLBASE}
+export SCLPOW=${SCLPOW}
 export QADJ=${QADJ:-no}
+export ORTH=${ORTH:-no}
 if [ $CYCLE -gt 1 ]; then
    PCYCLE=`expr $CYCLE - 1`
    fh=`expr $BV_H \* $PCYCLE`

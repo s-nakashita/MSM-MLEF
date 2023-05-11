@@ -43,7 +43,10 @@ calcte:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o 
 addprtb:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o norm_module.o rsmcom_module.o addprtb.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-addprtbbase:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o addprtbbase.o
+addprtbbase:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o spectral_module.o rfftmlt.o addprtbbase.o
+	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+spectra:	kind_module.o phconst_module.o func_module.o nml_module.o read_module.o write_module.o rsmcom_module.o spectral_module.o rfftmlt.o spectra.o
 	$(LD) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 test_read:	read_module.o write_module.o test_read.o
@@ -73,6 +76,12 @@ rsmcom_module.o:	$(MODDIR)/rsmcom_module.f90
 norm_module.o:	$(MODDIR)/norm_module.f90
 	$(FC) $(FFLAGS) -c $^
 
+spectral_module.o:	$(MODDIR)/spectral_module.f90
+	$(FC) $(FFLAGS) -c $^
+
+rfftmlt.o:	$(MODDIR)/rfftmlt.f90
+	$(FC) $(FFLAGS) -c $^
+
 ensmspr.o:	$(PARENT)/src/ensmspr.f90
 	$(FC) $(FFLAGS) -c $^
 
@@ -83,6 +92,9 @@ addprtb.o:	$(PARENT)/src/addprtb.f90
 	$(FC) $(FFLAGS) -c $^
 
 addprtbbase.o:	$(PARENT)/src/addprtbbase.f90
+	$(FC) $(FFLAGS) -c $^
+
+spectra.o:	$(PARENT)/src/spectra.f90
 	$(FC) $(FFLAGS) -c $^
 
 test_read.o:	$(PARENT)/src/test_read.f90

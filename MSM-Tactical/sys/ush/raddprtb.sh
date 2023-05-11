@@ -3,70 +3,95 @@
 # add rescaled perturbations to r_sig.f00
 #
 set -ex
-#if [ $# -lt 2 ]; then
-#  echo "Usage : ./run_ensmspr.sh init(YYYYMMDDHH) res(9 or 3)"
-#  exit 1
-#fi
 CYCLE=${1:-$CYCLE}
-PMEM=${2:-001} #prtb member
-IDATE=${SDATE:-2022083000} #base
-PDATE=${PDATE:-2022061112} #prtb base
-IRES=${IRES:-27}
+CYCLESTART=${2:-$CYCLESTART}
 BV_H=${INCCYCLE:-6}
 TETYPE=${TETYPE}
 SCL=${SCL}
 QADJ=${QADJ:-yes} #super saturation and dry adjustment
+ORTH=${ORTH:-yes} #orthogonalization
+PSUB=${PSUB:-no}  #subtract perturbation
 BP=${BP} #with boundary perturbation
 head=${HEAD:-bv$TETYPE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/usr/post
-DATADIR=${RUNDIR0:-/zdata/grmsm/work/dpac/rsm27}
-BASE=${BASEDIR0:-/zdata/grmsm/work/gfsp2rsm27_rda}
+SRCDIR=${MSMDIR}/dpac/build/pre
+DATA=${RUNDIR0:-/zdata/grmsm/work/dpac/rsm27}
+BASE0=${PRTBDIR0:-/zdata/grmsm/work/gfsp2rsm27_nomad}
+BASE1=${PRTBDIR1:-/zdata/grmsm/work/gfsp2rsm27_rda}
+DATADIR=$DATA/$SDATE
 if [ ! -d $DATADIR ]; then
   echo "No such directory : $DATADIR"
-  exit 3
-fi
-if [ ! -d $BASE ]; then
-  echo "No such directory : $BASE"
   exit 3
 fi
 EXEC=addprtb
 cd $SRCDIR
 gmake ${EXEC}
-OUTDIR=$DATADIR/$IDATE/${head}${PMEM}
-mkdir -p $OUTDIR
-##copy namelists
-cp $DATADIR/$IDATE/rsmparm $OUTDIR/
-cp $DATADIR/$IDATE/rsmlocation $OUTDIR/
-cp $DATADIR/$IDATE/rfcstparm $OUTDIR/
-cp $STTPRM $OUTDIR/station.parm
-##copy orography data
-cp $DATADIR/$IDATE/rmtn.parm $OUTDIR/
-cp $DATADIR/$IDATE/rmtnoss $OUTDIR/
-cp $DATADIR/$IDATE/rmtnslm $OUTDIR/
-cp $DATADIR/$IDATE/rmtnvar $OUTDIR/
-rm -rf $OUTDIR/tmp
-mkdir -p $OUTDIR/tmp
-cd $OUTDIR/tmp
-rm -f fort.*
+cd -
+rm -rf tmp
+mkdir -p tmp
+cd tmp
+rm -f *.grd
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 # base field
 echo $SDATE
-ln -s $DATADIR/$IDATE/r_sig.f00 fort.11 #analysis
-ln -s $DATADIR/$IDATE/r_sfc.f00 fort.14 #analysis
-#ln -s $DATADIR/$IDATE/r_sig.f$fh fort.11 #guess
-#ln -s $DATADIR/$IDATE/r_sfc.f$fh fort.14 #guess
+ln -s $DATADIR/r_sig.f00 rb.0000.sig.grd #analysis
+ln -s $DATADIR/r_sfc.f00 rb.0000.sfc.grd #analysis
 # perturbation base
-if [ $CYCLE -eq 1 ]; then
+if [ do$PSUB = doyes ]; then
+  SIGN=m
+else
+  SIGN=
+fi
+MEM=1
+while [ $MEM -le $MEMBER ]; do
+PMEM=`printf '%0.3d' $MEM` #prtb member
+OUTDIR=$DATADIR/${head}${SIGN}${PMEM}
+## restart check
+if [ -s $OUTDIR/r_sigi -a -s $OUTDIR/r_sigitdt -a -s $OUTDIR/r_sfci ]; then
+  echo 'Restart files exist !!'
+  MEM=`expr $MEM + 1`
+#  continue
+  exit
+fi
+mkdir -p $OUTDIR
+##copy namelists
+cp $DATADIR/rsmparm $OUTDIR/
+cp $DATADIR/rsmlocation $OUTDIR/
+cp $DATADIR/rfcstparm $OUTDIR/
+cp $STTPRM $OUTDIR/station.parm
+##copy orography data
+cp $DATADIR/rmtn.parm $OUTDIR/
+cp $DATADIR/rmtnoss $OUTDIR/
+cp $DATADIR/rmtnslm $OUTDIR/
+cp $DATADIR/rmtnvar $OUTDIR/
+MEM4=`printf '%0.4d' $MEM`
+ln -s $OUTDIR/r_sig.f00 ro.$MEM4.sig.grd
+ln -s $OUTDIR/r_sfc.f00 ro.$MEM4.sfc.grd
+if [ $CYCLE -eq $CYCLESTART ]; then
   if [ $GLOBAL = GFS ]; then #deterministic=lag forecast
+    cp $DATADIR/pdate.txt .
+    irow=$MEM
+    PDATE1=`cat pdate.txt | awk '{if(NR == '$irow') {print $1}}'`
+    irow=`expr $irow + $MEMBER`
+    PDATE2=`cat pdate.txt | awk '{if(NR == '$irow') {print $1}}'`
+    echo $PDATE1 $PDATE2
+    BASE=$BASE0
+    PDATE=$PDATE1
+    if [ ! -d $BASE0/$PDATE ]; then
+      BASE=$BASE1
+    fi
+    if [ ! -d $BASE/$PDATE ]; then
+      echo "No such directory : $BASE/$PDATE"
+      exit 3
+    fi
     mkdir -p $PDATE
     cd $PDATE
     hhr=12
-    cp $DATADIR/$IDATE/rsmlocation .
-    ln -s $DATADIR/$IDATE/rmtn.parm .
-    ln -s $DATADIR/$IDATE/rmtnoss .
-    ln -s $DATADIR/$IDATE/rmtnslm .
-    ln -s $DATADIR/$IDATE/rmtnvar .
+    cp $DATADIR/rsmlocation .
+    ln -s $DATADIR/rmtn.parm .
+    ln -s $DATADIR/rmtnoss .
+    ln -s $DATADIR/rmtnslm .
+    ln -s $DATADIR/rmtnvar .
     if [ do$G2R = doyes ] ; then
       ln -fs $BASE/$PDATE/sigf$hhr rb_sigf$hhr
       ln -fs $BASE/$PDATE/sfcf$hhr rb_sfcf$hhr
@@ -80,22 +105,34 @@ if [ $CYCLE -eq 1 ]; then
       fi
     else
       if [ do$C2R = doyes ] ; then
-        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
-        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+        cp $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        cp $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
       fi
     fi
-    $USHDIR/rinp.sh $NEST $hhr || exit 10
-    cp r_sigi ../fort.12
+    #$USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    $USHDIR/rinp.sh $NEST $hhr > rinp.log 2>&1 || exit 10
+    MEM4=`expr 2 \* $MEM - 1`
+    MEM4=`printf '%0.4d' $MEM4`
+    cp r_sigi ../ri.$MEM4.sig.grd
     cd ..
-    PDATE=`date -j -f "%Y%m%d%H" -v-12H +"%Y%m%d%H" "${PDATE}"`
+    #PDATE=`date -j -f "%Y%m%d%H" -v-24H +"%Y%m%d%H" "${PDATE}"`
+    BASE=$BASE0
+    PDATE=$PDATE2
+    if [ ! -d $BASE0/$PDATE ]; then
+      BASE=$BASE1
+    fi
+    if [ ! -d $BASE/$PDATE ]; then
+      echo "No such directory : $BASE/$PDATE"
+      exit 3
+    fi
     mkdir -p $PDATE
     cd $PDATE
-    hhr=24
-    cp $DATADIR/$IDATE/rsmlocation .
-    ln -s $DATADIR/$IDATE/rmtn.parm .
-    ln -s $DATADIR/$IDATE/rmtnoss .
-    ln -s $DATADIR/$IDATE/rmtnslm .
-    ln -s $DATADIR/$IDATE/rmtnvar .
+    #hhr=24
+    cp $DATADIR/rsmlocation .
+    ln -s $DATADIR/rmtn.parm .
+    ln -s $DATADIR/rmtnoss .
+    ln -s $DATADIR/rmtnslm .
+    ln -s $DATADIR/rmtnvar .
     if [ do$G2R = doyes ] ; then
       ln -fs $BASE/$PDATE/sigf$hhr rb_sigf$hhr
       ln -fs $BASE/$PDATE/sfcf$hhr rb_sfcf$hhr
@@ -109,36 +146,40 @@ if [ $CYCLE -eq 1 ]; then
       fi
     else
       if [ do$C2R = doyes ] ; then
-        ln -fs $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
-        ln -fs $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
+        cp $BASE/$PDATE/r_sig.f$hhr rb_sigf$hhr
+        cp $BASE/$PDATE/r_sfc.f$hhr rb_sfcf$hhr
       fi
     fi
-    $USHDIR/rinp.sh $NEST $hhr || exit 10
-    cp r_sigi ../fort.13
+    #$USHDIR/rinp.sh $NEST $hhr > /dev/null 2>&1 || exit 10
+    $USHDIR/rinp.sh $NEST $hhr > rinp.log 2>&1 || exit 10
+    MEM4=`expr 2 \* $MEM`
+    MEM4=`printf '%0.4d' $MEM4`
+    cp r_sigi ../ri.$MEM4.sig.grd
     cd ..
   else #ensemble
-    ln -s $DATADIR/$IDATE/$PMEM/r_sig.f00 fort.12
-    ln -s $DATADIR/$IDATE/r_sig.f00 fort.13
+    MEM4=`expr 2 \* $MEM - 1`
+    MEM4=`printf '%0.4d' $MEM4`
+    ln -s $DATADIR/$PMEM/r_sig.f00 ri.$MEM4.sig.grd
+    MEM4=`expr 2 \* $MEM`
+    MEM4=`printf '%0.4d' $MEM4`
+    ln -s $DATADIR/r_sig.f00 ri.$MEM4.sig.grd
   fi
 else
-  PCYCLE=`expr $CYCLE - 1`
   fh2=$BV_H
   if [ $fh2 -lt 10 ]; then
     fh2=0$fh2
   fi
-  PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${IDATE}"` #a
+  PDATE=`date -j -f "%Y%m%d%H" -v-${BV_H}H +"%Y%m%d%H" "${SDATE}"` #a
   echo $PDATE #a
-#  if [ do$BP = dowbp ];then
-#    ln -s $DATADIR/$PDATE/$PMEM/r_sig.f$fh2 fort.12 #c
-#  else
-    ln -s $DATADIR/$PDATE/r_sig.f$fh2 fort.12 #a
-#  fi
-  #if [ $PCYCLE -eq 1 ]; then
-  #ln -s $DATADIR/$PDATE/bv${PMEM}${BP}_c$PCYCLE/r_sig.f$fh2 fort.13 #c
-  #else
-  ln -s $DATADIR/$PDATE/${head}${PMEM}/r_sig.f$fh2 fort.13 #c
-  #fi
+  MEM4=`expr 2 \* $MEM - 1`
+  MEM4=`printf '%0.4d' $MEM4`
+  ln -s $DATA/$PDATE/r_sig.f$fh2 ri.$MEM4.sig.grd
+  MEM4=`expr 2 \* $MEM`
+  MEM4=`printf '%0.4d' $MEM4`
+  ln -s $DATA/$PDATE/${head}${PMEM}/r_sig.f$fh2 ri.$MEM4.sig.grd
 fi
+MEM=`expr $MEM + 1`
+done #MEM -le MEMBER
 ### set namelist
 if [ "$TETYPE" = "dry" ];then
   epsq=0.0d0
@@ -149,6 +190,12 @@ else
 fi
 if [ do$QADJ = doyes ];then
   adjust_q=T
+fi
+if [ do$ORTH = doyes ];then
+  orth=T
+fi
+if [ do$PSUB = doyes ]; then
+  lsub=T
 fi
 SPINUP=`expr 24 / $BV_H + 1`
 if [ do$SCL != do ];then
@@ -163,25 +210,31 @@ fi
 #### set rescaling magnitude from ensemble spread statistics
 cat <<EOF >namelist
 &namlst_prtb
+ member=${MEMBER},
  setnorm=T,
  teref=${teref},
  epsq=${epsq},
  lonw=110.0,
- lone=153.0,
- lats=15.0,
- latn=47.0,
+ lone=145.0,
+ lats=20.0,
+ latn=50.0,
  adjust_q=${adjust_q},
+ orth=${orth},
+ lsub=${lsub},
 &end
 EOF
 #
 ./${EXEC} < namelist 1>${EXEC}.log 2>${EXEC}.err
-mv ${EXEC}.log ${EXEC}.err $OUTDIR/
+mv ${EXEC}.log ${EXEC}.err $DATADIR/
 fh=00 #a
-mv fort.51 $OUTDIR/r_sig.f$fh
+MEM=1
+while [ $MEM -le $MEMBER ]; do
+PMEM=`printf '%0.3d' $MEM` #prtb member
+OUTDIR=$DATADIR/${head}${SIGN}${PMEM}
 cp $OUTDIR/r_sig.f$fh $OUTDIR/r_sigi
 cp $OUTDIR/r_sig.f$fh $OUTDIR/r_sigitdt
-mv fort.53 $OUTDIR/r_sfc.f$fh
 cp $OUTDIR/r_sfc.f$fh $OUTDIR/r_sfci
 ls -l $OUTDIR
-rm fort.*
+MEM=`expr $MEM + 1`
+done
 echo END

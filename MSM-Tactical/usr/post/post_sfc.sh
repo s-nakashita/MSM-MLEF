@@ -27,17 +27,26 @@ fi
 elif [ $IRES -eq 9 ]; then
 #DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 #FIGDIR=/zdata/grmsm/fig/rsm2msm9_jpn/$SDATE
-DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
-FIGDIR=/zdata/grmsm/fig/rsm2msm9_ens/$SDATE
+#DATADIR=/zdata/grmsm/work/rsm2msm9_ens/$SDATE/$MEM
+#FIGDIR=/zdata/grmsm/fig/rsm2msm9_ens/$SDATE
+if [ "$MEM" = "000" ]; then
+DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE
+else
+DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs/$SDATE/$MEM
+fi
+FIGDIR=/zdata/grmsm/fig/rsm2msm9_bvgfs/$SDATE
 elif [ $IRES -eq 3 ]; then
 DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 FIGDIR=/zdata/grmsm/fig/msm2msm3_jpn/$SDATE
+elif [ $IRES -gt 27 ]; then ##debug for base perturbation
+if [ do$MEM = do ] || [ "$MEM" = "000" ]; then
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE
+else
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE/$MEM
+fi
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
-fi
-if [ ! -d $FIGDIR ];then
-  mkdir -p $FIGDIR
 fi
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 SRCDIR=${MSMDIR}/usr/post
@@ -69,6 +78,9 @@ rm header.ctl middle.ctl footer.ctl
 #cdo -f nc import_binary $ctl ${out%.*}.nc
 rm fort.*
 ## plot SST
+#if [ ! -d $FIGDIR ];then
+#  mkdir -p $FIGDIR
+#fi
 #if [ `expr $fh % 24` -eq 0 ]; then
 #${HOME}/.local/bin/grads -lbx -c "run ${MSMDIR}/usr/grscripts/sst.gs ${fh}"
 #mv sst_f${fh}.png $FIGDIR

@@ -14,6 +14,7 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
+   export TEMP=$WORKUSR/rsm2msm9_osse          #output top directory
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
@@ -63,12 +64,14 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=7
-export DASTART=2
-export INCCYCLE=6 # cycle interval
-export ENDHOUR=6 # forecast length
+export CYCLESTART=0
+export CYCLEMAX=0
+export DASTART=1
+export INCCYCLE=6 # cycle interval (hours)
+export IOFFSET=24 # first guess offset (hours)
+export ENDHOUR=24 # forecast length (hours)
 export PRTHOUR=1
+export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
@@ -84,12 +87,16 @@ export RUNFCST=yes
 #export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+export MEMBER=30
+#export MEMBER=0
+export ENSMSPR=yes
 # BGM option for base
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=wbp
+export ORTH=yes
+export PSUB=no
+export BP=
 export SCLBASE=
 head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #if [ do$QADJ = doyes ];then #q adjustment
@@ -97,26 +104,29 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #fi #q adjustment
 export HEAD=$head
 # DA option
+export OSSE=T
+export OBSDIST=uniform # observation distribution
+export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
 export DA_FIXED_LEVEL=F
-export NISEP=5
-export NJSEP=2
+export NISEP=6
+export NJSEP=4
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=-60
-export ROBSMIN=60
+export LOBSMIN=0
+export ROBSMIN=0
 export SELOBS=all
 export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
-export HLOC=300 #km
-export VLOC=3   #*0.1ln p
+export HLOC=200 #km
+export VLOC=4   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
 export RTPS=90 #%
@@ -124,6 +134,9 @@ export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${BP}${PREP}
+if [ $OSSE = T ];then
+  head2=${head2}.siml${MEMBER}.${OBSDIST}
+fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi
@@ -135,6 +148,9 @@ if [ $DA_FIXED_LEVEL = T ];then
 fi
 if [ $DA_SCL_MEM = T ];then
   head2=${head2}.scl
+fi
+if [ $DA_MEAN = T ];then
+  head2=${head2}.mean
 fi
 DA_INFL=
 if [ $MINFL -gt 0 ];then
@@ -152,19 +168,32 @@ export HEAD2=$head2
 
 #### rsmlocation
 
-# d02 domain 110E-150E 16N-46N
-export  IGRD=384
-export  JGRD=324
+## d02 domain 110E-150E 16N-46N
+#export  IGRD=384
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=140.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=35.0
+#export  RCENLON=130.0
+#export  RLFTGRD=183.0
+#export  RBTMGRD=190.0
+# d02 domain 118.5E-135E 22N-36N
+export  IGRD=144
+export  JGRD=144
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=140.0
 export  RDELX=9000.
-export  RDELY=9300.
+export  RDELY=9000.
 export  RCENLAT=35.0
-export  RCENLON=130.0
-export  RLFTGRD=183.0
-export  RBTMGRD=190.0
+export  RCENLON=125.0
+export  RLFTGRD=58.0
+export  RBTMGRD=131.0
 # d01 domain 70E-170W 22S-65N
 export  CIGRD=324
 export  CJGRD=288
@@ -178,6 +207,32 @@ export  CCENLAT=23.5
 export  CCENLON=120.0
 export  CLFTGRD=133.
 export  CBTMGRD=121.
+## d02 domain 110E-150E 16N-46N
+#export  IGRD=324
+#export  JGRD=288
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=140.0
+#export  RDELX=9000.
+#export  RDELY=9300.
+#export  RCENLAT=35.0
+#export  RCENLON=130.0
+#export  RLFTGRD=176.0
+#export  RBTMGRD=145.0
+## d01 domain 100E-170E 10N-60N
+#export  CIGRD=216
+#export  CJGRD=216
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=30.0
+#export  CCENLON=120.0
+#export  CLFTGRD=59.
+#export  CBTMGRD=63.
 
 #
 # load default configure file

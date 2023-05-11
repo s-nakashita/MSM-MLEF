@@ -119,7 +119,7 @@
 #endif
 ! time loop
 !jw for test
-      maxstp=nint(fhseg/fhbas)
+      maxstp=max(nint(fhseg/fhbas),1)
       do n=1,maxstp
 #ifdef G2R
 #ifdef MP
@@ -137,11 +137,12 @@
         kmax=levr
 #endif
 
-        fhnxt=phour+fhbas
+        fhnxt=phour+fhseg
+        fhnxtb=phour+fhbas
 #ifdef MP
         if (mype.eq.master) then
 #endif
-        kh=nint(fhnxt)
+        kh=nint(fhnxtb)
         ndig=max(log10(kh+0.5)+1.,2.)
         write(cform,'("(i",i1,".",i1,")")') ndig,ndig
         write(cfhour,cform) kh
@@ -176,7 +177,7 @@
 #endif
 !c      n2=n2+1
 !c      fhnxt=phour+fhbas
-        call rsmsmf(fhnxt,gz,q,te,du,zv,rq)
+        call rsmsmf(fhnxt,fhnxtb,gz,q,te,du,zv,rq)
       enddo
 
 #ifdef RKN

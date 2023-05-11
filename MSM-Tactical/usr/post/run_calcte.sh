@@ -16,28 +16,24 @@ SCL=${SCL}
 MEM=${MEM:-003}
 BV=${BV:-yes}
 QADJ=${QADJ:-no} #super saturation and dry adjustment
+ORTH=${ORTH:-no}
 BP=${BP} #with boundary perturbation
 SCLBASE=${SCLBASE}
+SCLPOW=${SCLPOW}
 MEM=${1:-$MEM}
 CYCLE=${2:-$CYCLE}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
-SRCDIR=${MSMDIR}/usr/post
+#SRCDIR=${MSMDIR}/usr/post
+SRCDIR=${MSMDIR}/dpac/build/post
 if [ $IRES -eq 27 ]; then
-  DATADIR=/zdata/grmsm/work/rsm2rsm27_bvgfs
   EXPDIR=$MSMDIR/usr/exp/rsm2rsm27_bv
 elif [ $IRES -eq 9 ]; then
-  DATADIR=/zdata/grmsm/work/rsm2msm9_bvgfs
   EXPDIR=$MSMDIR/usr/exp/rsm2msm9_bv
 elif [ $IRES -eq 3 ]; then
-  DATADIR=/zdata/grmsm/work/msm2msm3_bv
   EXPDIR=$MSMDIR/usr/exp/msm2msm3_bv
 else
   echo "Invalid resolution. Specify 9 or 3."
   exit 2
-fi
-if [ ! -d $DATADIR ]; then
-  echo "No such directory : $DATADIR"
-  exit 3
 fi
 if [ ! -d $EXPDIR ]; then
   echo "No such directory : $EXPDIR"
@@ -49,8 +45,13 @@ gmake ${EXEC}
 cd ${EXPDIR}
 . ./configure
 cd -
-mkdir -p tmp
-cd tmp
+DATADIR=$TEMP
+if [ ! -d $DATADIR ]; then
+  echo "No such directory : $DATADIR"
+  exit 3
+fi
+mkdir -p $DATADIR/tmp
+cd $DATADIR/tmp
 rm -f fort.*
 ln -fs ${SRCDIR}/${EXEC} ${EXEC}
 if [ $CYCLE -gt 1 ];then
@@ -75,8 +76,14 @@ if [ $BV = yes ];then
   else
     WDIR=bv${TETYPE}${SCL}${MEM}${BP}${SCLBASE}
   fi
+  if [ ! -z $SCLPOW ]; then
+    WDIR=${WDIR}p${SCLPOW}
+  fi
   if [ do$QADJ = doyes ];then
     WDIR=${WDIR}_qadj
+  fi
+  if [ do$ORTH = doyes ];then
+    WDIR=${WDIR}_orth
   fi
 fi
 if [ "$TETYPE" = "dry" ];then
@@ -116,6 +123,7 @@ cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
  epsq=,
+ kmax=,
  lonw=110.0,
  lone=153.0,
  lats=15.0,
@@ -127,6 +135,7 @@ cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
  epsq=,
+ kmax=,
  lonw=,
  lone=,
  lats=,

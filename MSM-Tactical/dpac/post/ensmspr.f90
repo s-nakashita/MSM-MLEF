@@ -6,7 +6,7 @@ program ensmspr
   integer, parameter :: icld=1
   ! ensemble size
   integer :: nens=10
-  character(len=10) :: file_basename='r_LEV.@@@@'
+  character(len=10),parameter :: file_basename='r_LEV.@@@@'
   character(len=10) :: filename
   logical :: lflx=.true. !whether write flux file or not
   namelist /namlst_ensmspr/ nens, lflx
@@ -17,6 +17,7 @@ program ensmspr
   integer, parameter :: nmsig=51, nmsfc=52, nmflx=53 !mean
   integer, parameter :: nssig=54, nssfc=55, nsflx=56 !sprd
   real(kind=dp), allocatable :: dfld(:,:,:)
+  real(kind=dp), allocatable :: dflde(:,:,:,:)
   real(kind=dp), allocatable :: dfldm(:,:,:), dflds(:,:,:)
   real(kind=dp), allocatable :: mapf(:,:,:), clat(:), clon(:), slmsk(:,:)
   character(len=8) :: label(4)
@@ -59,6 +60,7 @@ program ensmspr
   print*, si(1:levs+1)
   print*, sl(1:levs)
   allocate( dfld(igrd1,jgrd1,nfldsig) )
+  allocate( dflde(igrd1,jgrd1,nfldsig,nens) )
   allocate( dfldm(igrd1,jgrd1,nfldsig),dflds(igrd1,jgrd1,nfldsig) )
   allocate( mapf(igrd1,jgrd1,3) )
   allocate( clat(jgrd1), clon(igrd1) )
@@ -74,23 +76,34 @@ program ensmspr
     open(nisig,file=filename,access='sequential',form='unformatted',action='read')
     call read_sig(nisig,igrd1,jgrd1,levs,nfldsig,nonhyd,icld,fhour,sl,dfld,mapf,clat,clon)
     close(nisig)
+    dflde(:,:,:,n) = dfld
     print*, n, maxval(dfld(:,:,3)),minval(dfld(:,:,3))
     dfldm = dfldm + dfld
-    dflds = dflds + dfld**2
+    !dflds = dflds + dfld**2
   !  nsig=nsig+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  do n=1,nens
+    dflds = dflds + (dflde(:,:,:,n) - dfldm)**2
+  end do
+  dflds = dflds/real(nens-1,kind=dp)
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   ! write output
+  print *,icld, nfldsig, size(dfldm,1), size(dfldm,2), size(dfldm,3)
   call write_sig(nmsig,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dfldm,mapf,clat,clon)
   call write_sig(nssig,label,idate,fhour,si,sl,ext,&
 &                    igrd1,jgrd1,levs,nfldsig,nonhyd,icld,dflds,mapf,clat,clon)
 
-  deallocate( dfld, dfldm, dflds ) 
+  deallocate( dfld, dflde, dfldm, dflds ) 
 
 !!! surface files (r_sfc.fNN)
   allocate( dfld(igrd1,jgrd1,nfldsfc) )
+  allocate( dflde(igrd1,jgrd1,nfldsfc,nens) )
   allocate( dfldm(igrd1,jgrd1,nfldsfc), dflds(igrd1,jgrd1,nfldsfc) )
   allocate( slmsk(igrd1,jgrd1) ) !assuming sea-land mask identical for all members
   dfldm=0.0d0
@@ -104,22 +117,32 @@ program ensmspr
     open(nisfc,file=filename,access='sequential',form='unformatted',action='read')
     call read_sfc(nisfc,igrd1,jgrd1,dfld)
     close(nisfc)
+    dflde(:,:,:,n) = dfld
     print*, n, maxval(dfld(:,:,1)), minval(dfld(:,:,1))
     dfldm = dfldm + dfld
-    dflds = dflds + dfld**2
+    !dflds = dflds + dfld**2
 !    nsfc = nsfc+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  do n=1,nens
+    dflds = dflds + (dflde(:,:,:,n) - dfldm)**2
+  end do
+  dflds = dflds/real(nens-1,kind=dp)
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   slmsk = dfld(:,:,16)
   ! write output
   call write_sfc(nmsfc,igrd1,jgrd1,dfldm,label,idate,fhour)
   call write_sfc(nssfc,igrd1,jgrd1,dflds,label,idate,fhour)
-  deallocate( dfld, dfldm, dflds ) 
+  deallocate( dfld, dflde, dfldm, dflds ) 
 
   if(lflx) then
 !!! flux files (r_flx.fNN)
   allocate( dfld(igrd1,jgrd1,nfldflx) )
+  allocate( dflde(igrd1,jgrd1,nfldflx,nens) )
   allocate( dfldm(igrd1,jgrd1,nfldflx), dflds(igrd1,jgrd1,nfldflx) )
   dfldm=0.0d0
   dflds=0.0d0
@@ -134,12 +157,21 @@ program ensmspr
     call read_flx(niflx,igrd1,jgrd1,dfld,ids,iparam,fhour,zhour)
     close(niflx)
     print*, n, maxval(dfld(:,:,1)), minval(dfld(:,:,1))
+    dflde(:,:,:,n) = dfld
     dfldm = dfldm + dfld
-    dflds = dflds + dfld**2
+!    dflds = dflds + dfld**2
 !    nflx = nflx+1
   end do
-  dfldm = dfldm / nens
-  dflds = sqrt( dflds/nens - dfldm**2 )
+  dfldm = dfldm / real(nens,kind=dp)
+  do n=1,nens
+    dflds = dflds + (dflde(:,:,:,n) - dfldm)**2
+  end do
+  dflds = dflds/real(nens-1,kind=dp)
+  where (dflds < 0.0)
+    dflds = 0.0
+  else where
+    dflds = sqrt( dflds )
+  end where
   ! write output
   call write_flx(nmflx,igrd1,jgrd1,dfldm,ids,iparam,slmsk,&
                & idate,fhour,zhour,&
@@ -147,6 +179,6 @@ program ensmspr
   call write_flx(nsflx,igrd1,jgrd1,dflds,ids,iparam,slmsk,&
                & idate,fhour,zhour,&
                & rdelx,rdely,clat,clon,rtruth,rorient,rproj)
-  deallocate( dfld, dfldm, dflds ) 
+  deallocate( dfld, dflde, dfldm, dflds ) 
   end if
 end program

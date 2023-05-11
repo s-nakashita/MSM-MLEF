@@ -1,19 +1,24 @@
 #!/bin/sh
 set -ex
-cycle=${1}
-cycleda=${2}
+cycleda=${1}
+danest=${DANEST:-F}
 head_bv=${HEAD:-bv}
 head_da=${HEAD2:-da}
 ## experiment parameters
 # ensemble size
 member=${MEMBER:-10}
+psub=${PSUB:-no}
 # analysis date
 adate=${SDATE:-2022061812}
 # first guess lead time
-fhour=${INCCYCLE:-0}
+fhour=${INCCYCLE:-6}
 # model resolution
 ires=${IRES:-27}
 # observation settings
+osse=${OSSE:-F}
+noda=${NODA:-F}
+obsdist=${OBSDIST}
+tmem=${TMEM:-0}
 single=${SINGLEOBS:-F}
 lats=${DA_SINGLE_LATS}
 latn=${DA_SINGLE_LATN}
@@ -67,9 +72,17 @@ if [ $single = T ];then
 fi
 #saveens=${SAVEENS:-0} #0:save all ensemble, 1:save only ctrl, mean and spread
 ## data directories
-guesdir=${RUNDIR0:-/zdata/grmsm/work/rsm2rsm27_da}
-analdir=${RUNDIR0:-$guesdir}
-obsdir=/zdata/grmsm/work/dpac/obs
+guesdir=${RUNDIR0}
+analdir=${RUNDIR0}
+obsdir=${RUNDIR0}/obs
+export obsdir
+if [ $cycleda -eq 1 ]; then
+fhour=${IOFFSET:-$fhour}
+guesdir=${GUESDIR:-$RUNDIR0}
+if [ $danest = T ]; then
+	fhour=0
+fi
+fi
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
 yyyy=`echo ${adate} | cut -c1-4`
@@ -139,9 +152,14 @@ edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
 else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
+if [ $osse = T ];then
+obsf=upper${prep}.siml.${obsdist}.${sdate}-${edate}
+obsf2=surf.siml.${obsdist}.${sdate}-${edate}
+else
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
 $USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
+fi
 ### namelist
 cat <<EOF >lmlef.nml
 &namlst_commlef
@@ -208,6 +226,8 @@ cat <<EOF >lmlef.nml
  oma_monit=T,
  obsgues_output=T,
  obsanal_output=T,
+ debug_time=,
+ noda=${noda},
 &end
 EOF
 #cat lmlef.nml
@@ -217,27 +237,70 @@ rm -f ${obsf}.dat ${obsf2}.dat
 ln -s ${obsdir}/${adate}/${obsf}.dat .
 ln -s ${obsdir}/${adate}/${obsf2}.dat .
 rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
+if [ $mean != T ]; then
 if [ $cycleda -eq 1 ];then
+if [ $danest = T ]; then
+ln -s ${guesdir}/${adate}/${head_da}000/r_sig.f$fh gues.0000.sig.grd
+ln -s ${guesdir}/${adate}/${head_da}000/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${adate}/${head_da}000/r_flx.f$fh gues.0000.flx.grd
+else
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${pdate}/r_flx.f$fh gues.0000.flx.grd
+fi
 else
 ln -s ${guesdir}/${pdate}/${head}000/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/${head}000/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}000/r_flx.f$fh gues.0000.flx.grd
 fi
 if [ $obsda_in = T ];then
 ln -s ${obsdir}/${pdate}/${obsextf}.0000.dat .
 fi
+fi
 if [ -f ${guesdir}/${pdate}/infl.grd ];then
   ln -s ${guesdir}/${pdate}/infl.grd .
 fi
+#gmem=$member
+#if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $tmem -le $member ]; then
+#  gmem=`expr $member + 1`
+#fi
 m=1
-while [ $m -le $member ];do
+em=1
+while [ $em -le $member ];do
 mem=`printf '%0.3d' $m`
-ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem}.sig.grd
-ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem}.sfc.grd
-if [ $obsda_in = T ];then
-ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat .
+#if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
+#else
+mem2=`printf '%0.3d' $em`
+if [ $cycleda -eq 1 ] && [ $danest = T ]; then
+ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${adate}/${head_da}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+else
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
 fi
+if [ $obsda_in = T ];then
+ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat ${obsextf}.0${mem2}.dat
+fi
+em=`expr $em + 1`
+if [ $cycleda -eq 1 ] && [ do$psub = doyes ]; then
+mem2=`printf '%0.3d' $em`
+if [ $danest = T ]; then
+ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+else
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+fi
+if [ $obsda_in = T ];then
+ln -s ${obsdir}/${adate}/${obsextf}.m0${mem}.dat ${obsextf}.0${mem2}.dat
+fi
+em=`expr $em + 1`
+fi
+#fi
 m=`expr $m + 1`
 done
 rm -f STDIN lmlef
@@ -245,6 +308,7 @@ ln -s lmlef.nml STDIN
 ln -s ${bindir}/lmlef .
 ## start calculation
 rm -f ${obsoutf}.*.dat anal.*.grd
+export OMP_NUM_THREADS=1
 mpiexec -n $NODE ./lmlef 2>${logf}err || exit 11
 if [ ! -z ${print_img} ];then
 img=`printf '%0.3d' $print_img`
@@ -253,12 +317,25 @@ else
 mv NOUT-001 ${logf}txt
 fi
 rm -f NOUT-*
+n=1
+while [ $n -le $NODE ];do
+img=`printf '%0.3d' $n`
+if [ -f debug_time-${img}.txt ];then
+  mv debug_time-${img}.txt debug_time-${img}.${head_da}txt
+fi
+n=`expr $n + 1`
+done
 #fi # ! -f ${logf}_n${NODE}.txt
 
 ## post process
 ### write GrADS files
 for vtype in gues anal;do
-for emem in ctrl mean sprd;do
+if [ $mean = T ]; then
+  emems="mean sprd"
+else
+  emems="ctrl mean sprd"
+fi
+for emem in $emems;do
 if [ $emem = ctrl ];then
 in=${vtype}.0000.sig.grd
 else
@@ -282,7 +359,7 @@ sed -i -e 's/DATAFILE/'$out'/g' $ctl
 rm ${ctl}-e
 done
 done
-if [ $relax_spread_out = T ];then
+if [ $relax_spread_out = T ] && [ -s rtps.sig.grd ];then
   rm -f fort.*
   ln -s rtps.sig.grd fort.11
   ln -s rtps.bin fort.51
@@ -292,7 +369,7 @@ if [ $relax_spread_out = T ];then
   sed -i -e 's/DATAFILE/'rtps.bin'/g' rtps.ctl
   rm rtps.ctl-e
 fi
-if [ $save_info = T ];then
+if [ $save_info = T ] && [ -s dainfo.sig.grd ];then
 cat << EOF > read_info.nml
 &namlst_info
  member=${member},
@@ -343,9 +420,17 @@ EOF
   done
 fi
 ### prepare forecast initial files
-if [ -d ${head_da}000 ]; then
-  rm -rf ${head_da}000
-fi
+if [ $noda = T ]; then
+mv noda.0000.sig.grd r_sig.f00
+mv noda.0000.sfc.grd r_sfc.f00
+cp r_sig.f00 r_sigi
+cp r_sig.f00 r_sigitdt
+cp r_sfc.f00 r_sfci
+fi 
+if [ $mean != T ]; then
+#if [ -d ${head_da}000 ]; then
+#  rm -rf ${head_da}000
+#fi
 mkdir -p ${head_da}000
 cd ${head_da}000
 ### copy namelists
@@ -370,10 +455,10 @@ fi
 if [ -f ../${obsoutf}.0000.dat ]; then
 mv ../${obsoutf}.0000.dat . 
 fi
-if [ $relax_spread_out = T ];then
+if [ $relax_spread_out = T ] && [ -s rtps.sig.bin ];then
 mv ../rtps.* .
 fi
-if [ $save_info = T ];then
+if [ $save_info = T ] && [ -s ewgt.ctl ];then
 mv ../dainfo.* .
 mv ../ewgt.ctl .
 fi
@@ -384,12 +469,13 @@ cp r_sig.f00 r_sigi
 cp r_sig.f00 r_sigitdt
 cp r_sfc.f00 r_sfci
 cd $wdir
+fi
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
-if [ -d ${head_da}${mem} ];then
-  rm -rf ${head_da}${mem}
-fi
+#if [ -d ${head_da}${mem} ];then
+#  rm -rf ${head_da}${mem}
+#fi
 mkdir -p ${head_da}${mem}
 cd ${head_da}${mem}
 ### copy namelists
@@ -410,7 +496,7 @@ fi
 if [ -f ../${obsoutf}.0$mem.dat ]; then
 mv ../${obsoutf}.0$mem.dat .
 fi
-if [ $save_info = T ]; then
+if [ $save_info = T ] && [ -f ../ewgt.0$mem.sig.grd ]; then
 mv ../ewgt.0$mem.* .
 fi
 cp r_sig.f00 r_sigi
@@ -420,19 +506,32 @@ cd $wdir
 m=`expr $m + 1`
 done
 for emem in mean sprd;do
-mkdir -p ${guesdir}/${pdate}/${head}${emem}
-mv gues.${emem}.sig.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
-mv gues.${emem}.sfc.grd ${guesdir}/${pdate}/${head}${emem}/r_sfc.f$fh
-mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
-mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
-if [ -d ${head_da}${emem} ];then
-  rm -rf ${head_da}${emem}
-fi
+#mkdir -p ${guesdir}/${pdate}/${head}${emem}
+#mv gues.${emem}.sig.grd ${guesdir}/${pdate}/${head}${emem}/r_sig.f$fh
+#mv gues.${emem}.sfc.grd ${guesdir}/${pdate}/${head}${emem}/r_sfc.f$fh
+#mv gues.${emem}.bin ${guesdir}/${pdate}/${head}${emem}/
+#mv gues.${emem}.ctl ${guesdir}/${pdate}/${head}${emem}/
+#if [ -d ${head_da}${emem} ];then
+#  rm -rf ${head_da}${emem}
+#fi
 mkdir -p ${head_da}${emem}
+mv gues.${emem}.sig.grd ${head_da}${emem}/r_sig.f$fh
+mv gues.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f$fh
+mv gues.${emem}.bin ${head_da}${emem}/
+mv gues.${emem}.ctl ${head_da}${emem}/
 mv anal.${emem}.sig.grd ${head_da}${emem}/r_sig.f00
 mv anal.${emem}.sfc.grd ${head_da}${emem}/r_sfc.f00
 mv anal.${emem}.bin ${head_da}${emem}/
 mv anal.${emem}.ctl ${head_da}${emem}/
+if [ $mean = T ] && [ $emem = mean ]; then
+if [ $relax_spread_out = T ] && [ -f rtps.sig.grd ];then
+mv rtps.* ${head_da}${emem}/
+fi
+if [ $save_info = T ] && [ -f ewgt.ctl ];then
+mv dainfo.* ${head_da}${emem}/
+mv ewgt.ctl ${head_da}${emem}/
+fi
+fi
 done
 rm gues.*.grd
 if [ $obsda_in = T ];then

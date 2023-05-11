@@ -2,8 +2,11 @@
 export IDATE=2022082900
 export GLOBAL=GFS
 export BV_H=6
-export TETYPE=weak
-export QADJ=no
+export TETYPE=dry
+export SCL=
+export QADJ=yes
+export BP=wbp
+export SCLBASE=
 #export IDATE=2022061400
 #export GLOBAL=GFS
 #export BV_H=12
@@ -47,18 +50,11 @@ export MEM
 #fi
 #### breeding
 export BV=yes
-#for j in $(seq 0 1 1);do
-j=0
-if [ $j -eq 0 ];then
-export BP=
-else
-export BP=wbp
-fi
 ### start cycle
 cd $RUNDIR
 ./run || exit 2 #1>run.log 2>run.err
 cd $POSTDIR
 ./run_calcte.sh || exit 4 #1>out.log 2>out.err
-#done
+./run_spectra.sh || exit 5
 MEM=`expr $MEM + 1`
 done

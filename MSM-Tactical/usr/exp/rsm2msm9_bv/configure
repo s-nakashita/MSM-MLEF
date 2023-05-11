@@ -24,7 +24,7 @@ if [ do$BV = doyes ];then #BGM
   if [ $BV_H -gt 6 ]; then #scaling interval
     head=${head}${BV_H}h
   fi
-  head=${head}${MEM}${BP}
+  head=${head}${MEM}${BP}${SCLBASE}
   if [ do$QADJ = doyes ];then #q adjustment
     head=${head}_qadj
   fi
@@ -86,7 +86,7 @@ export FCST=yes
 
 # --------------- run option --------------------
 export ENDHOUR=24 
-#export ENDHOUR=48                             # release_test
+export ENDHOUR=48                             # release_test
 #from gfsp2rsm27
 export INCBASE=3
 export INCHOUR=3

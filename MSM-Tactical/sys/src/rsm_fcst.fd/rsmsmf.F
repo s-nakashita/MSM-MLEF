@@ -1,4 +1,4 @@
-      subroutine rsmsmf(fhnxt,ggz,gq,gte,gdu,gzv,grq)
+      subroutine rsmsmf(fhnxt,fhnxtb,ggz,gq,gte,gdu,gzv,grq)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:  rsmsmf
@@ -94,6 +94,7 @@
 ! ....... run regional per certain seconds
       secnow=phour*3600.
       secnxt=fhnxt*3600.
+      secnxtb=fhnxtb*3600.
       if( secnxt.le.secnow ) return
 #ifdef MP
         if (mype.eq.master) then
@@ -104,7 +105,7 @@
 #endif
 !
 ! ....... setup the target lateral boundary for rsm
-      call rsmltb(secnow,secnxt,ggz,gq,gte,gdu,gzv,grq)
+      call rsmltb(secnow,secnxtb,ggz,gq,gte,gdu,gzv,grq)
 !
 ! ................................................
 ! ....... do step 1 if fhour=0 

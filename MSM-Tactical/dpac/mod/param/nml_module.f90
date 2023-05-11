@@ -8,11 +8,10 @@ module nml_module
   implicit none
   public
 
-  integer, parameter :: filelenmax=256
-
   !! ensemble
   integer, parameter :: memberflen=4   ! length of member num in filename
   integer, save :: member=10
+  namelist /param_ens/ member
 
   !! obsope
   integer, parameter :: nobsfilemax=10
@@ -28,9 +27,11 @@ module nml_module
   real(kind=dp),save :: lone=0.0d0
   real(kind=dp),save :: lats=0.0d0
   real(kind=dp),save :: latn=0.0d0
-  logical, save :: luseobs(9)=(/&
-  !!     U       V       T       Q      RH      Ps      Td      Wd      Ws
-  & .true., .true., .true., .true., .true., .true., .true., .true., .true./)
+  logical, save :: luseobs(10)=(/&
+  !!     U       V       T       Q      RH
+  & .true., .true., .true., .true., .true., &
+  !!    Ps      T2      Td      Wd      Ws
+  & .true., .true., .true., .true., .true./)
   integer, save :: nobsmax=0 !only effective for nobsmax > 0
 
   logical, save :: fixed_level=.false. ! only used mandatory level data
@@ -39,7 +40,22 @@ module nml_module
   integer, save :: slot_end = 1
   integer, save :: slot_base = 1
   real(kind=dp), save :: slot_tint = 60.0_dp !minutes
-
+  namelist /param_obsope/ &
+      obsin_num, &
+      obsin_name, &
+      obs_out, &
+      obsout_basename, &
+      fguess_basename, &
+      single_obs, &
+      lonw, lone, lats, latn, &
+      luseobs, &
+      nobsmax, &
+      fixed_level, &
+      slot_start, &
+      slot_end, &
+      slot_base, &
+      slot_tint
+      
   !! corsm
   integer, save :: njsep = 1 ! number of separation in latitude
   integer, save :: nisep = 1 ! number of separation in longitude
@@ -47,6 +63,12 @@ module nml_module
   integer, save :: jghost = 0  ! number of ghost point in latitude
   integer, save :: ighost = 0  ! number of ghost point in longitude
   integer, save :: print_img=1 ! standart output image
+  namelist /param_corsm/ &
+      njsep, &
+      nisep, &
+      jghost, &
+      ighost, &
+      print_img
 
   !! lmlef
   logical, save :: obsda_in = .false.
@@ -91,89 +113,11 @@ module nml_module
   logical, save :: oma_monit=.true.
   logical, save :: obsgues_output=.false.
   logical, save :: obsanal_output=.false.
-!
-contains
-  subroutine read_nml_ens
-    implicit none
-    integer :: ierr
-
-    namelist /param_ens/ member
-
-    rewind(5)
-    read (5,nml=param_ens,iostat=ierr)
-    if (ierr<0) then
-      write(6,*) 'error: /param_ens/ is not found in namelist'
-      stop
-    elseif (ierr>0) then
-      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_ens'
-      stop
-    end if
-    write(6,nml=param_ens)
-    return
-  end subroutine read_nml_ens
-
-  subroutine read_nml_obsope
-    implicit none
-    integer :: ierr
-
-    namelist /param_obsope/ &
-      obsin_num, &
-      obsin_name, &
-      obs_out, &
-      obsout_basename, &
-      fguess_basename, &
-      single_obs, &
-      lonw, lone, lats, latn, &
-      luseobs, &
-      nobsmax, &
-      fixed_level, &
-      slot_start, &
-      slot_end, &
-      slot_base, &
-      slot_tint
-      
-    rewind(5)
-    read (5,nml=param_obsope,iostat=ierr)
-    if (ierr<0) then
-      write(6,*) 'error: /param_obsope/ is not found in namelist'
-      stop
-    elseif (ierr>0) then
-      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_obsope'
-      stop
-    end if
-    write(6,nml=param_obsope)
-    return
-  end subroutine read_nml_obsope
-
-  subroutine read_nml_corsm
-    implicit none
-    integer :: ierr
-
-    namelist /param_corsm/ &
-      njsep, &
-      nisep, &
-      jghost, &
-      ighost, &
-      print_img
-
-    rewind(5)
-    read (5,nml=param_corsm,iostat=ierr)
-    if (ierr<0) then
-      write(6,*) 'error: /param_corsm/ is not found in namelist'
-      stop
-    else if(ierr>0) then
-      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_corsm'
-      stop
-    end if
-    write(6,nml=param_corsm)
-    return
-  end subroutine read_nml_corsm
-
-  subroutine read_nml_lmlef
-    implicit none
-    integer :: ierr
-
-    namelist /param_lmlef/ &
+! debug
+  logical, save :: debug_time=.false.
+  logical, save :: noda=.false.
+  character(filelenmax) :: noda_out_basename = 'noda.@@@@'
+  namelist /param_lmlef/ &
       obsda_in, &
       obsda_in_basename, &
       obsg_out_basename, &
@@ -207,7 +151,65 @@ contains
       q_adjust, &
       oma_monit, &
       obsgues_output, &
-      obsanal_output
+      obsanal_output, &
+      debug_time, &
+      noda
+!
+contains
+  subroutine read_nml_ens
+    implicit none
+    integer :: ierr
+
+    rewind(5)
+    read (5,nml=param_ens,iostat=ierr)
+    if (ierr<0) then
+      write(6,*) 'error: /param_ens/ is not found in namelist'
+      stop
+    elseif (ierr>0) then
+      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_ens'
+      stop
+    end if
+    write(6,nml=param_ens)
+    return
+  end subroutine read_nml_ens
+
+  subroutine read_nml_obsope
+    implicit none
+    integer :: ierr
+
+    rewind(5)
+    read (5,nml=param_obsope,iostat=ierr)
+    if (ierr<0) then
+      write(6,*) 'error: /param_obsope/ is not found in namelist'
+      stop
+    elseif (ierr>0) then
+      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_obsope'
+      stop
+    end if
+    write(6,nml=param_obsope)
+    return
+  end subroutine read_nml_obsope
+
+  subroutine read_nml_corsm
+    implicit none
+    integer :: ierr
+
+    rewind(5)
+    read (5,nml=param_corsm,iostat=ierr)
+    if (ierr<0) then
+      write(6,*) 'error: /param_corsm/ is not found in namelist'
+      stop
+    else if(ierr>0) then
+      write(6,'(a,i5,a)') 'ierr',ierr,':invalid names in namelist param_corsm'
+      stop
+    end if
+    write(6,nml=param_corsm)
+    return
+  end subroutine read_nml_corsm
+
+  subroutine read_nml_lmlef
+    implicit none
+    integer :: ierr
 
     rewind(5)
     read (5,nml=param_lmlef,iostat=ierr)

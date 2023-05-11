@@ -11,11 +11,10 @@ program lmlef
   use kind_module
   use co_module
   use nml_module
-  use func_module, only: ndate
   use rsmcom_module
   use corsm_module
   use obs_module, only: obstype2, get_nobs, read_obs, write_obsout, monit_obsin, &
-          obsin_allocate, obsout_allocate, obsout_deallocate
+          obsin_allocate, obsout_allocate, obsout_deallocate, ndate
   use obsope_module, only: obsope_serial,obsope_parallel
   use mlef_module, only: mlef_init
   use lmlef_tools, only: init_das_lmlef, das_lmlefy
@@ -32,6 +31,8 @@ program lmlef
   real(kind=dp),allocatable :: gues2d(:,:,:,:)[:]   !ensemble
   real(kind=dp),allocatable :: anal3d(:,:,:,:,:)[:] !ensemble
   real(kind=dp),allocatable :: anal2d(:,:,:,:)[:]   !ensemble
+  real(kind=dp),allocatable :: noda3dc(:,:,:,:)[:]  !free run
+  real(kind=dp),allocatable :: noda2dc(:,:,:)[:]    !free run
   real(kind=dp) :: rtimer00,rtimer
   integer,dimension(5) :: fdate,adate !year,month,day,hour,minutes
   integer :: iymdh
@@ -128,6 +129,12 @@ program lmlef
     call file_member_replace(0,gues_in_basename,guesf)
     call read_cntl(guesf,gues3dc,gues2dc)
     sync all
+    if(noda) then
+      allocate(noda3dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*])
+      allocate(noda2dc(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,     nv2d)[*])
+      noda3dc = gues3dc
+      noda2dc = gues2dc
+    end if
   else
     gues3dc = 0.0d0
     gues2dc = 0.0d0
@@ -151,9 +158,11 @@ program lmlef
   allocate( obs(obsin_num) )
   do iof=1,obsin_num
     call get_nobs(obsin_name(iof),6,obs(iof)%nobs)
+    if (obs(iof)%nobs.gt.0) then
     call obsin_allocate(obs(iof))
     call read_obs(obsin_name(iof),obs(iof))
     call monit_obsin(obs(iof)%nobs,obs(iof)%elem,obs(iof)%dat)
+    end if
   end do
   call cpu_time(rtimer)
   write(6,'(A,2F10.2)') '### TIMER(READ_OBS):',rtimer,rtimer-rtimer00
@@ -191,6 +200,7 @@ program lmlef
   !
   if(obsgues_output) then
     obsout%nobs = obsdasort%nobs
+    if(obsout%nobs.gt.0) then
     call obsout_allocate(obsout,member)
     obsout%elem = obsdasort%elem
     obsout%lon  = obsdasort%lon
@@ -216,6 +226,7 @@ program lmlef
       call write_obsout(obsf,obsout,im)
     end do
     call obsout_deallocate(obsout)
+    end if
     sync all
   end if
 !
@@ -259,6 +270,11 @@ program lmlef
   fhour=0.0
   iymdh = idate(4)*1000000+idate(2)*10000+idate(3)*100+idate(1)
   print *, 'analysis date ', iymdh, '+', nint(fhour)
+  if(noda) then
+    call file_member_replace(0,noda_out_basename,guesf)
+    call write_cntl(guesf,noda3dc,noda2dc)
+    sync all
+  end if
   !
   ! write analysis
   !
@@ -278,6 +294,7 @@ program lmlef
   !
   if(obsanal_output) then
     obsout%nobs = obsdasort%nobs
+    if(obsout%nobs.gt.0) then
     call obsout_allocate(obsout,member)
     obsout%elem = obsdasort%elem
     obsout%lon  = obsdasort%lon
@@ -303,6 +320,7 @@ program lmlef
       call write_obsout(obsf,obsout,im)
     end do
     call obsout_deallocate(obsout)
+    end if
   end if
 !
   call cpu_time(rtimer)

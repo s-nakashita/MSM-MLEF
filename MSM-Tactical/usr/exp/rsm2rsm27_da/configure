@@ -14,9 +14,11 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
+   export TEMP=$WORKUSR/rsm2rsm27_osse
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
+export GUESDIR=$WORKUSR/$EXPN
 export BASEDIR0=$WORKUSR/gefs2rsm27_nomad
 #export BASEDIR0=$WORKUSR/DATA/gefs
 if [ $GLOBAL = GFS ];then #deterministic
@@ -70,60 +72,76 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=9
-export CYCLEMAX=10
-export DASTART=11
+export CYCLESTART=1
+export CYCLEMAX=1
+export DASTART=1
+export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval
+export IOFFSET=24 # first guess offset
 export ENDHOUR=24 # forecast length
-export EXTEND=0 # forecast extends to $ENDHOUR at $EXTEND UTC
+export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
+                # 0:forecast stops at $INCCYCLE hour
 export PRTHOUR=1
 export INCBASE=3
 export INCHOUR=3
-export TIMESTEP=120
+export TIMESTEP=90
 export IMDLPHY=1
-export NEWMTN=.FALSE.
+#export NEWMTN=.FALSE.
 export CLIM=0
 export RSFC_MERGE=yes
 export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-#export RUNFCST=no # debug
+export RUNFCST=no # debug
 
 # Ensemble size
-export MEMBER=10
+#export MEMBER=40
+export MEMBER=30
+export ENSMSPR=yes
 # BGM option
 export TETYPE=dry
 export SCL=
 export QADJ=yes
-export BP=
+export ORTH=yes
+export PSUB=yes
+export BP=wbp
 export SCLBASE=
+export SCLPOW=
 head=bv${TETYPE}${SCL}${BP}
 #if [ do$QADJ = doyes ];then #q adjustment
 #  head=${head}_qadj
 #fi #q adjustment
 export HEAD=$head
 # DA option
+export OSSE=T
+export TMEM=25 # truth member
+export TMEM=1 # truth member
+export OBSDIST=single
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
 export DA_FIXED_LEVEL=F
-export NISEP=5
-export NJSEP=2
-export IGHOST=1
-export JGHOST=1
-export LOBSMIN=-60
-export ROBSMIN=60
+#export NISEP=6
+#export NJSEP=4
+#export IGHOST=1
+#export JGHOST=1
+export NISEP=1
+export NJSEP=1
+export IGHOST=0
+export JGHOST=0
+export LOBSMIN=0
+export ROBSMIN=0
 export SELOBS=all
 export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
 export MAXITER=1
-export HLOC=500 #km
-export VLOC=3   #*0.1ln p
+export HLOC=400 #km
+export VLOC=4   #*0.1ln p
 export MINFL=0 #%
 export RTPP=0 #%
 export RTPS=90 #%
@@ -131,6 +149,9 @@ export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
 head2=da${PREP}
+if [ $OSSE = T ];then
+  head2=${head2}.siml${MEMBER}.${OBSDIST}
+fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
 fi
@@ -162,20 +183,33 @@ export HEAD2=$head2
 
 #### rsmlocation
 
-# d01 domain 70E-170W 22S-65N
-export  IGRD=324
-export  JGRD=288
+## d01 domain 70E-170W 22S-65N
+#export  IGRD=324
+#export  JGRD=288
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=27000.
+#export  RDELY=27000.
+#export  RCENLAT=23.5
+#export  RCENLON=120.0
+#export  RLFTGRD=133.
+#export  RBTMGRD=121.
+# d01 domain 100E-170E 10N-60N
+export  IGRD=216
+export  JGRD=216
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
 export  RORIENT=120.0
 export  RDELX=27000.
 export  RDELY=27000.
-export  RCENLAT=23.5
+export  RCENLAT=30.0
 export  RCENLON=120.0
-export  RLFTGRD=133.
-export  RBTMGRD=121.
-# test dimension and shift
+export  RLFTGRD=59.
+export  RBTMGRD=63.
+## test dimension and shift
 #export  IGRD=128                             # release_test
 #export  JGRD=108                             # release_test
 #export  RLFTGRD=57.                          # release_test

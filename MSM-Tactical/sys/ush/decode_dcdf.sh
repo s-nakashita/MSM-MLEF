@@ -1,7 +1,7 @@
 #!/bin/sh
 set -ex
 dcddir=/zdata/grmsm/work/DATA/dcd
-obsdir=/zdata/grmsm/work/dpac/obs
+obsdir=${obsdir:-/zdata/grmsm/work/dpac/obs}
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 adate=${1:-2022061812}
 lmin=${2:--60}
@@ -53,4 +53,5 @@ tar zxvf $tarf
 
 cd ..
 mv tmp/*.dat .
+mv tmp/decode_dcdf.log .
 echo "END decode_dcdf"

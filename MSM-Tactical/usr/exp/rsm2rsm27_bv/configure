@@ -35,16 +35,26 @@ else #BGM
     head=${head}${BV_H}h
   fi #scaling interval
   head=${head}${MEM}${BP}${SCLBASE}
+  if [ ! -z $SCLPOW ]; then
+    head=${head}p${SCLPOW}
+  fi
   if [ do$QADJ = doyes ];then #q adjustment
     head=${head}_qadj
   fi #q adjustment
+  if [ do$ORTH = doyes ];then #orthogonalization
+    head=${head}_orth
+  fi #orthogonalization
   export RUNDIR=$TEMP/$SDATE/${head}_c${CYCLE}
   # basedir
-  if [ do$BP = dowbp ];then #base perturbation by global ensemble
+  BMEM=${SCLBASE}${MEM}
+  #BMEM=${BMEM}nps
+  #BMEM=${BMEM}ntrunc100
+  BMEM=${BMEM}ltb
+  if [ do$BP != do ];then #base perturbation by global ensemble
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM} #LBP?
     if [ $GLOBAL = GFS ];then #deterministic
-      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${SCLBASE}${MEM}
-      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${SCLBASE}${MEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}/${BMEM}
+      export BASEDIR=$WORKUSR/gfsp2rsm27_rda/${SDATE}/${BMEM}
     fi #deterministic
   else #no base perturbation
     export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/000 #noLBP
@@ -101,13 +111,13 @@ export FCST=yes
 # --------------- run option --------------------
 export ENDHOUR=168 
 export ENDHOUR=48                             # release_test
-export ENDHOUR=24                             # release_test
+#export ENDHOUR=24                             # release_test
 export PRTHOUR=3                             # release_test
 export INCBASE=3
 export INCHOUR=3
 export TIMESTEP=90
 export IMDLPHY=1
-export NEWMTN=.FALSE.
+#export NEWMTN=.FALSE.
 export CLIM=0
 export RSFC_MERGE=yes
 export POSTTYPE=sync

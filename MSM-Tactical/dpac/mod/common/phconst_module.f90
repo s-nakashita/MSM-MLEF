@@ -16,4 +16,6 @@ module phconst_module
   real(kind=dp), parameter :: lh=2.5104d6     ! latent heat of condensation [J/kg]
   real(kind=dp), parameter :: lapse=0.65d-2   ! lapse rate for normal atmosphere [K/m]
   real(kind=dp), parameter :: t0=273.15_dp    ! absolute temperature [K]
+  ! reference temperature and pressure for energy calculation
+  real(kind=dp), parameter :: tr=300.0d0, pr=800.0d2![Pa]
 end module phconst_module

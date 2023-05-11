@@ -72,11 +72,15 @@ else
    INEWSST=0
 fi
 SSTLAG=${SSTLAG:-0}
+# ensemble
+BV=${BV:-no}
+BP=${BP}
 #
 # NO NEED TO CHANGE BELOW THIS!
 #
 FCSTSEC=`expr $INCHOUR \* 3600`
 PRNTSEC=`expr $PRTHOUR \* 3600`
+PRNTSEC=${PSEC:-$PRNTSEC}
 RSWRSEC=`expr $RSWRHOUR \* 3600`
 RLWRSEC=`expr $RLWRHOUR \* 3600`
 BASESEC=`expr $INCBASE \* 3600`
@@ -215,12 +219,17 @@ h=$FH
 while [ $h -lt $FEND ]; do
   hx=`expr $h + $INCHOUR`
   if [ $hx -gt $FEND ]; then  hx=$FEND; fi
-  hh=$hx
+  hxb=`expr $h + $INCBASE`
+  if [ $hx -gt $hxb ]; then  hxb=$hx; fi
+  hh=$hxb
   if [ $hx -lt 10 ];then hx=0$hx;fi
   hhr=`expr $h + 0`
-  while [ $hhr -le $hx ]; do
+  while [ $hhr -le $hxb ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
+     if [ do$BV = doyes ] && [ do$BP != do ]; then
+	     ## base field prepared external
+     else
        if [ do$G2R = doyes ] ; then
          ln -fs $BASEDIR/sigf$hhr rb_sigf$hhr
          ln -fs $BASEDIR/sfcf$hhr rb_sfcf$hhr
@@ -238,6 +247,7 @@ while [ $h -lt $FEND ]; do
            ln -fs $BASESFCDIR/r_sfc.f$hhr rb_sfcf$hhr
          fi
        fi
+     fi
        if [ do$NEWSST = do.TRUE. ] ; then
          #ln -fs $BASEDIR/sstf$hhr rb_sstf$hhr
          slag=`expr $hhr + $SSTLAG`
@@ -327,9 +337,15 @@ while [ $h -lt $FEND ]; do
 #
       if [ $hx -eq $ENDHOUR ]; then
         if [ $hx -lt 10 ];then hx=0$hx;fi
+        if [ $IOUTNHR -eq 1 ]; then
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
+        else
+        mv r_sigf${hx}:00:00   r_sig.f$hx
+        mv r_sfcf${hx}:00:00   r_sfc.f$hx
+        mv r_flxf${hx}:00:00   r_flx.f$hx
+        fi
         $USHDIR/rpgb_post.sh $hx || exit 16
       fi
 
