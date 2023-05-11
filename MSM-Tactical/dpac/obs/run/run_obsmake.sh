@@ -3,15 +3,15 @@ set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #wdir=rsm2rsm27_osse
 #wdir=rsm2rsm18_osse
-wdir=rsm2msm9_osse
+wdir=rsm2msm9_osse2
 #datadir=/zdata/grmsm/work/$wdir
 #datadir=/zdata/grmsm/work/rsm2rsm27_truth
 #datadir=/zdata/grmsm/work/rsm2rsm18_truth
-datadir=/zdata/grmsm/work/rsm2msm9_truth
+datadir=/zdata/grmsm/work/rsm2msm9_truth2
 obsdir=/zdata/grmsm/work/$wdir/obs
 stadir=${HOME}/mnt/methane/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-obsdist=uniform_ez
+obsdist=grid
 if [ $obsdist = grid ];then
 	stationin=T
 else
@@ -35,7 +35,7 @@ NODE=`expr $nisep \* $njsep`
 RUNENV="mpiexec -n ${NODE} "
 echo $RUNENV
 
-for fhour in $(seq 0 6 24);do
+for fhour in $(seq 0 1 24);do
 adate=`date -j -f "%Y%m%d%H" -v+${fhour}H +"%Y%m%d%H" "${idate}"`
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`

@@ -15,13 +15,14 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
 #   export TEMP=$WORKUSR/${EXPN}          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_truth
+   export TEMP=$WORKUSR/${EXPN}_truth2
 fi
 #export BASEDIR=$WORKUSR/rsm2rsm27/${SDATE}
 if [ do$MEM = do ];then
 #export BASEDIR=$HOME/mnt/methane/work/gfsp2rsm27_nomad/${SDATE}
 #export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
 export BASEDIR=$WORKUSR/gfsp2rsm27_nomad_gfsz/${SDATE}
+export BASEDIR=$WORKUSR/rsm2rsm18_truth/${SDATE}
 else
 export RUNDIR=$TEMP/$SDATE/$MEM
 export BASEDIR=$HOME/mnt/methane/work/gefs2rsm27_nomad/${SDATE}/${MEM}
@@ -72,14 +73,14 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export ENDHOUR=48 
+export ENDHOUR=24 
 #from gfsp2rsm27
-export INCBASE=3
-export INCHOUR=3
+#export INCBASE=3
+#export INCHOUR=3
 #export PRTHOUR=3
 ##from rsm2rsm27
-#export INCBASE=1
-#export INCHOUR=1
+export INCBASE=1
+export INCHOUR=1
 export PRTHOUR=1
 export TIMESTEP=30
 export IMDLPHY=1                # 1: run model physics, 0: off
@@ -190,19 +191,32 @@ export  RBTMGRD=33.0
 #export  RBTMGRD=63.                         # release_test
 
 ## base field from running RSM 
-#from gfsp2rsm27
-export  CIGRD=384 
-export  CJGRD=324
+##from gfsp2rsm27
+#export  CIGRD=384 
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=163.
+#export  CBTMGRD=139.
+##from rsm2rsm18
+export  CIGRD=96
+export  CJGRD=96
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
 export  CORIENT=120.0
-export  CDELX=27000.
-export  CDELY=27000.
-export  CCENLAT=23.5
+export  CDELX=18000.
+export  CDELY=18000.
+export  CCENLAT=30.0
 export  CCENLON=120.0
-export  CLFTGRD=163.
-export  CBTMGRD=139.
+export  CLFTGRD=30.
+export  CBTMGRD=33.
 ##from rsm2rsm27
 #export  CIGRD=324
 #export  CJGRD=288

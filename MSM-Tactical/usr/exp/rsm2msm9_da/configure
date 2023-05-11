@@ -14,12 +14,14 @@ if [ -s /ptmp ]; then
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
    export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/rsm2msm9_osse          #output top directory
+   export TEMP=$WORKUSR/rsm2msm9_osse2          #output top directory
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
 #export BASEDIR0=$WORKUSR/rsm2rsm18_osse #BGM
-export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad_gfsz #OSSE base
+export BASEDIR0=$WORKUSR/rsm2rsm18_truth #OSSE base
+export GUESDIR=$WORKUSR/rsm2msm9_osse #BGM
+#export BASEDIR0=$WORKUSR/gfsp2rsm27_nomad_gfsz #OSSE base
 export IRES=9
 
 # --------------- compile options ----------------
@@ -66,10 +68,10 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=1
-export CYCLEMAX=5
+export CYCLEMAX=6
 export DASTART=1
 export NODA=F # free run for OSSE
-export INCCYCLE=6 # cycle interval (hours)
+export INCCYCLE=1 # cycle interval (hours)
 export IOFFSET=24 # first guess offset (hours)
 export ENDHOUR=24 # forecast length (hours)
 export PRTHOUR=1
@@ -78,6 +80,8 @@ export EXTEND=0
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=3
 export INCHOUR=3
+#export INCBASE=$INCCYCLE
+export INCHOUR=$INCCYCLE
 export TIMESTEP=30
 export IMDLPHY=1
 export CLIM=0
@@ -108,7 +112,7 @@ export HEAD=$head
 # DA option
 export OSSE=T
 export DANEST=F
-export OBSDIST=uniform_ez # observation distribution
+export OBSDIST=grid # observation distribution
 export TMEM=25 # truth member
 export SINGLEOBS=F
 export DA_SINGLE_LATS=28.0
@@ -127,7 +131,7 @@ export PREP=_preprh
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=3
+export MAXITER=1
 export HLOC=150 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
@@ -139,6 +143,9 @@ export DA_SAVE_INFO=T
 head2=da${BP}${PREP}
 if [ $OSSE = T ];then
   head2=${head2}.siml${MEMBER}.${OBSDIST}
+  if [ $INCBASE -gt $INCCYCLE ]; then
+    head2=${head2}.tint
+  fi
 fi
 if [ $SINGLEOBS = T ];then
   head2=${head2}.single
@@ -185,31 +192,31 @@ export  RCENLON=120.0
 export  RLFTGRD=30.0
 export  RBTMGRD=33.0
 # d01 domain 110E-143.3E 20N-47N (rsm2rsm18 for BGM)
-#export  CIGRD=96
-#export  CJGRD=96
-#export  LEVS=42
-#export  CPROJ=0.
-#export  CTRUTH=45.0
-#export  CORIENT=120.0
-#export  CDELX=18000.
-#export  CDELY=18000.
-#export  CCENLAT=30.0
-#export  CCENLON=120.0
-#export  CLFTGRD=30.
-#export  CBTMGRD=33.
-## base field from running RSM (gfsp2rsm27 for OSSE)
-export  CIGRD=384 
-export  CJGRD=324
+export  CIGRD=96
+export  CJGRD=96
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
 export  CORIENT=120.0
-export  CDELX=27000.
-export  CDELY=27000.
-export  CCENLAT=23.5
+export  CDELX=18000.
+export  CDELY=18000.
+export  CCENLAT=30.0
 export  CCENLON=120.0
-export  CLFTGRD=163.
-export  CBTMGRD=139.
+export  CLFTGRD=30.
+export  CBTMGRD=33.
+## base field from running RSM (gfsp2rsm27 for OSSE)
+#export  CIGRD=384 
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=120.0
+#export  CDELX=27000.
+#export  CDELY=27000.
+#export  CCENLAT=23.5
+#export  CCENLON=120.0
+#export  CLFTGRD=163.
+#export  CBTMGRD=139.
 ## d01 domain 70E-170W 22S-65N (rsm2rsm27)
 #export  CIGRD=324
 #export  CJGRD=288

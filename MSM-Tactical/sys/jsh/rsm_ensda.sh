@@ -370,9 +370,9 @@ else
     else
     GBASEDIR=${BASEDIR0}/${SDATE}/${head}${pmem}
     GBASESFCDIR=${GBASEDIR}
-    GUESDIR=${RUNDIR0}/${SDATE}/${head}${pmem}
-    mkdir -p $GUESDIR
-    cd ${GUESDIR}
+    GDIR=${RUNDIR0}/${SDATE}/${head}${pmem}
+    mkdir -p $GDIR
+    cd ${GDIR}
     ### copy namelists
     cp ${RUNDIR}/rsmparm .
     cp ${RUNDIR}/rsmlocation .
@@ -506,9 +506,11 @@ while [ $h -lt $FEND ]; do
   hx=`expr $h + $INCHOUR`
   if [ $hx -gt $FEND ]; then  hx=$FEND; fi
   hh=$hx
+  if [ $hh -lt $INCBASE ]; then hh=$INCBASE; fi
   if [ $hx -lt 10 ];then hx=0$hx;fi
+  if [ $hh -lt 10 ];then hh=0$hh;fi
   hhr=`expr $h + 0`
-  while [ $hhr -le $hx ]; do
+  while [ $hhr -le $hh ]; do
        if [ $hhr -lt 10 ]; then hhr=0$hhr; fi
          rfti=`$UTLDIR/ndate $hhr $CDATE$CHOUR`
   if [ $PREPBASE = F ] || \

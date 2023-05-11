@@ -68,7 +68,7 @@ elif [ $IRES -eq 18 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm18_truth
 fhtruemax=48
 elif [ $IRES -eq 9 ]; then
-TRUEDIR=$WORKUSR/rsm2msm9_truth
+TRUEDIR=$WORKUSR/rsm2msm9_truth2
 fhtruemax=24
 fi
 echo $TRUEDIR
