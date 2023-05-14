@@ -5,8 +5,8 @@ obsdir=/zdata/grmsm/work/dpac/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 #bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/obs
 adate=${1:-2022061812}
-lmin=-30
-rmin=30
+lmin=-60
+rmin=60
 lprep=T
 iq=2
 yyyy=`echo ${adate} | cut -c1-4`
@@ -43,10 +43,11 @@ cp ${dcddir}/${yyyy}/$tarf .
 tar zxvf $tarf
 ./decode_dcdf < decode.nml | tee decode_dcdf.log
 
-cd ..
-mv tmp/*.dat .
-mv tmp/decode_dcdf.log .
-#for f in $(ls *.dat);do
-#  mv $f ../${f%.dat}.noship.dat
-#done
+#cd ..
+#mv tmp/*.dat .
+#mv tmp/decode_dcdf.log .
+for f in $(ls *.dat);do
+  mv $f ../${f%.dat}.noship.dat
+done
+mv decode_dcdf.log ../
 echo "END"

@@ -74,14 +74,14 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=1
-export CYCLEMAX=14
+export CYCLESTART=7
+export CYCLEMAX=7
 export DASTART=1
 export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval
-export IOFFSET=24 # first guess offset
+export IOFFSET=6 # first guess offset
 export ENDHOUR=24 # forecast length
-export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
+export EXTEND=1 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
                 # 0:forecast stops at $INCCYCLE hour
 export PRTHOUR=1
 export INCBASE=3
@@ -177,6 +177,7 @@ head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
 #head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ser.n${DA_NODE}.
 #head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}n${DA_NODE}.
 #head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}ni${NISEP}nj${NJSEP}.
+head2=${head2}noship.
 export HEAD2=$head2
 
 #### rsmlocation

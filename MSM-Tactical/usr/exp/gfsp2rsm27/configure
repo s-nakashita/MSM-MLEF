@@ -20,7 +20,7 @@ fi
 export BASEDIR=$WORKUSR/DATA/gfs/$SDATE
 #export BASEDIR=$DISKSYS/inp/gfsp/$SDATE           # release_test
 
-export RDA=yes            # use RDA historical data
+export RDA=no            # use RDA historical data
 if [ $RDA = yes ];then
 export TEMP=$WORKUSR/${EXPN}_rda_gfsz
 export BASEDIR=$WORKUSR/DATA/gfs/rda/$SDATE
@@ -55,7 +55,7 @@ export FCST=no
 
 # --------------- run option --------------------
 export ENDHOUR=120 
-export ENDHOUR=48                                # release_test
+export ENDHOUR=24                                # release_test
 #export ENDHOUR=12                                # release_test
 export CLIM=1
 export POSTTYPE=sync
