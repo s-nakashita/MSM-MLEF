@@ -227,9 +227,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}000 ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -266,7 +266,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}mean
+  fi # -d ${head}mean
 else
   #
   # control
@@ -505,7 +505,7 @@ while [ $mem -le $MEMBER ];do
     fi
   elif [ $mem -eq 0 ]; then ## control
     if [ do$DA = doyes ] || [ $DANEST = T ]; then
-    export ENDHOUR=$INCCYCLE
+#    export ENDHOUR=$INCCYCLE
     cd $RUNDIR/${head}000
     else
     cd $RUNDIR
@@ -515,9 +515,9 @@ while [ $mem -le $MEMBER ];do
     export BASESFCDIR=$BASEDIR
     fi
   else ## member
-    if [ do$DA = doyes ]; then
-    export ENDHOUR=$INCCYCLE
-    fi
+#    if [ do$DA = doyes ]; then
+#    export ENDHOUR=$INCCYCLE
+#    fi
     pmem=$mem
     if [ $pmem -lt 10 ]; then
       pmem=00$pmem

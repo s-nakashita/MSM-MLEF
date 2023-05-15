@@ -13,11 +13,13 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/$EXPN          #output top directory
+   #export TEMP=$WORKUSR/$EXPN          #output top directory
+   export TEMP=$WORKUSR/${EXPN}2          #output top directory
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-export BASEDIR0=$WORKUSR/rsm2rsm18_da
+#export BASEDIR0=$WORKUSR/rsm2rsm18_da
+export BASEDIR0=$WORKUSR/rsm2rsm18_da2
 export IRES=3
 export DANEST=T
 
@@ -64,7 +66,7 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=4
+export CYCLESTART=25
 export CYCLEMAX=25
 export DASTART=1
 export INCCYCLE=1 # cycle interval (hours)
@@ -72,9 +74,9 @@ export INCCYCLEBASE=6 # base cycle interval (hours)
 export IOFFSET=12 # first guess offset (hours)
 export ENDHOUR=24 # forecast length (hours)
 export PRTHOUR=1
-export EXTEND=0
-export PSEC=300   # output interval in seconds (debug)
-export IOUTNHR=0 # 1: output interval units is hours
+export EXTEND=1
+#export PSEC=300   # output interval in seconds (debug)
+#export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=1
 export INCHOUR=1
 export TIMESTEP=10
@@ -165,8 +167,9 @@ if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
+head2=${head2}no4ship.
 headbase=da${BP}${PREP}.scl.iter${MAXITER}.l200.v${VLOC}.${DA_INFL}
-#head2=${head2}tn.
+headbase=${headbase}noship.
 export HEAD2=$head2
 export HEADBASE=$headbase
 

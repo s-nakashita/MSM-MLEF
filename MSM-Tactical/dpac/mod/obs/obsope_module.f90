@@ -686,6 +686,18 @@ contains
 
     qc=iqc_good
     
+!    ! (debug) check whether observation is within prescribed horizontal domain or not
+!    if(lonw.ne.0.0d0.and.lone.ne.0.0d0&
+!            .and.lats.ne.0.0d0.and.latn.ne.0.0d0) then
+!      if(rlon1.lt.lonw.or.rlon1.gt.lone.or.rlat1.lt.lats.or.rlat1.gt.latn) then
+!        write(0,'(2a,4f8.2,2(a,f8.2))') &
+!        & 'warning: observation is outside of the prescribed horizontal domain ', &
+!        & 'lonw,lone,lats,latn=',lonw,lone,lats,latn,&
+!        & 'lon=',rlon1,' lat=',rlat1
+!        qc=iqc_out_h
+!        return
+!      end if
+!    end if
     if(local_) then
       allocate( lnps(1:ni1max+2*ighost,1:nj1max+2*jghost) )
       ! rlon1 -> ri

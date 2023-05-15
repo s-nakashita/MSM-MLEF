@@ -1,16 +1,18 @@
 #!/bin/sh
 set -e
+datadir=/zdata/grmsm/work/msm2msm3_jpn
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #datadir=/zdata/grmsm/work/rsm2msm9_bv
-datadir=/zdata/grmsm/work/rsm2rsm18_da
+#datadir=/zdata/grmsm/work/rsm2rsm18_da
 #obsdir=/zdata/grmsm/work/dpac/obs
-obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
-bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
+#obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
+obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/obs
 member=0
 adate=${1:-2022061812}
 fhour=${2:-0}
-lmin=-30
-rmin=30
+lmin=0
+rmin=0
 prep=_preprh
 single=F
 useobs='all'
@@ -47,8 +49,8 @@ edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${odate}00"`
 fi
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
-outf=obsda${prep}_18_fh${fhour}
-logf=obsope${prep}_18_fh${fhour}
+outf=obsda${prep}_3_fh${fhour}
+logf=obsope${prep}_3_fh${fhour}
 if [ "$single" = "T" ];then
   outf=${outf}.single
   logf=${logf}.single
@@ -91,6 +93,10 @@ cat <<EOF >obsope.nml
  fguess_basename=,
  nobsmax=,
  single_obs=${single},
+ lonw=124.8,
+ lone=132.1,
+ lats=29.1,
+ latn=33.8,
  luseobs=${luseobs},
  slot_start=,
  slot_end=,

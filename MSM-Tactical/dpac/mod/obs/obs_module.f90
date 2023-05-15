@@ -304,8 +304,10 @@ contains
 !          end if
         end if
       else if(dtypename=='surf ') then
-        ! use all data type except METAR(18XX)
-        if(did(i)/100.ne.18) then
+!        ! use all data type except METAR(18XX)
+!        if(did(i)/100.ne.18) then
+        ! use only land surface data
+        if((did(i)/1000.eq.1).and.(did(i)/100.ne.18)) then
           ! read hour and minutes
           irec=ioffset+nrec1+5
           read(iunit,rec=irec) ibuf2
@@ -467,10 +469,11 @@ contains
             read(iunit,rec=irec) sta(2*i-1:2*i)
             irec=irec+1
           end do
-          !if ((sta(1:4)=='7KBR').or.(sta(1:4)=='7JEJ').or.(sta(1:4)=='7JJW')) then
-          !!! skip 3 ships' observations
-          !else
-          !print *, 'station ', sta
+          if ((sta(1:4)=='7KBR').or.(sta(1:4)=='7JEJ') &
+          .or.(sta(1:4)=='7JJW').or.(sta(1:4)=='JPBN')) then
+          ! skip 4 ships' observations
+          print *, 'station ', sta
+          else
           ! part4
           irec=ioffset+nrec1+nrec2+nrec3+1
           read(iunit,rec=irec) ibuf2
@@ -546,7 +549,7 @@ contains
               &  tmpdat,tmpdt)
             end if   
           end do
-          !end if ! skip ship obs
+          end if ! skip 4 ship obs
         end if ! time window
       end if ! dtype
       ioffset=ioffset+nrec_data
@@ -645,8 +648,10 @@ contains
         ioffset=ioffset+nrec_data
         cycle
       end if
-      ! use all data type except for METAR(18XX)
-      if(dtype/100.ne.18) then
+      !! use all data type except for METAR(18XX)
+      !if(dtype/100.ne.18) then
+      ! use only land surface data
+      if((dtype/1000.eq.1).and.(dtype/100.ne.18)) then
         if(debug) then
           print *, 'reading part 1 of record ',idrec
           print *, '# of address', nrecall
