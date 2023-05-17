@@ -75,11 +75,11 @@ export FCST=yes
 
 # --------------- run option --------------------
 export CYCLESTART=1
-export CYCLEMAX=14
+export CYCLEMAX=12
 export DASTART=1
 export NODA=F # free run for OSSE
 export INCCYCLE=6 # cycle interval
-export IOFFSET=24 # first guess offset
+export IOFFSET=6 # first guess offset
 export ENDHOUR=24 # forecast length
 export EXTEND=0 # 1:forecast extends to $ENDHOUR hour at 00 or 12 UTC
                 # 0:forecast stops at $INCCYCLE hour
@@ -117,6 +117,7 @@ head=bv${TETYPE}${SCL}${BP}
 #fi #q adjustment
 export HEAD=$head
 # DA option
+## OSSE
 export OSSE=F
 export TMEM=25 # truth member
 export OBSDIST=uniform_ezd
@@ -125,19 +126,23 @@ export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
-export DA_FIXED_LEVEL=F
+## PALALLEL
 export NISEP=4
 export NJSEP=6
 export IGHOST=1
 export JGHOST=1
+## OBSERVATION
+export PLATFORM=prepbufr
 export LOBSMIN=-30
 export ROBSMIN=30
+export DA_FIXED_LEVEL=F
 export SELOBS=all
-export PREP=_preprh
+export PREP=
+## DA SETTINGS
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=3
+export MAXITER=1
 export HLOC=200 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
@@ -146,7 +151,7 @@ export RTPS=90 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
-head2=da${PREP}
+head2=da${PLATFORM}${PREP}
 if [ $OSSE = T ];then
   head2=${head2}.siml${MEMBER}.${OBSDIST}
 fi
