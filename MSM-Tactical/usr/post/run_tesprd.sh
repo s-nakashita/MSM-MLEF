@@ -20,6 +20,8 @@ elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018
 #SDATE0=2022061812
+elif [ $IRES -eq 3 ]; then
+EXPN=rsm2msm3_da
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -72,9 +74,9 @@ if [ $ANAL = T ] && [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`
   fhfree=`expr $icycp \* $INCCYCLE`
 fi
-if [ $fhfree -gt 24 ]; then
-  break
-fi
+#if [ $fhfree -gt 24 ]; then
+#  break
+#fi
 echo $SDATE
 if [ $ANAL = F ] || [ $icyc -lt $DASTART ]; then
 header=${HEAD}
@@ -86,7 +88,7 @@ header=${HEAD2}
 fi
 echo $header $truth
 fh=0
-if [ $ANAL = F ]; then
+if [ $ANAL = F ] || [ $icyc -eq $CYCLEMAX ]; then
 end_hour=$ENDHOUR
 else
 end_hour=$INCCYCLE
@@ -154,7 +156,7 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
-else
+elif [ $IRES -eq 9 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  nens=${MEMBER},
@@ -163,6 +165,18 @@ cat <<EOF >NAMELIST
  lone=129.5,
  lats=28.5,
  latn=37.5,
+ kmax=42,
+&END
+EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ nens=${MEMBER},
+ epsq=,
+ lonw=,
+ lone=,
+ lats=,
+ latn=,
  kmax=42,
 &END
 EOF
@@ -185,9 +199,9 @@ fi
   if [ $ANAL = F ] && [ $fh -eq $end_hour ]; then
     break
   fi
-if [ $fhfree -gt 24 ]; then
-  break
-fi
+#if [ $fhfree -gt 24 ]; then
+#  break
+#fi
 done #fh
 SDATE=`date -j -f "%Y%m%d%H" -v+${INCCYCLE}H +"%Y%m%d%H" "${SDATE}"`
 icyc=`expr $icyc + 1`

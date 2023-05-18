@@ -183,7 +183,7 @@ program read_info
   end if !emem
 
   if(nonhyd.eq.1) then
-    nskip=3*levs+1 !pn,tn,wn
+    nskip=nskip+3*levs+1 !pn,tn,wn
   end if
   nskip=nskip+3 ! fm2,fm2x,fm2y
   do k=1,nskip

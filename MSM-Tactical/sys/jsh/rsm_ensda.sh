@@ -227,7 +227,7 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-  if [ -d ${head}000 ]; then
+  if [ -d ${head}mean ]; then
     echo 'DA already done'
   else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA

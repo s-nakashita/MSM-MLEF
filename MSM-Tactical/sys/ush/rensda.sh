@@ -455,10 +455,10 @@ fi
 if [ -f ../${obsoutf}.0000.dat ]; then
 mv ../${obsoutf}.0000.dat . 
 fi
-if [ $relax_spread_out = T ] && [ -s rtps.sig.bin ];then
+if [ $relax_spread_out = T ] && [ -s ../rtps.bin ];then
 mv ../rtps.* .
 fi
-if [ $save_info = T ] && [ -s ewgt.ctl ];then
+if [ $save_info = T ] && [ -s ../ewgt.ctl ];then
 mv ../dainfo.* .
 mv ../ewgt.ctl .
 fi
