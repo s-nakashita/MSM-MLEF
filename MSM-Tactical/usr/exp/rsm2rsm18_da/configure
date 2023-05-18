@@ -151,7 +151,7 @@ export RTPS=90 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
-head2=da${PLATFORM}${PREP}
+head2=da${BP}${PLATFORM}${PREP}
 if [ $OSSE = T ];then
   head2=${head2}.siml${MEMBER}.${OBSDIST}
 fi

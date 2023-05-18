@@ -380,6 +380,7 @@ contains
 !$OMP END PARALLEL DO
     end do
 
+    sync all
     call gather_grd(print_img,v3dm,v2dm,v3dg,v2dg)
     if(myimage.eq.print_img) then
       call file_member_replace(member+1,basename,filename)

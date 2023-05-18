@@ -13,13 +13,13 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   #export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}2          #output top directory
+   export TEMP=$WORKUSR/$EXPN          #output top directory
+   #export TEMP=$WORKUSR/${EXPN}2          #output top directory
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
-#export BASEDIR0=$WORKUSR/rsm2rsm18_da
-export BASEDIR0=$WORKUSR/rsm2rsm18_da2
+export BASEDIR0=$WORKUSR/rsm2rsm18_da
+#export BASEDIR0=$WORKUSR/rsm2rsm18_da2
 export IRES=3
 export DANEST=T
 
@@ -66,15 +66,15 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=25
-export CYCLEMAX=25
+export CYCLESTART=1
+export CYCLEMAX=1
 export DASTART=1
 export INCCYCLE=1 # cycle interval (hours)
 export INCCYCLEBASE=6 # base cycle interval (hours)
 export IOFFSET=12 # first guess offset (hours)
 export ENDHOUR=24 # forecast length (hours)
 export PRTHOUR=1
-export EXTEND=1
+export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
 #export IOUTNHR=0 # 1: output interval units is hours
 export INCBASE=1
@@ -108,6 +108,7 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #fi #q adjustment
 export HEAD=$head
 # DA option
+## OSSE
 export OSSE=F
 export OBSDIST=uniform # observation distribution
 export TMEM=25 # truth member
@@ -116,19 +117,23 @@ export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
-export DA_FIXED_LEVEL=F
+## PARALLEL
 export NISEP=6
 export NJSEP=4
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=0
-export ROBSMIN=0
+## OBSERVATION
+export PLATFORM=prepbufr
+export LOBSMIN=-30
+export ROBSMIN=30
+export DA_FIXED_LEVEL=F
 export SELOBS=all
-export PREP=_preprh
+export PREP=
+## DA SETTINGS
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=3
+export MAXITER=1
 export HLOC=100 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
@@ -137,7 +142,7 @@ export RTPS=90 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
-head2=da${BP}${PREP}
+head2=da${BP}${PLATFORM}${PREP}
 if [ $OSSE = T ];then
   head2=${head2}.siml${MEMBER}.${OBSDIST}
 fi
@@ -167,9 +172,9 @@ if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
-head2=${head2}no4ship.
-headbase=da${BP}${PREP}.scl.iter${MAXITER}.l200.v${VLOC}.${DA_INFL}
-headbase=${headbase}noship.
+#head2=${head2}no4ship.
+headbase=daprepbufr.scl.iter1.l200.v4.rs90.
+#headbase=${headbase}noship.
 export HEAD2=$head2
 export HEADBASE=$headbase
 
