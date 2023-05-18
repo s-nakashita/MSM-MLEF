@@ -1,0 +1,210 @@
+#!/bin/ksh
+# check all config term and comment in utl/rsm_default.option
+
+# --------------- directory ------------------
+export USERID=` whoami `
+export DISK=` cd ../../.. ; pwd `                 #working top directory
+export DISKSYS=$DISK/sys
+export DISKUSR=$DISK/usr
+export WORKUSR=$DISK/usr/work
+export WORK=` pwd `                            #working directory
+export EXPN=` basename $WORK `                 #experimental subdirectory
+if [ -s /ptmp ]; then
+   export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
+else
+#   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
+   export TEMP=$WORKUSR/$EXPN          #output top directory
+fi
+export GLOBAL=${GLOBAL:-GFS}
+export RUNDIR0=$TEMP
+#export BASEDIR0=$WORKUSR/rsm2rsm18_da
+export BASEDIR0=$WORKUSR/rsm2rsm18_da2
+export IRES=3
+export DANEST=T
+
+# --------------- compile options ----------------
+# machine dependent
+# compile options for ibm_xlf, mac_intel, mac_absoft, mac_xlf, 
+# linux_pgi, linux_intel, linux_gfortran
+export MACHINE=freebsd_gfortran
+export IBMSP=no 
+export DCRFT=no
+export FFT99M=no
+export RFFTMLT=yes
+
+# massively parallel procesing options
+export MARCH=mpi
+export LAMMPI=no
+export MPICH=yes
+export KINDMPI=4
+export NCOL=6
+export NROW=4
+export NODES=32   
+export MP=yes
+export THREAD=no 
+
+# model parameter
+
+# compile model option
+export NEST=C2R   # G2R C2R P2R N2R
+export NONHYD=yes
+export INTDTB=yes           # internal evolved base field T
+export RAS=no
+export SAS=yes
+export NCLDB=1
+export NCLD=1
+export GTOPO30=yes
+export CHGTLEV=no              # top level damping
+export BGF=6                        # CDELX ~= BGF * RDELX
+export MBC=yes 
+export LBC=no 
+
+# compile exec option
+export RMTN=yes
+export RINP=yes
+export FCST=yes
+
+# --------------- run option --------------------
+export CYCLESTART=1
+export CYCLEMAX=1
+export DASTART=2
+export INCCYCLE=1 # cycle interval (hours)
+export INCCYCLEBASE=6 # base cycle interval (hours)
+export IOFFSET=0 # first guess offset (hours)
+export ENDHOUR=24 # forecast length (hours)
+export PRTHOUR=1
+export EXTEND=0
+#export PSEC=300   # output interval in seconds (debug)
+#export IOUTNHR=0 # 1: output interval units is hours
+export INCBASE=1
+export INCHOUR=1
+export TIMESTEP=10
+export IMDLPHY=1
+export CLIM=0
+export RSFC_MERGE=yes
+export POSTTYPE=sync
+export RUNRMTN=yes
+export RUNRINP=yes
+export RUNFCST=yes
+export RUNFCST=no # prepare first guess by downscaling
+
+# Ensemble size
+export MEMBER=30
+#export MEMBER=0
+export ENSMSPR=yes
+#export ENSMSPR=no
+# BGM option for base
+export TETYPE=dry
+export SCL=
+export QADJ=yes
+export ORTH=yes
+export PSUB=no
+export BP=
+export SCLBASE=
+head=bv${TETYPE}${SCL}${BP}${SCLBASE}
+#if [ do$QADJ = doyes ];then #q adjustment
+#  head=${head}_qadj
+#fi #q adjustment
+export HEAD=$head
+# DA option
+export OSSE=F
+export OBSDIST=uniform # observation distribution
+export TMEM=25 # truth member
+export SINGLEOBS=F
+export DA_SINGLE_LATS=28.0
+export DA_SINGLE_LATN=32.0
+export DA_SINGLE_LONW=125.0
+export DA_SINGLE_LONE=131.0
+export DA_FIXED_LEVEL=F
+export NISEP=6
+export NJSEP=4
+export IGHOST=1
+export JGHOST=1
+export LOBSMIN=0
+export ROBSMIN=0
+export SELOBS=all
+export PREP=_preprh
+export DA_MEAN=F
+export DA_TL=F
+export DA_SCL_MEM=T
+export MAXITER=3
+export HLOC=100 #km
+export VLOC=4   #*0.1ln p
+export MINFL=0 #%
+export RTPP=80 #%
+export RTPS=0 #%
+export RELAX_SPREAD_OUT=T
+export Q_UPDATE_TOP=20000.0 #Pa
+export DA_SAVE_INFO=T
+head2=da${BP}${PREP}
+if [ $OSSE = T ];then
+  head2=${head2}.siml${MEMBER}.${OBSDIST}
+fi
+if [ $SINGLEOBS = T ];then
+  head2=${head2}.single
+fi
+if [ ${SELOBS} != all ];then
+  head2=${head2}.${SELOBS}
+fi
+if [ $DA_FIXED_LEVEL = T ];then
+  head2=${head2}.fixed
+fi
+if [ $DA_SCL_MEM = T ];then
+  head2=${head2}.scl
+fi
+if [ $DA_MEAN = T ];then
+  head2=${head2}.mean
+fi
+DA_INFL=
+if [ $MINFL -gt 0 ];then
+  DA_INFL=mi${MINFL}.
+fi
+if [ $RTPP -gt 0 ];then
+  DA_INFL=${DA_INFL}rp${RTPP}.
+fi
+if [ $RTPS -gt 0 ];then
+  DA_INFL=${DA_INFL}rs${RTPS}.
+fi
+head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
+#head2=${head2}no4ship.
+headbase=da${BP}${PREP}.scl.iter3.l200.v4.rs90.noship.
+#head2=${head2}tn.
+export HEAD2=$head2
+export HEADBASE=$headbase
+
+#### rsmlocation
+
+# d02 domain 118.5E-135E 22N-36N
+export  IGRD=192
+export  JGRD=144
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=140.0
+export  RDELX=3000.
+export  RDELY=3000.
+export  RCENLAT=31.5
+export  RCENLON=127.5
+export  RLFTGRD=72.0
+export  RBTMGRD=72.0
+# d01 domain 110E-143.3E 20N-47N
+export  CIGRD=96
+export  CJGRD=96
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=120.0
+export  CDELX=18000.
+export  CDELY=18000.
+export  CCENLAT=30.0
+export  CCENLON=120.0
+export  CLFTGRD=30.
+export  CBTMGRD=33.
+
+#
+# load default configure file
+. $DISKSYS/opt/rsm_default.option
+
+# compile option
+. $DISKSYS/opt/compile.option
+
