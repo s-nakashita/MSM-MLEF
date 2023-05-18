@@ -227,9 +227,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-  if [ -d ${head}mean ]; then
-    echo 'DA already done'
-  else
+#  if [ -d ${head}000 ]; then
+#    echo 'DA already done'
+#  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -266,7 +266,7 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-  fi # -d ${head}mean
+#  fi # -d ${head}000
 else
   #
   # control
@@ -701,7 +701,7 @@ done  ###### end of while forecast loop
 mem=`expr 1 + $mem`
 done  ###### end of while member loop
 # ensemble mean and spread
-if [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
+if [ do$RUNFCST = doyes ] && [ do$ENSMSPR = doyes ] && [ $MEMBER -gt 0 ]; then
   $USHDIR/rensmspr.sh $head || exit 17
 fi
 # save ensemble member or not

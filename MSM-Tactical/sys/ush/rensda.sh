@@ -15,6 +15,7 @@ fhour=${INCCYCLE:-6}
 # model resolution
 ires=${IRES:-27}
 # observation settings
+platform=${PLATFORM:-dcdf}
 osse=${OSSE:-F}
 noda=${NODA:-F}
 obsdist=${OBSDIST}
@@ -28,7 +29,7 @@ fixed_level=${DA_FIXED_LEVEL}
 lmin=${LOBSMIN:--60}
 rmin=${ROBSMIN:-60}
 selobs=${SELOBS:-all}
-prep=${PREP:-_preprh}
+prep=${PREP}
 # parallelization
 nisep=${NISEP:-5}
 njsep=${NJSEP:-2}
@@ -153,12 +154,22 @@ else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
 fi
 if [ $osse = T ];then
+obsin_num=2
 obsf=upper${prep}.siml.${obsdist}.${sdate}-${edate}
 obsf2=surf.siml.${obsdist}.${sdate}-${edate}
 else
+if [ $platform = dcdf ]; then
+obsin_num=2
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
 $USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
+elif [ $platform = prepbufr ]; then
+obsin_num=3
+obsf=ADPUPA${prep}.${sdate}-${edate}
+obsf2=ADPSFC.${sdate}-${edate}
+obsf3=SFCSHP.${sdate}-${edate}
+$USHDIR/decode_prepbufr.sh $adate $lmin $rmin || exit 9
+fi
 fi
 ### namelist
 cat <<EOF >lmlef.nml
@@ -173,8 +184,8 @@ cat <<EOF >lmlef.nml
  member=${member},
 &end
 &param_obsope
- obsin_num=2,
- obsin_name='${obsf}','${obsf2}',
+ obsin_num=${obsin_num},
+ obsin_name='${obsf}','${obsf2}','${obsf3}',
  obs_out=F,
  obsout_basename=,
  fguess_basename=,
@@ -236,6 +247,10 @@ EOF
 rm -f ${obsf}.dat ${obsf2}.dat
 ln -s ${obsdir}/${adate}/${obsf}.dat .
 ln -s ${obsdir}/${adate}/${obsf2}.dat .
+if [ $platform = prepbufr ]; then
+rm -f ${obsf3}.dat
+ln -s ${obsdir}/${adate}/${obsf3}.dat .
+fi
 rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
 if [ $mean != T ]; then
 if [ $cycleda -eq 1 ];then
@@ -455,7 +470,7 @@ fi
 if [ -f ../${obsoutf}.0000.dat ]; then
 mv ../${obsoutf}.0000.dat . 
 fi
-if [ $relax_spread_out = T ] && [ -s ../rtps.bin ];then
+if [ $relax_spread_out = T ] && [ -s ../rtps.sig.grd ];then
 mv ../rtps.* .
 fi
 if [ $save_info = T ] && [ -s ../ewgt.ctl ];then

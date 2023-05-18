@@ -1,1 +1,1 @@
-`../../rsmmap.x' is up to date.
+gfortran -o ../../rsmmap.x -fconvert=big-endian -fallow-argument-mismatch rsmmap.o
