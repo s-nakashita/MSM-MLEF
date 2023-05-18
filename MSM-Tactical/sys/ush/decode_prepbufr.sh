@@ -38,15 +38,15 @@ cd $wdir/tmp
 # get file date
 set +e
 if [ $ihh -ge 21 ] || [ $ihh -lt 3 ]; then #00UTC
-  dhr=$ihh
+  dhr=`expr 0 - $ihh`
 elif [ $ihh -lt 9 ]; then #06UTC
-  dhr=`expr $ihh - 6`
+  dhr=`expr 6 - $ihh`
 elif [ $ihh -lt 15 ]; then #12UTC
-  dhr=`expr $ihh - 12`
+  dhr=`expr 12 - $ihh`
 else #18UTC
-  dhr=`expr $ihh - 18`
+  dhr=`expr 18 - $ihh`
 fi
-if [ $dhr -gt 3 ]; then dhr=`expr $dhr - 24`; fi
+if [ $dhr -lt -3 ]; then dhr=`expr 24 + $dhr`; fi
 if [ $dhr -ge 0 ]; then dhr=+$dhr; fi
 cdate=`date -j -f "%Y%m%d%H" -v${dhr}H +"%Y%m%d%H" "$adate"`
 cyyyy=`echo ${cdate} | cut -c1-4`

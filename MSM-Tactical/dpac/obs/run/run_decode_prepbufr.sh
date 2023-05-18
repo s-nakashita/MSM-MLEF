@@ -2,8 +2,8 @@
 set -e
 pbdir=/zdata/grmsm/work/DATA/gdas
 obsdir=/zdata/grmsm/work/dpac/obs
-#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/obs
+bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
+#bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/builddev/obs
 adate=${1:-2022061812}
 lmin=-30
 rmin=30
@@ -26,16 +26,17 @@ mkdir -p $wdir/tmp
 cd $wdir/tmp
 
 # get file date
+set +e
 if [ $ihh -ge 21 ] || [ $ihh -lt 3 ]; then #00UTC
-  dhr=$ihh
+  dhr=`expr 0 - $ihh`
 elif [ $ihh -lt 9 ]; then #06UTC
-  dhr=`expr $ihh - 6`
+  dhr=`expr 6 - $ihh`
 elif [ $ihh -lt 15 ]; then #12UTC
-  dhr=`expr $ihh - 12`
+  dhr=`expr 12 - $ihh`
 else #18UTC
-  dhr=`expr $ihh - 18`
+  dhr=`expr 18 - $ihh`
 fi
-if [ $dhr -gt 3 ]; then dhr=`expr $dhr - 24`; fi
+if [ $dhr -lt -3 ]; then dhr=`expr 24 + $dhr`; fi
 if [ $dhr -ge 0 ]; then dhr=+$dhr; fi
 cdate=`date -j -f "%Y%m%d%H" -v${dhr}H +"%Y%m%d%H" "$adate"`
 cyyyy=`echo ${cdate} | cut -c1-4`
@@ -43,7 +44,6 @@ cmm=`echo ${cdate} | cut -c5-6`
 cdd=`echo ${cdate} | cut -c7-8`
 chh=`echo ${cdate} | cut -c9-10`
 echo $cyyyy $cmm $cdd $chh
-set +e
 icmm=`expr $cmm + 0`
 icdd=`expr $cdd + 0`
 ichh=`expr $chh + 0`
