@@ -66,8 +66,8 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=2
-export CYCLEMAX=4
+export CYCLESTART=5
+export CYCLEMAX=13
 export DASTART=1
 export INCCYCLE=1 # cycle interval (hours)
 export INCCYCLEBASE=6 # base cycle interval (hours)

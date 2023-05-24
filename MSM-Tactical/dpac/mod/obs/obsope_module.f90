@@ -362,9 +362,24 @@ contains
           kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
           k=kk(1)
           obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+    ! (debug) check whether observation is 
+    !  within prescribed horizontal domain or not
+    if(     lonw.ne.0.0d0.and.lone.ne.0.0d0 &
+       .and.lats.ne.0.0d0.and.latn.ne.0.0d0 &
+       .and.(obsout%lon(nobsout).lt.lonw&
+         .or.obsout%lon(nobsout).gt.lone&
+         .or.obsout%lat(nobsout).lt.lats&
+         .or.obsout%lat(nobsout).gt.latn)) then
+        write(0,'(2a,4f8.2,2(a,f8.2))') &
+        & 'warning: observation is outside of the prescribed horizontal domain ', &
+        & 'lonw,lone,lats,latn=',lonw,lone,lats,latn,&
+        & 'lon=',obsout%lon(nobsout),' lat=',obsout%lat(nobsout)
+        obsout%qc(nobsout)=iqc_out_h
+    else
           call phys2ijk(p_full,obsin(iof)%elem(n),&
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout))
+    end if
           if(obsout%qc(nobsout).eq.iqc_good) then
             if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
               obsout%qc(nobsout)=iqc_otype
@@ -686,18 +701,6 @@ contains
 
     qc=iqc_good
     
-!    ! (debug) check whether observation is within prescribed horizontal domain or not
-!    if(lonw.ne.0.0d0.and.lone.ne.0.0d0&
-!            .and.lats.ne.0.0d0.and.latn.ne.0.0d0) then
-!      if(rlon1.lt.lonw.or.rlon1.gt.lone.or.rlat1.lt.lats.or.rlat1.gt.latn) then
-!        write(0,'(2a,4f8.2,2(a,f8.2))') &
-!        & 'warning: observation is outside of the prescribed horizontal domain ', &
-!        & 'lonw,lone,lats,latn=',lonw,lone,lats,latn,&
-!        & 'lon=',rlon1,' lat=',rlat1
-!        qc=iqc_out_h
-!        return
-!      end if
-!    end if
     if(local_) then
       allocate( lnps(1:ni1max+2*ighost,1:nj1max+2*jghost) )
       ! rlon1 -> ri

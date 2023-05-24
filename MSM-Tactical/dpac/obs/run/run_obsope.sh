@@ -1,12 +1,12 @@
 #!/bin/sh
 set -e
-#datadir=/zdata/grmsm/work/msm2msm3_jpn
+datadir=/zdata/grmsm/work/msm2msm3_jpn
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #datadir=/zdata/grmsm/work/rsm2msm9_bv
-datadir=/zdata/grmsm/work/rsm2rsm18_da
+#datadir=/zdata/grmsm/work/rsm2rsm18_da
 #obsdir=/zdata/grmsm/work/dpac/obs
-obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
-#obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
+#obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
+obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=0
 adate=${1:-2022061812}
@@ -58,8 +58,8 @@ obsin_num=2
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
 fi
-outf=obsda${prep}_18_fh${fhour}
-logf=obsope${prep}_18_fh${fhour}
+outf=obsda${prep}_3_fh${fhour}
+logf=obsope${prep}_3_fh${fhour}
 if [ "$single" = "T" ];then
   outf=${outf}.single
   logf=${logf}.single
