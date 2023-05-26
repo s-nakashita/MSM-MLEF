@@ -1,0 +1,104 @@
+#undef MP
+#define SINGLE
+#undef THREAD
+#undef HYBRID
+
+#undef RKN
+
+#undef RAS
+
+#define CNT
+#define CNT_1
+#undef CNT_2
+#undef CNT_3
+#undef CNT_4
+#undef CNT_5
+#undef CNT_6
+
+#define MPIIO
+
+#define G2R
+#undef C2R
+
+#undef CRA
+#undef ORIGIN
+#undef DEC
+#define IBMSP
+
+#undef CRAY_THREAD
+#undef ORIGIN_THREAD
+#undef OPENMP
+
+#undef FFT99M
+#define DCRFT
+
+#undef FFD
+#undef FFS
+#undef FF
+#undef FTC
+#undef FT9
+#undef FT
+
+#ifdef THREAD
+#define OPENMP
+#endif
+#ifdef HYBRID
+#define OPENMP
+#endif
+#ifdef DCRFT
+#define FFD
+#define FF
+#endif
+#ifdef FFT99M
+#define FT9
+#define FT
+#endif
+
+#ifdef CRA
+#ifdef THREAD
+#define CRAY_THREAD
+#endif
+#ifdef HYBRID
+#define CRAY_THREAD
+#endif
+#define ASSIGN
+#define FT
+#ifdef DCRFT
+#define FTC
+#else
+#define FT9
+#endif
+#endif
+
+#ifdef ORIGIN
+#ifdef THREAD
+#define ORIGIN_THREAD
+#endif
+#ifdef HYBRID
+#define ORIGIN_THREAD
+#endif
+#endif
+
+#ifdef DEC
+#ifdef THREAD
+#define OPENMP
+#endif
+#ifdef HYBRID
+#define OPENMP
+#endif
+#endif
+
+#define SQK
+#undef SPT
+
+#undef A
+#undef T
+#undef Q
+#undef U
+#undef V
+#undef P
+
+#define M0
+#define M10
+#undef M05
+#undef MHI

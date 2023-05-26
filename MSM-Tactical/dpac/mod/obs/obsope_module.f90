@@ -10,7 +10,7 @@ module obsope_module
   use co_module
   use rsmcom_module
   use corsm_module
-  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj
+  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj, calc_q2
   use obs_module
   implicit none
   private
@@ -530,6 +530,9 @@ contains
     real(kind=dp), allocatable :: rand(:)
     real(kind=dp) :: tmplev, tmperr
     real(kind=dp), allocatable :: wk(:,:)[:]
+    !! q-adjustment
+    real(kind=dp) :: ptmp,ttmp,qstmp
+    !!
     integer :: is,ie,js,je
     integer,dimension(1) :: kk
     integer :: k
@@ -625,7 +628,18 @@ contains
                 if(wk(n,2)<0.0) wk(n,2)=1.0e-6
                 if(wk(n,2)>1.0) wk(n,2)=1.0
               else if(obsin(iof)%elem(n)==id_q_obs) then
-                if(wk(n,2)<0.0) wk(n,2)=1.0e-9
+                if(wk(n,2)<0.0) then
+                  wk(n,2)=1.0e-9
+                else
+                  ptmp=wk(n,1)
+                  call trans_xtoy(id_t_obs,ri,rj,rk,&
+                     &  v3d,v2d,p_full,ttmp)
+                  call calc_q2(ttmp,1.0d0,ptmp,qstmp)
+                  if(wk(n,2)>qstmp) then
+                    write(0,*) 'simulated q ',wk(n,2),'>',qstmp
+                    wk(n,2)=qstmp
+                  end if
+                end if
               end if
             end if !luseobs
           end if !iqc_good

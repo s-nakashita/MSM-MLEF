@@ -156,7 +156,8 @@ PDATE=$SDATE
 f0base=0
 if [ ! -d $base_dir ];then
 base_dir=$BASEDIR1/$SDATE
-if [ $OSSE = F ] && [ ! -d $base_dir ];then
+if [ $DANEST = T ] || [ $OSSE = F ]; then
+  if [ ! -d $base_dir ];then
   while [ $f0base -lt $INCCYCLEBASE ];do
     PDATE=`${UTLDIR}/ndate -$INCCYCLE ${PDATE}`
     f0base=`expr $f0base + $INCCYCLE`
@@ -172,8 +173,10 @@ if [ $OSSE = F ] && [ ! -d $base_dir ];then
     echo 'Cannot find boundary data '$base_dir
     exit 1
   fi
+  fi
 fi
 fi
+f0base0=$f0base
 BASEDIR=$base_dir
 BASESFCDIR=$BASEDIR
 export RUNDIR BASEDIR BASESFCDIR
@@ -227,9 +230,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}mean ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -266,11 +269,11 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}000
+  fi # -d ${head}mean
 else
   #
   # control
-  if [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
+  if [ $DANEST = F ] && [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
     #
     #  Restart
     #
@@ -472,7 +475,7 @@ fi #doDA=doyes
 # Ensemble Forecast loop
 ########################################
 PREPBASE=F
-if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ]; then
+if [ $CYCLEDA -ge 1 ] && [ $OSSE = T ] && [ $DANEST = F ]; then
   $USHDIR/rprepbase.sh $CYCLEDA $DA_MEAN || exit 6
   PREPBASE=T
 #fi
@@ -500,17 +503,23 @@ while [ $mem -le $MEMBER ];do
     export ENDHOUR=$ENDHOUR0
     cd $RUNDIR
     if [ $DANEST = T ];then
-    export BASEDIR=$base_dir
+    #export BASEDIR=$BASEDIR0/$SDATE0
+    #f0base0=$f0base
+    #f0base=$IOFFSET
+    export BASEDIR=$base_dir/${HEADBASE}000
     export BASESFCDIR=$BASEDIR
     fi
   elif [ $mem -eq 0 ]; then ## control
+    if [ $OSSE = T ] && [ $NODA = T ]; then
+      export ENDHOUR=$INCCYCLE
+    fi
     if [ do$DA = doyes ] || [ $DANEST = T ]; then
-#    export ENDHOUR=$INCCYCLE
     cd $RUNDIR/${head}000
     else
     cd $RUNDIR
     fi
     if [ $DANEST = T ];then
+    #f0base=$f0base0
     export BASEDIR=$base_dir/${HEADBASE}000
     export BASESFCDIR=$BASEDIR
     fi
@@ -623,8 +632,12 @@ while [ $h -lt $FEND ]; do
     else
     echo "Ensemble forecast member $mem starting from hour $h..." >>stdout
     fi
+    if [ do$RUNGBASE = doyes ] ; then
+    timeout 300 $USHDIR/rgbase.sh $hx || exit 10
+    else
     timeout 300 $USHDIR/rfcst.sh $hx || exit 10
     #$USHDIR/rfcst.sh $hx || exit 10
+    fi
 
     if [ do$LAMMPI = doyes ]; then
        lamclean
@@ -648,10 +661,16 @@ while [ $h -lt $FEND ]; do
       mv r_sigf$hr   r_sig.f$hr
       mv r_sfcf$hr   r_sfc.f$hr
       mv r_flxf$hr   r_flx.f$hr
+      if [ do$RUNGBASE = doyes ] ; then
+      mv rbssigf$hr  rbssig.f$hr
+      fi
       else
       mv r_sigf${hr}:00:00   r_sig.f$hr
       mv r_sfcf${hr}:00:00   r_sfc.f$hr
       mv r_flxf${hr}:00:00   r_flx.f$hr
+      if [ do$RUNGBASE = doyes ] ; then
+      mv rbssigf${hr}:00:00   rbssig.f$hr
+      fi
       fi
       hr=`expr $hr + $PRTHOUR`
     done

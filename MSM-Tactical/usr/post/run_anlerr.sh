@@ -20,6 +20,8 @@ elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018
 #SDATE0=2022061812
+elif [ $IRES -eq 3 ]; then
+EXPN=rsm2msm3_da
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -70,6 +72,12 @@ fhtruemax=48
 elif [ $IRES -eq 9 ]; then
 TRUEDIR=$WORKUSR/rsm2msm9_truth2
 fhtruemax=24
+elif [ $IRES -eq 3 ]; then
+TRUEDIR=$WORKUSR/rsm2msm3_truthb
+TRUENESTDIR=$WORKUSR/rsm2msm3_truthb
+DANESTDIR=$WORKUSR/rsm2msm3_osseb
+DANESTHEAD=noda000
+fhtruemax=6
 fi
 echo $TRUEDIR
 #tmem=`printf '%0.3d' $TMEM`
@@ -111,40 +119,53 @@ inc_h=$PRTHOUR
 echo $end_hour $inc_h
 #exit
 while [ $fh -le $end_hour ]; do
-if [ $fh -lt 10 ]; then
-  fh=0$fh
-fi
-rm -f fort.*
-# reference state
-if [ $fhtrue -lt 10 ]; then
-  fhtrue=0$fhtrue
-fi
+  if [ $fh -lt 10 ]; then
+    fh=0$fh
+  fi
+  rm -f fort.*
+  # reference state
+  lbase=F
+  if [ $fhtrue -lt 10 ]; then
+    fhtrue=0$fhtrue
+  fi
   nsig=11
   #ln -s $DATADIR/$SDATE0/$truth/r_sig.f$fhtrue fort.$nsig
   ln -s $TRUEDIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
+  if [ $DANEST = T ]; then
+    # truth base
+    lbase=T
+    nsig=`expr $nsig + 1`
+    ln -s $TRUENESTDIR/$SDATE0/rbssigf$fhtrue fort.$nsig
+  fi
 # experiment
   nsig=`expr $nsig + 1`
   if [ $ANAL = F ]; then
-#  if [ $DA_MEAN = T ]; then
-#  ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
-#  else
-  ln -s $DATADIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
-#  fi
+#    if [ $DA_MEAN = T ]; then
+#      ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
+#    else
+    ln -s $DATADIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
+#    fi
   else
-  if [ $DA_MEAN = T ]; then
-  ln -s $DATADIR/$SDATE/${header}mean/r_sig.f$fh fort.$nsig #c
-  else
-    if [ $header = $HEAD ];then
-      ln -s $DATADIR/$SDATE/r_sig.f$fh fort.$nsig #c
+    if [ $DA_MEAN = T ]; then
+      ln -s $DATADIR/$SDATE/${header}mean/r_sig.f$fh fort.$nsig #c
     else
-      ln -s $DATADIR/$SDATE/${header}000/r_sig.f$fh fort.$nsig #c
-    fi
-  fi
+      if [ $header = $HEAD ];then
+        ln -s $DATADIR/$SDATE/r_sig.f$fh fort.$nsig #c
+      else
+        ln -s $DATADIR/$SDATE/${header}000/r_sig.f$fh fort.$nsig #c
+      fi
+    fi #DA_MEAN
+  fi #ANAL
+  if [ $DANEST = T ]; then
+    # exp base
+    nsig=`expr $nsig + 1`
+    ln -s $DANESTDIR/$SDATE0/$DANESTHEAD/rbssigf$fhtrue fort.$nsig
   fi
 if [ $IRES -eq 18 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ lbase=${lbase},
  epsq=,
  lonw=115,
  lone=133,
@@ -153,10 +174,11 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
-else
+elif [ $IRES -gt 3 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ lbase=${lbase},
  epsq=,
  lonw=118.5,
  lone=129.5,
@@ -165,12 +187,25 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ lprtb=T,
+ lbase=${lbase},
+ epsq=,
+ lonw=,
+ lone=,
+ lats=,
+ latn=,
+ kmax=42,
+&END
+EOF
 fi
-  rm te.grd teprof.dat
+  rm -f te*.grd teprof*.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 
 #  cat te.dat
 #  ./${EXEC2} < NAMELIST 1>>${EXEC2}.log 2>&1 || exit 9 
-  head -n 5 teprof.dat
+#  head -n 5 teprof.dat
   if [ $ANAL = F ]; then
 #    if [ $DA_MEAN = T ];then
 ##      mv te.dat $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.dat #c
@@ -178,23 +213,58 @@ fi
 #      mv teprof.dat $DATADIR/${SDATE0}/${header}mean/teprof-err${fhtrue}h.dat
 #    else
 ##      mv te.dat $DATADIR/${SDATE0}/te-err${fhtrue}h.dat #c
-      mv te.grd $DATADIR/${SDATE0}/te-err${fhtrue}h.grd
-      mv teprof.dat $DATADIR/${SDATE0}/teprof-err${fhtrue}h.dat
+      if [ $DANEST = T ]; then
+        mv teb.grd $DATADIR/${SDATE0}/tebase-err${fhtrue}h.grd
+        mv teprofb.dat $DATADIR/${SDATE0}/teprofbase-err${fhtrue}h.dat
+        mv tec.grd $DATADIR/${SDATE0}/tecross-err${fhtrue}h.grd
+        mv teprofc.dat $DATADIR/${SDATE0}/teprofcross-err${fhtrue}h.dat
+        mv tep.grd $DATADIR/${SDATE0}/teprtb-err${fhtrue}h.grd
+        mv teprofp.dat $DATADIR/${SDATE0}/teprofprtb-err${fhtrue}h.dat
+      else
+        mv te.grd $DATADIR/${SDATE0}/te-err${fhtrue}h.grd
+        mv teprof.dat $DATADIR/${SDATE0}/teprof-err${fhtrue}h.dat
+      fi
 #    fi
   else
     if [ $DA_MEAN = T ];then
-#      mv te.dat $DATADIR/${SDATE}/${header}mean/te-err${fh}h.dat #c
-      mv te.grd $DATADIR/${SDATE}/${header}mean/te-err${fh}h.grd #c
-      mv teprof.dat $DATADIR/${SDATE}/${header}mean/teprof-err${fh}h.dat #c
+      if [ $DANEST = T ]; then
+        mv teb.grd $DATADIR/${SDATE}/${header}mean/tebase-err${fh}h.grd
+        mv teprofb.dat $DATADIR/${SDATE}/${header}mean/teprofbase-err${fh}h.dat
+        mv tec.grd $DATADIR/${SDATE}/${header}mean/tecross-err${fh}h.grd
+        mv teprofc.dat $DATADIR/${SDATE}/${header}mean/teprofcross-err${fh}h.dat
+        mv tep.grd $DATADIR/${SDATE}/${header}mean/teprtb-err${fh}h.grd
+        mv teprofp.dat $DATADIR/${SDATE}/${header}mean/teprofprtb-err${fh}h.dat
+      else
+        mv te.grd $DATADIR/${SDATE}/${header}mean/te-err${fh}h.grd #c
+        mv teprof.dat $DATADIR/${SDATE}/${header}mean/teprof-err${fh}h.dat #c
+      fi
     else
       if [ $header = $HEAD ];then
-#        mv te.dat $DATADIR/${SDATE}/te-err${fh}h.dat
-        mv te.grd $DATADIR/${SDATE}/te-err${fh}h.grd
-        mv teprof.dat $DATADIR/${SDATE}/teprof-err${fh}h.dat
+        if [ $DANEST = T ]; then
+          mv teb.grd $DATADIR/${SDATE}/tebase-err${fh}h.grd
+          mv teprofb.dat $DATADIR/${SDATE}/teprofbase-err${fh}h.dat
+          mv tec.grd $DATADIR/${SDATE}/tecross-err${fh}h.grd
+          mv teprofc.dat $DATADIR/${SDATE}/teprofcross-err${fh}h.dat
+          mv tep.grd $DATADIR/${SDATE}/teprtb-err${fh}h.grd
+          mv teprofp.dat $DATADIR/${SDATE}/teprofprtb-err${fh}h.dat
+        else
+#          mv te.dat $DATADIR/${SDATE}/te-err${fh}h.dat
+          mv te.grd $DATADIR/${SDATE}/te-err${fh}h.grd
+          mv teprof.dat $DATADIR/${SDATE}/teprof-err${fh}h.dat
+	fi
       else
-#        mv te.dat $DATADIR/${SDATE}/${header}000/te-err${fh}h.dat
-        mv te.grd $DATADIR/${SDATE}/${header}000/te-err${fh}h.grd
-        mv teprof.dat $DATADIR/${SDATE}/${header}000/teprof-err${fh}h.dat
+        if [ $DANEST = T ]; then
+          mv teb.grd $DATADIR/${SDATE}/${header}000/tebase-err${fh}h.grd
+          mv teprofb.dat $DATADIR/${SDATE}/${header}000/teprofbase-err${fh}h.dat
+          mv tec.grd $DATADIR/${SDATE}/${header}000/tecross-err${fh}h.grd
+          mv teprofc.dat $DATADIR/${SDATE}/${header}000/teprofcross-err${fh}h.dat
+          mv tep.grd $DATADIR/${SDATE}/${header}000/teprtb-err${fh}h.grd
+          mv teprofp.dat $DATADIR/${SDATE}/${header}000/teprofprtb-err${fh}h.dat
+        else
+#          mv te.dat $DATADIR/${SDATE}/${header}000/te-err${fh}h.dat
+          mv te.grd $DATADIR/${SDATE}/${header}000/te-err${fh}h.grd
+          mv teprof.dat $DATADIR/${SDATE}/${header}000/teprof-err${fh}h.dat
+	fi
       fi
     fi
   fi
