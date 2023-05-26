@@ -14,21 +14,17 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-#   export TEMP=$WORKUSR/${EXPN}          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_truth2
+   export TEMP=$WORKUSR/${EXPN}_tparc          #output top directory
 fi
 #export BASEDIR=$WORKUSR/rsm2rsm27/${SDATE}
 if [ do$MEM = do ];then
-#export BASEDIR=$HOME/mnt/methane/work/gfsp2rsm27_nomad/${SDATE}
-#export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
-export BASEDIR=$WORKUSR/gfsp2rsm27_nomad_gfsz/${SDATE}
-export BASEDIR=$WORKUSR/rsm2rsm18_truth/${SDATE}
+export BASEDIR=$WORKUSR/gfsp2rsm27_nomad/${SDATE}
 else
 export RUNDIR=$TEMP/$SDATE/$MEM
-export BASEDIR=$HOME/mnt/methane/work/gefs2rsm27_nomad/${SDATE}/${MEM}
+export BASEDIR=$WORKUSR/gefs2rsm27_nomad/${SDATE}/${MEM}
 fi
 export IRES=9
-export PLOT=no
+export PLOT=yes
 
 # --------------- compile options ----------------
 # machine dependent
@@ -73,15 +69,16 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export ENDHOUR=24 
+export ENDHOUR=120 
+#export ENDHOUR=48                             # release_test
 #from gfsp2rsm27
-#export INCBASE=3
-#export INCHOUR=3
-#export PRTHOUR=3
+export INCBASE=3
+export INCHOUR=3
 ##from rsm2rsm27
-export INCBASE=1
-export INCHOUR=1
-export PRTHOUR=1
+#export INCBASE=1
+#export INCHOUR=1
+#export PRTHOUR=1
+export PRTHOUR=3
 export TIMESTEP=30
 export IMDLPHY=1                # 1: run model physics, 0: off
 export CLIM=0
@@ -92,32 +89,6 @@ export RUNRINP=yes
 export RUNFCST=yes
 
 #### rsmlocation
-# d02 domain 118.5E-135E 22N-36N
-export  IGRD=128
-export  JGRD=128
-export  LEVR=42
-export  RPROJ=0.
-export  RTRUTH=45.0
-export  RORIENT=140.0
-export  RDELX=9000.
-export  RDELY=9000.
-export  RCENLAT=30.0
-export  RCENLON=120.0
-export  RLFTGRD=30.0
-export  RBTMGRD=33.0
-## d02 domain 118.5E-135E 22N-36N
-#export  IGRD=144
-#export  JGRD=144
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=140.0
-#export  RDELX=9000.
-#export  RDELY=9000.
-#export  RCENLAT=35.0
-#export  RCENLON=125.0
-#export  RLFTGRD=98.0
-#export  RBTMGRD=81.0
 
 ## d02 domain 100E-142E 2N-37N
 #export  IGRD=384
@@ -159,18 +130,18 @@ export  RBTMGRD=33.0
 #export  RLFTGRD=183.0
 #export  RBTMGRD=190.0
 ## For T-PARC II domain 120E-164E 5N-38N
-#export  IGRD=384
-#export  JGRD=324
-#export  LEVR=42
-#export  RPROJ=0.
-#export  RTRUTH=45.0
-#export  RORIENT=140.0
-#export  RDELX=9000.
-#export  RDELY=9000.
-#export  RCENLAT=20.0
-#export  RCENLON=140.0
-#export  RLFTGRD=176.0
-#export  RBTMGRD=136.0
+export  IGRD=384
+export  JGRD=324
+export  LEVR=42
+export  RPROJ=0.
+export  RTRUTH=45.0
+export  RORIENT=140.0
+export  RDELX=9000.
+export  RDELY=9000.
+export  RCENLAT=20.0
+export  RCENLON=140.0
+export  RLFTGRD=176.0
+export  RBTMGRD=136.0
 ## North America domain 125W-82W 20N-55N
 #export  IGRD=324
 #export  JGRD=324
@@ -191,32 +162,19 @@ export  RBTMGRD=33.0
 #export  RBTMGRD=63.                         # release_test
 
 ## base field from running RSM 
-##from gfsp2rsm27
-#export  CIGRD=384 
-#export  CJGRD=324
-#export  LEVS=42
-#export  CPROJ=0.
-#export  CTRUTH=45.0
-#export  CORIENT=120.0
-#export  CDELX=27000.
-#export  CDELY=27000.
-#export  CCENLAT=23.5
-#export  CCENLON=120.0
-#export  CLFTGRD=163.
-#export  CBTMGRD=139.
-##from rsm2rsm18
-export  CIGRD=96
-export  CJGRD=96
+#from gfsp2rsm27
+export  CIGRD=384 
+export  CJGRD=324
 export  LEVS=42
 export  CPROJ=0.
 export  CTRUTH=45.0
 export  CORIENT=120.0
-export  CDELX=18000.
-export  CDELY=18000.
-export  CCENLAT=30.0
+export  CDELX=27000.
+export  CDELY=27000.
+export  CCENLAT=23.5
 export  CCENLON=120.0
-export  CLFTGRD=30.
-export  CBTMGRD=33.
+export  CLFTGRD=163.
+export  CBTMGRD=139.
 ##from rsm2rsm27
 #export  CIGRD=324
 #export  CJGRD=288

@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 set -x
+#export SDATE=2022061806
 export SDATE=2022061712
 export SAMPLETXT="gfs_sampledate_MJ.txt"
 #export SDATE=2022082900

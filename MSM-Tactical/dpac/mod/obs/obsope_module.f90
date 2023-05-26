@@ -10,7 +10,7 @@ module obsope_module
   use co_module
   use rsmcom_module
   use corsm_module
-  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj
+  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj, calc_q2
   use obs_module
   implicit none
   private
@@ -54,11 +54,11 @@ contains
       nobsin=nobsin+obsin(iof)%nobs
     end do
     obsout%nobs = nobsin + obsout%nobs ! obsout%nobs:externally processed obs number
-    call obsout_allocate(obsout,member)
-    if(nobsin.le.0) then
+    if(obsout%nobs.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
+    call obsout_allocate(obsout,member)
 
     if(debug_obs) open(stnout,file='station_synop.txt')
     allocate( v3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d) )
@@ -125,8 +125,10 @@ contains
           k=kk(1)
           obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           ! horizontal domain check
-          if(    obsin(iof)%lon(n).lt.rlon(1).or.obsin(iof)%lon(n).gt.rlon(nlon)&
-             .or.obsin(iof)%lat(n).lt.rlat(1).or.obsin(iof)%lat(n).gt.rlat(nlat)) then
+          if(    obsin(iof)%lon(n).le.rlon(1) &
+             .or.obsin(iof)%lon(n).ge.rlon(nlon)&
+             .or.obsin(iof)%lat(n).le.rlat(1) &
+             .or.obsin(iof)%lat(n).ge.rlat(nlat)) then
             if(myimage.eq.print_img) &
             write(0,'(a,2(a,f8.2))') &
             & 'warning: observation is outside of the horizontal domain ', &
@@ -316,11 +318,11 @@ contains
       nobsin=nobsin+obsin(iof)%nobs
     end do
     obsout%nobs = nobsin + obsout%nobs !obsout%nobs : externally processes obs number
-    call obsout_allocate(obsout,member)
-    if(nobsin.le.0) then
+    if(obsout%nobs.le.0) then
       write(6,'(a)') 'no observation to be assimilated'
       return
     end if
+    call obsout_allocate(obsout,member)
     allocate( tmpqc(nobsin) )
    
     do im=0,member
@@ -528,6 +530,9 @@ contains
     real(kind=dp), allocatable :: rand(:)
     real(kind=dp) :: tmplev, tmperr
     real(kind=dp), allocatable :: wk(:,:)[:]
+    !! q-adjustment
+    real(kind=dp) :: ptmp,ttmp,qstmp
+    !!
     integer :: is,ie,js,je
     integer,dimension(1) :: kk
     integer :: k
@@ -623,7 +628,18 @@ contains
                 if(wk(n,2)<0.0) wk(n,2)=1.0e-6
                 if(wk(n,2)>1.0) wk(n,2)=1.0
               else if(obsin(iof)%elem(n)==id_q_obs) then
-                if(wk(n,2)<0.0) wk(n,2)=1.0e-9
+                if(wk(n,2)<0.0) then
+                  wk(n,2)=1.0e-9
+                else
+                  ptmp=wk(n,1)
+                  call trans_xtoy(id_t_obs,ri,rj,rk,&
+                     &  v3d,v2d,p_full,ttmp)
+                  call calc_q2(ttmp,1.0d0,ptmp,qstmp)
+                  if(wk(n,2)>qstmp) then
+                    write(0,*) 'simulated q ',wk(n,2),'>',qstmp
+                    wk(n,2)=qstmp
+                  end if
+                end if
               end if
             end if !luseobs
           end if !iqc_good

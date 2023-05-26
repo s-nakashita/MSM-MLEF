@@ -1,15 +1,20 @@
 #!/bin/sh
 set -e
+#datadir=/zdata/grmsm/work/msm2msm3_jpn
 #datadir=/zdata/grmsm/work/msm2msm3_bv
-datadir=/zdata/grmsm/work/rsm2msm9_bv
-obsdir=/zdata/grmsm/work/dpac/obs
+#datadir=/zdata/grmsm/work/rsm2msm9_bv
+datadir=/zdata/grmsm/work/rsm2rsm18_da
+#obsdir=/zdata/grmsm/work/dpac/obs
+obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
+#obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
-member=10
-adate=2022061812
-fhour=0
-lmin=-60
-rmin=60
-prep=_prep
+member=0
+adate=${1:-2022061812}
+fhour=${2:-0}
+platform=prepbufr
+lmin=-30
+rmin=30
+prep=
 single=F
 useobs='all'
 parallel=F
@@ -21,28 +26,40 @@ RUNENV=''
 fi
 echo $RUNENV
 
-yyyy=`echo ${adate} | cut -c1-4`
-yy=`echo ${adate} | cut -c3-4`
-mm=`echo ${adate} | cut -c5-6`
-dd=`echo ${adate} | cut -c7-8`
-hh=`echo ${adate} | cut -c9-10`
+odate=$adate
+yyyy=`echo ${odate} | cut -c1-4`
+yy=`echo ${odate} | cut -c3-4`
+mm=`echo ${odate} | cut -c5-6`
+dd=`echo ${odate} | cut -c7-8`
+hh=`echo ${odate} | cut -c9-10`
 echo $yyyy $mm $dd $hh
+set +e
 imm=`expr $mm + 0`
 idd=`expr $dd + 0`
 ihh=`expr $hh + 0`
+set -e
 if [ $lmin -lt 0 ];then
-sdate=`date -j -f "%Y%m%d%H%M" -v${lmin}M +"%y%m%d%H%M" "${adate}00"`
+sdate=`date -j -f "%Y%m%d%H%M" -v${lmin}M +"%y%m%d%H%M" "${odate}00"`
 else
-sdate=`date -j -f "%Y%m%d%H%M" -v+${lmin}M +"%y%m%d%H%M" "${adate}00"`
+sdate=`date -j -f "%Y%m%d%H%M" -v+${lmin}M +"%y%m%d%H%M" "${odate}00"`
 fi
 if [ $rmin -lt 0 ];then
-edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${adate}00"`
+edate=`date -j -f "%Y%m%d%H%M" -v${rmin}M +"%H%M" "${odate}00"`
 else
-edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${adate}00"`
+edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${odate}00"`
 fi
+if [ $platform = prepbufr ]; then
+obsin_num=3
+obsf=ADPUPA${prep}.${sdate}-${edate}
+obsf2=ADPSFC.${sdate}-${edate}
+obsf3=SFCSHP.${sdate}-${edate}
+else
+obsin_num=2
 obsf=upper${prep}.${sdate}-${edate}
-outf=obsda${prep}
-logf=obsope${prep}
+obsf2=surf.${sdate}-${edate}
+fi
+outf=obsda${prep}_18_fh${fhour}
+logf=obsope${prep}_18_fh${fhour}
 if [ "$single" = "T" ];then
   outf=${outf}.single
   logf=${logf}.single
@@ -78,13 +95,17 @@ cat <<EOF >obsope.nml
  member=${member},
 &end
 &param_obsope
- obsin_num=1,
- obsin_name='${obsf}',
- obs_out=,
+ obsin_num=${obsin_num},
+ obsin_name='${obsf}','${obsf2}','${obsf3}',
+ obs_out=T,
  obsout_basename='${outf}.@@@@',
  fguess_basename=,
  nobsmax=,
  single_obs=${single},
+! lonw=124.8,
+! lone=132.1,
+! lats=29.1,
+! latn=33.8,
  luseobs=${luseobs},
  slot_start=,
  slot_end=,
@@ -112,12 +133,17 @@ fi
 cat obsope.nml
 
 rm -f gues.*
+idate=`date -j -f "%Y%m%d%H" -v-${fhour}H +"%Y%m%d%H" "$adate"`
 fh=`printf '%0.2d' $fhour`
-ln -s ${datadir}/${adate}/r_sig.f$fh gues.0000.grd
+ln -s ${datadir}/${idate}/r_sig.f$fh gues.0000.sig.grd
+ln -s ${datadir}/${idate}/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${datadir}/${idate}/r_flx.f$fh gues.0000.flx.grd
 m=1
 while [ $m -le $member ];do
 mem=`printf '%0.3d' $m`
-ln -s ${datadir}/${adate}/bv${mem}/r_sig.f$fh gues.0${mem}.grd
+ln -s ${datadir}/${idate}/bv${mem}/r_sig.f$fh gues.0${mem}.sig.grd
+ln -s ${datadir}/${idate}/bv${mem}/r_sfc.f$fh gues.0${mem}.sfc.grd
+ln -s ${datadir}/${idate}/bv${mem}/r_flx.f$fh gues.0${mem}.flx.grd
 m=`expr $m + 1`
 done
 

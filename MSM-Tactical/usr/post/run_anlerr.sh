@@ -8,6 +8,7 @@ IRES=${1}
 SDATE0=${2}
 #export SDATE IRES
 ANAL=${3:-T}
+LBASE=${4:-F}
 MSMDIR=/home/nakashita/Development/grmsm/MSM-Tactical
 #SRCDIR=${MSMDIR}/usr/post
 SRCDIR=${MSMDIR}/dpac/build/post
@@ -20,6 +21,9 @@ elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018
 #SDATE0=2022061812
+elif [ $IRES -eq 3 ]; then
+EXPN=rsm2msm3_da
+EXPN=rsm2msm3_datest
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -63,30 +67,41 @@ ln -s ${SRCDIR}/${EXEC} ${EXEC}
 
 if [ $IRES -eq 27 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm27_truth
+fhtrue=0
 fhtruemax=24
 elif [ $IRES -eq 18 ]; then
 TRUEDIR=$WORKUSR/rsm2rsm18_truth
+fhtrue=0
 fhtruemax=48
 elif [ $IRES -eq 9 ]; then
 TRUEDIR=$WORKUSR/rsm2msm9_truth2
+fhtrue=0
 fhtruemax=24
+elif [ $IRES -eq 3 ]; then
+TRUEDIR=$WORKUSR/rsm2msm3_truthb
+TRUENESTDIR=$WORKUSR/rsm2msm3_truthb
+LBASEDIR=$WORKUSR/rsm2msm3_osseb
+LBASEHEAD=noda000
+fhtrue=12
+fhtruemax=18
 fi
 echo $TRUEDIR
 #tmem=`printf '%0.3d' $TMEM`
 #truth=${HEAD}${tmem}
 #echo $truth
-fhtrue=0
 icyc=$CYCLESTART
 SDATE=$SDATE0
-if [ $icyc -gt 1 ]; then
+if [ $icyc -ge 1 ]; then
   icycp=`expr $icyc - 1`
-  offset=`expr $icycp \* $INCCYCLE`
+  offset=`expr $IOFFSET + $icycp \* $INCCYCLE`
   SDATE=`date -j -f "%Y%m%d%H" -v+${offset}H +"%Y%m%d%H" "${SDATE}"`
 fi
+NDATE=$SDATE # for noda
+fhnoda=0
 while [ $icyc -le $CYCLEMAX ];do
 if [ $ANAL = T ] && [ $icyc -gt 1 ]; then
   icycp=`expr $icyc - 1`
-  fhtrue=`expr $icycp \* $INCCYCLE`
+  fhtrue=`expr $IOFFSET + $icycp \* $INCCYCLE`
 fi
 if [ $fhtrue -gt $fhtruemax ]; then
   break
@@ -111,40 +126,59 @@ inc_h=$PRTHOUR
 echo $end_hour $inc_h
 #exit
 while [ $fh -le $end_hour ]; do
-if [ $fh -lt 10 ]; then
-  fh=0$fh
-fi
-rm -f fort.*
-# reference state
-if [ $fhtrue -lt 10 ]; then
-  fhtrue=0$fhtrue
-fi
+  if [ $fh -lt 10 ]; then
+    fh=0$fh
+  fi
+  rm -f fort.*
+  # reference state
+  if [ $fhtrue -lt 10 ]; then
+    fhtrue=0$fhtrue
+  fi
   nsig=11
   #ln -s $DATADIR/$SDATE0/$truth/r_sig.f$fhtrue fort.$nsig
   ln -s $TRUEDIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
+  if [ $LBASE = T ]; then
+    # truth base
+    nsig=`expr $nsig + 1`
+    ln -s $TRUENESTDIR/$SDATE0/rbssigf$fhtrue fort.$nsig
+  fi
 # experiment
   nsig=`expr $nsig + 1`
   if [ $ANAL = F ]; then
-#  if [ $DA_MEAN = T ]; then
-#  ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
-#  else
-  ln -s $DATADIR/$SDATE0/r_sig.f$fhtrue fort.$nsig
-#  fi
-  else
-  if [ $DA_MEAN = T ]; then
-  ln -s $DATADIR/$SDATE/${header}mean/r_sig.f$fh fort.$nsig #c
-  else
-    if [ $header = $HEAD ];then
-      ln -s $DATADIR/$SDATE/r_sig.f$fh fort.$nsig #c
-    else
-      ln -s $DATADIR/$SDATE/${header}000/r_sig.f$fh fort.$nsig #c
-    fi
+  if [ $fhnoda -lt 10 ]; then
+    fhnoda=0$fhnoda
   fi
+#    if [ $DA_MEAN = T ]; then
+#      ln -s $DATADIR/$SDATE0/${header}mean/r_sig.f$fhtrue fort.$nsig
+#    else
+    ln -s $DATADIR/$NDATE/r_sig.f$fhnoda fort.$nsig
+#    fi
+  else
+    if [ $DA_MEAN = T ]; then
+      ln -s $DATADIR/$SDATE/${header}mean/r_sig.f$fh fort.$nsig #c
+    else
+      if [ $header = $HEAD ];then
+        ln -s $DATADIR/$SDATE/r_sig.f$fh fort.$nsig #c
+      else
+        ln -s $DATADIR/$SDATE/${header}000/r_sig.f$fh fort.$nsig #c
+      fi
+    fi #DA_MEAN
+  fi #ANAL
+  if [ $LBASE = T ]; then
+    # exp base
+    nsig=`expr $nsig + 1`
+    if [ $ANAL = F ]; then
+    ln -s $LBASEDIR/$NDATE/rbssigf$fhnoda fort.$nsig
+    else
+    #ln -s $LBASEDIR/$SDATE0/$LBASEHEAD/rbssigf$fh fort.$nsig
+    ln -s $LBASEDIR/$SDATE/${header}000/rbssigf$fh fort.$nsig
+    fi
   fi
 if [ $IRES -eq 18 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ lbase=${LBASE},
  epsq=,
  lonw=115,
  lone=133,
@@ -153,10 +187,11 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
-else
+elif [ $IRES -gt 3 ]; then
 cat <<EOF >NAMELIST
 &NAMLST_PRTB
  lprtb=T,
+ lbase=${LBASE},
  epsq=,
  lonw=118.5,
  lone=129.5,
@@ -165,12 +200,25 @@ cat <<EOF >NAMELIST
  kmax=42,
 &END
 EOF
+else
+cat <<EOF >NAMELIST
+&NAMLST_PRTB
+ lprtb=T,
+ lbase=${LBASE},
+ epsq=,
+ lonw=,
+ lone=,
+ lats=,
+ latn=,
+ kmax=42,
+&END
+EOF
 fi
-  rm te.grd teprof.dat
+  rm -f te*.grd teprof*.dat
   ./${EXEC} < NAMELIST 1>>${EXEC}.log 2>&1 || exit 9 
 #  cat te.dat
 #  ./${EXEC2} < NAMELIST 1>>${EXEC2}.log 2>&1 || exit 9 
-  head -n 5 teprof.dat
+#  head -n 5 teprof.dat
   if [ $ANAL = F ]; then
 #    if [ $DA_MEAN = T ];then
 ##      mv te.dat $DATADIR/${SDATE0}/${header}mean/te-err${fhtrue}h.dat #c
@@ -178,30 +226,66 @@ fi
 #      mv teprof.dat $DATADIR/${SDATE0}/${header}mean/teprof-err${fhtrue}h.dat
 #    else
 ##      mv te.dat $DATADIR/${SDATE0}/te-err${fhtrue}h.dat #c
-      mv te.grd $DATADIR/${SDATE0}/te-err${fhtrue}h.grd
-      mv teprof.dat $DATADIR/${SDATE0}/teprof-err${fhtrue}h.dat
+      if [ $LBASE = T ]; then
+        mv teb.grd $DATADIR/${NDATE}/tebase-err${fhnoda}h.grd
+        mv teprofb.dat $DATADIR/${NDATE}/teprofbase-err${fhnoda}h.dat
+        mv tec.grd $DATADIR/${NDATE}/tecross-err${fhnoda}h.grd
+        mv teprofc.dat $DATADIR/${NDATE}/teprofcross-err${fhnoda}h.dat
+        mv tep.grd $DATADIR/${NDATE}/teprtb-err${fhnoda}h.grd
+        mv teprofp.dat $DATADIR/${NDATE}/teprofprtb-err${fhnoda}h.dat
+      else
+        mv te.grd $DATADIR/${NDATE}/te-err${fhnoda}h.grd
+        mv teprof.dat $DATADIR/${NDATE}/teprof-err${fhnoda}h.dat
+      fi
 #    fi
   else
     if [ $DA_MEAN = T ];then
-#      mv te.dat $DATADIR/${SDATE}/${header}mean/te-err${fh}h.dat #c
-      mv te.grd $DATADIR/${SDATE}/${header}mean/te-err${fh}h.grd #c
-      mv teprof.dat $DATADIR/${SDATE}/${header}mean/teprof-err${fh}h.dat #c
+      if [ $LBASE = T ]; then
+        mv teb.grd $DATADIR/${SDATE}/${header}mean/tebase-err${fh}h.grd
+        mv teprofb.dat $DATADIR/${SDATE}/${header}mean/teprofbase-err${fh}h.dat
+        mv tec.grd $DATADIR/${SDATE}/${header}mean/tecross-err${fh}h.grd
+        mv teprofc.dat $DATADIR/${SDATE}/${header}mean/teprofcross-err${fh}h.dat
+        mv tep.grd $DATADIR/${SDATE}/${header}mean/teprtb-err${fh}h.grd
+        mv teprofp.dat $DATADIR/${SDATE}/${header}mean/teprofprtb-err${fh}h.dat
+      else
+        mv te.grd $DATADIR/${SDATE}/${header}mean/te-err${fh}h.grd #c
+        mv teprof.dat $DATADIR/${SDATE}/${header}mean/teprof-err${fh}h.dat #c
+      fi
     else
       if [ $header = $HEAD ];then
-#        mv te.dat $DATADIR/${SDATE}/te-err${fh}h.dat
-        mv te.grd $DATADIR/${SDATE}/te-err${fh}h.grd
-        mv teprof.dat $DATADIR/${SDATE}/teprof-err${fh}h.dat
+        if [ $LBASE = T ]; then
+          mv teb.grd $DATADIR/${SDATE}/tebase-err${fh}h.grd
+          mv teprofb.dat $DATADIR/${SDATE}/teprofbase-err${fh}h.dat
+          mv tec.grd $DATADIR/${SDATE}/tecross-err${fh}h.grd
+          mv teprofc.dat $DATADIR/${SDATE}/teprofcross-err${fh}h.dat
+          mv tep.grd $DATADIR/${SDATE}/teprtb-err${fh}h.grd
+          mv teprofp.dat $DATADIR/${SDATE}/teprofprtb-err${fh}h.dat
+        else
+#          mv te.dat $DATADIR/${SDATE}/te-err${fh}h.dat
+          mv te.grd $DATADIR/${SDATE}/te-err${fh}h.grd
+          mv teprof.dat $DATADIR/${SDATE}/teprof-err${fh}h.dat
+	fi
       else
-#        mv te.dat $DATADIR/${SDATE}/${header}000/te-err${fh}h.dat
-        mv te.grd $DATADIR/${SDATE}/${header}000/te-err${fh}h.grd
-        mv teprof.dat $DATADIR/${SDATE}/${header}000/teprof-err${fh}h.dat
+        if [ $LBASE = T ]; then
+          mv teb.grd $DATADIR/${SDATE}/${header}000/tebase-err${fh}h.grd
+          mv teprofb.dat $DATADIR/${SDATE}/${header}000/teprofbase-err${fh}h.dat
+          mv tec.grd $DATADIR/${SDATE}/${header}000/tecross-err${fh}h.grd
+          mv teprofc.dat $DATADIR/${SDATE}/${header}000/teprofcross-err${fh}h.dat
+          mv tep.grd $DATADIR/${SDATE}/${header}000/teprtb-err${fh}h.grd
+          mv teprofp.dat $DATADIR/${SDATE}/${header}000/teprofprtb-err${fh}h.dat
+        else
+#          mv te.dat $DATADIR/${SDATE}/${header}000/te-err${fh}h.dat
+          mv te.grd $DATADIR/${SDATE}/${header}000/te-err${fh}h.grd
+          mv teprof.dat $DATADIR/${SDATE}/${header}000/teprof-err${fh}h.dat
+	fi
       fi
     fi
   fi
   rm fort.*
   fh=`expr $fh + $inc_h`
+  fhnoda=`expr $fhnoda + $inc_h`
   fhtrue=`expr $fhtrue + $inc_h`
-  if [ $ANAL = F ] && [ $fh -eq $end_hour ]; then
+  if [ $ANAL = F ] && [ $fhnoda -eq $end_hour ]; then
     break
   fi
 if [ $fhtrue -gt $fhtruemax ]; then

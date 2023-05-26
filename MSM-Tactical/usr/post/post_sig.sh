@@ -30,9 +30,9 @@ fi
 fi
 elif [ $IRES -eq 18 ]; then
 ICLD=0
-DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
-#DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE
-#DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_preprh.siml30.uniform.scl.iter3.l400.v4.rs90.000
+#DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE
+#DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_prep.siml30.grid.scl.iter1.l200.v4.rs90.000
 elif [ $IRES -eq 9 ]; then
 ICLD=1 #nonhydrostatic
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
@@ -49,7 +49,11 @@ fi
 #fi
 elif [ $IRES -eq 3 ]; then
 ICLD=1 #nonhydrostatic
-DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
+#DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
+ICLD=0
+#DATADIR=/zdata/grmsm/work/rsm2msm3_truthb/$SDATE
+DATADIR=/zdata/grmsm/work/rsm2msm3_osse/$SDATE/da_prep.siml30.grid.scl.iter1.l100.v4.rs90.000
+#DATADIR=/zdata/grmsm/work/rsm2msm3_osseb/$SDATE/noda000
 elif [ $IRES -gt 27 ]; then ##debug for base perturbation
 ICLD=0 #hydrostatic
 if [ do$MEM = do ] || [ "$MEM" = "000" ]; then
@@ -78,8 +82,8 @@ cat <<EOF >read_sig.nml
  icld=${ICLD},
 &end
 EOF
-#fh=0
-fh=$ENDHOUR
+fh=0
+#fh=$ENDHOUR
 end_hour=$ENDHOUR
 inc_h=1
 rm -f fort.*
@@ -91,6 +95,9 @@ fi
 in=r_sig.f$fh
 out=sig.f${fh}.bin
 ctl=sig.f${fh}.ctl
+#in=rbssigf$fh
+#out=sigb.f${fh}.bin
+#ctl=sigb.f${fh}.ctl
 rm $out
 rm $ctl
 ln -s $in fort.11

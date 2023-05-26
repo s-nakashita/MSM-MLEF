@@ -3,13 +3,15 @@ set -ex
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #wdir=rsm2rsm27_osse
 #wdir=rsm2rsm18_osse
-wdir=rsm2msm9_osse2
+#wdir=rsm2msm9_osse
+wdir=rsm2msm3_osseb
 #datadir=/zdata/grmsm/work/$wdir
 #datadir=/zdata/grmsm/work/rsm2rsm27_truth
 #datadir=/zdata/grmsm/work/rsm2rsm18_truth
-datadir=/zdata/grmsm/work/rsm2msm9_truth2
+#datadir=/zdata/grmsm/work/rsm2msm9_truth
+datadir=/zdata/grmsm/work/rsm2msm3_truthb
 obsdir=/zdata/grmsm/work/$wdir/obs
-stadir=${HOME}/mnt/methane/work/DATA/station
+stadir=/zdata/grmsm/work/DATA/station
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 obsdist=grid
 if [ $obsdist = grid ];then
@@ -18,15 +20,15 @@ else
 	stationin=F
 fi
 #reg=ecs
-reg=jpn
+reg=d2
 idate=2022061812
 truth=25
 member=40
 tetype=dry
 bp=
-lmin=0
-rmin=0
-prep=_preprh
+lmin=-30
+rmin=30
+prep=_prep
 nisep=2
 njsep=5
 ighost=1
@@ -35,7 +37,7 @@ NODE=`expr $nisep \* $njsep`
 RUNENV="mpiexec -n ${NODE} "
 echo $RUNENV
 
-for fhour in $(seq 0 1 24);do
+for fhour in $(seq 12 1 18);do
 adate=`date -j -f "%Y%m%d%H" -v+${fhour}H +"%Y%m%d%H" "${idate}"`
 yyyy=`echo ${adate} | cut -c1-4`
 yy=`echo ${adate} | cut -c3-4`

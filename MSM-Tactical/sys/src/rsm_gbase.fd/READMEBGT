@@ -1,0 +1,63 @@
+Regional budget computation is switched by
+##A
+##T   NT=15 (output 16 terms)
+##Q   NQ=10 (output 11 terms)
+##U   NU=11 (output 12 terms)
+##V   NV=11 (output 12 terms)
+##P   NP=6  (output  7 terms)
+The output file contain one more term called base field tendency
+
+---- T equation ----
+1.  	Horizontal advection
+2.	Vertical advection
+3.	Pressure changes
+4.	Vertical diffusion and PBL physics
+5.	Horizontal diffusion
+6.	Cumulus convection
+7.	Shallow convection
+8.	Large scale precipitation
+9.	Short wave radiation
+10.	Long wave radiation
+11.	Virtual temperature effect
+12.	Semi-implicit adjustment
+13.	Lateral boundary effect
+14.	Spectral truncation
+15.	Model tendency
+16.	Base field tendency
+
+---- Q equation ----
+1.	Horizontal advection
+2.	Vertical advection
+3.	Vertical diffusion and PBL physics
+4.	Horizontal diffusion
+5.	Cumulus convection
+6.	Shallow convection
+7.	Large scale precipitation
+8.	Lateral boundary effect
+9.	Spectral truncation
+10.	Model tendency
+11.	Base field tendency
+
+--- U & V equation ---
+1.	Horizontal advection
+2.	Vertical advection
+3.	Coriolis force
+4.	Pressure gradient force
+5.	Vertical diffusion and PBL physics
+6.	Horizontal diffusion
+7.	Gravity wave drag
+8.	Semi-implicit adjustment
+9.	Lateral boundary effect
+10.	Spectral truncation
+11.	Model tendency
+12.	Base field tendency
+
+--- PS equation ----
+1.	Horizontal advection
+2.	Divergence effect
+3.	Semi-implicit adjustment
+4.	Lateral boundary effect
+5.	Spectral truncation
+6.	Model tendency
+7.	Base field tendency
+

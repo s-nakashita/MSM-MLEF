@@ -47,7 +47,6 @@ ENDHOUR=${ENDHOUR:-$end_hr}
 #-----------------------------------------------
 # set running space
 #-----------------------------------------------
-FIXBASE=${FIXBASE:-no}
 RUNDIR=${RUNDIR:-$TEMP/$ryyyy$rmm/r${SDATE}.$CASE}
 base_dir=$TEMP/$ryyyy$rmm/g${SDATE}.$CASE
 BASEDIR=${BASEDIR:-$base_dir}
@@ -244,13 +243,8 @@ while [ $h -lt $FEND ]; do
          fi
        else
          if [ do$C2R = doyes ] ; then
-	   if [ do$FIXBASE = doyes ]; then
-           ln -fs $BASEDIR/r_sig.f00 rb_sigf$hhr
-           ln -fs $BASESFCDIR/r_sfc.f00 rb_sfcf$hhr
-	   else
            ln -fs $BASEDIR/r_sig.f$hhr rb_sigf$hhr
            ln -fs $BASESFCDIR/r_sfc.f$hhr rb_sfcf$hhr
-	   fi
          fi
        fi
      fi
@@ -313,15 +307,9 @@ while [ $h -lt $FEND ]; do
     hr=`expr $h + $PRTHOUR`
     while [ $hr -lt $hx ];do
       if [ $hr -lt 10 ];then hr=0$hr;fi
-      if [ $IOUTNHR -eq 1 ]; then
       mv r_sigf$hr   r_sig.f$hr
       mv r_sfcf$hr   r_sfc.f$hr
       mv r_flxf$hr   r_flx.f$hr
-      else
-      cp r_sigf${hr}:00:00   r_sig.f$hr
-      cp r_sfcf${hr}:00:00   r_sfc.f$hr
-      cp r_flxf${hr}:00:00   r_flx.f$hr
-      fi
       hr=`expr $hr + $PRTHOUR`
     done
 #
@@ -348,18 +336,15 @@ while [ $h -lt $FEND ]; do
       done
 #
       if [ $hx -eq $ENDHOUR ]; then
-#        if [ $hx -lt 10 ];then hx=0$hx;fi
+        if [ $hx -lt 10 ];then hx=0$hx;fi
         if [ $IOUTNHR -eq 1 ]; then
         mv r_sigf$hx   r_sig.f$hx
         mv r_sfcf$hx   r_sfc.f$hx
         mv r_flxf$hx   r_flx.f$hx
         else
-        cp r_sig.f00 r_sigf00:00:00
-        cp r_sfc.f00 r_sfcf00:00:00
-        cp r_flx.f00 r_flxf00:00:00
-        cp r_sig.f$hx r_sigf${hx}:00:00
-        cp r_sfc.f$hx r_sfcf${hx}:00:00
-        cp r_flx.f$hx r_flxf${hx}:00:00
+        mv r_sigf${hx}:00:00   r_sig.f$hx
+        mv r_sfcf${hx}:00:00   r_sfc.f$hx
+        mv r_flxf${hx}:00:00   r_flx.f$hx
         fi
         $USHDIR/rpgb_post.sh $hx || exit 16
       fi

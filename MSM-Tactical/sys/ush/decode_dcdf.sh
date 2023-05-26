@@ -53,4 +53,5 @@ tar zxvf $tarf
 
 cd ..
 mv tmp/*.dat .
+mv tmp/decode_dcdf.log .
 echo "END decode_dcdf"

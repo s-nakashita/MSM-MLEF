@@ -186,6 +186,7 @@ export RUNRINP=${RUNRINP:-no}                       # run rinp at 00
 export RUNRINP2=${RUNRINP2:-no}                     # run rinp at $fh
 export RUNMOVE=${RUNMOVE:-no}                        # run movable domain
 export RUNFCST=${RUNFCST:-no}                       # run fcst
+export RUNGBASE=${RUNGBASE:-no}                       # run gbase
 export PLOT=${PLOT:-no}                             # make 6 panel plot (added by SN)
 
 # rsmlocation
