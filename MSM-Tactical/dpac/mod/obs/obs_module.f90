@@ -18,6 +18,7 @@ module obs_module
     real(kind=dp),allocatable :: lat(:)
     real(kind=dp),allocatable :: lev(:) !pressure[hPa] or elevation[m]
     real(kind=dp),allocatable :: dat(:)
+    real(kind=dp),allocatable :: err(:)
     real(kind=dp),allocatable :: dmin(:) ! observation time relative to analysis time (minutes)
   end type obstype 
 !
@@ -125,6 +126,8 @@ module obs_module
   &   2.8d0,3.0d0,3.2d0,2.7d0,2.6d0,2.4d0,2.3d0,2.1d0,2.1d0,& !Ws
   &   2.1d0,2.1d0,2.1d0,2.1d0,2.1d0,2.1d0,2.1d0 &             !Ws
   &   /),(/nlevfix,nobstype/))
+  integer, dimension(1) :: kk
+  integer :: k
 !
 ! QC flags
 !
@@ -422,6 +425,7 @@ contains
         tmpobs2%lat (nobsuse+1:nobsuse+nn) = tmpobs%lat (1:nn)
         tmpobs2%lev (nobsuse+1:nobsuse+nn) = tmpobs%lev (1:nn)
         tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
+        tmpobs2%err (nobsuse+1:nobsuse+nn) = tmpobs%err (1:nn)
         tmpobs2%dmin(nobsuse+1:nobsuse+nn) = tmpobs%dmin(1:nn)
         nobsuse=nobsuse+nn
         !if(debug)
@@ -509,44 +513,56 @@ contains
             if(acc(13:13)=='0'.and.ibuf2>0) then
               tmpelm=id_t_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+              kk = minloc(abs(tmplev-plevfix(:)))
+              k=kk(1)
+              tmperr=obserr(k,uid_obs(tmpelm))
               nn=nn+1
               call setobs(nn,tmpobs,&
               &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmpdt)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
             read(iunit,rec=irec) ibuf2
             if(acc(14:14)=='0'.and.ibuf2>0) then
               tmpelm=id_td_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+              kk = minloc(abs(tmplev-plevfix(:)))
+              k=kk(1)
+              tmperr=obserr(k,uid_obs(tmpelm))
               nn=nn+1
               call setobs(nn,tmpobs,&
               &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmpdt)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+2 
             read(iunit,rec=irec) ibuf2
             if(acc(15:15)=='0'.and.ibuf2>0) then
               tmpelm=id_wd_obs
               tmpdat=real(ibuf2,kind=dp) ![degree]
+              kk = minloc(abs(tmplev-plevfix(:)))
+              k=kk(1)
+              tmperr=obserr(k,uid_obs(tmpelm))
               nn=nn+1
               call setobs(nn,tmpobs,&
               &  tmpelm,&
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmpdt)
+              &  tmpdat,tmperr,tmpdt)
             end if   
             irec=irec+1
             read(iunit,rec=irec) ibuf2
             if(acc(16:16)=='0'.and.ibuf2>0) then
               tmpelm=id_ws_obs
               tmpdat=real(ibuf2,kind=dp)*0.1d0 ![m/s]
+              kk = minloc(abs(tmplev-plevfix(:)))
+              k=kk(1)
+              tmperr=obserr(k,uid_obs(tmpelm))
               nn=nn+1
               call setobs(nn,tmpobs,&
               &  tmpelm,& 
               &  tmplat,tmplon,tmplev,&
-              &  tmpdat,tmpdt)
+              &  tmpdat,tmperr,tmpdt)
             end if   
           end do
           end if ! skip 4 ship obs
@@ -565,6 +581,7 @@ contains
       tmpobs2%lat (nobsuse+1:nobsuse+nn) = tmpobs%lat (1:nn)
       tmpobs2%lev (nobsuse+1:nobsuse+nn) = tmpobs%lev (1:nn)
       tmpobs2%dat (nobsuse+1:nobsuse+nn) = tmpobs%dat (1:nn)
+      tmpobs2%err (nobsuse+1:nobsuse+nn) = tmpobs%err (1:nn)
       tmpobs2%dmin(nobsuse+1:nobsuse+nn) = tmpobs%dmin(1:nn)
       nobsuse=nobsuse+nn
       !if(debug)
@@ -580,6 +597,7 @@ contains
     obs%lat (:) = tmpobs2%lat (1:nobsuse)
     obs%lev (:) = tmpobs2%lev (1:nobsuse)
     obs%dat (:) = tmpobs2%dat (1:nobsuse)
+    obs%err (:) = tmpobs2%err (1:nobsuse)
     obs%dmin(:) = tmpobs2%dmin(1:nobsuse)
     close(iunit)
 
@@ -765,26 +783,34 @@ contains
           read(iunit,rec=irec) ibuf2
           tmpelm=id_ps_obs
           tmpdat=real(ibuf2,kind=dp)*10.0d0 ![Pa]
+          !kk = minloc(abs(tmplev-plevfix(:)))
+          !k=kk(1)
+          k=1
+          tmperr=obserr(k,uid_obs(tmpelm))
           if(tmpdat.gt.0) then
             if(debug) print *, 'Ps ',tmpdat
             nobsuse=nobsuse+1
             call setobs(nobsuse,tmpobs,&
             &  tmpelm,&
             &  tmplat,tmplon,tmplev,&
-            &  tmpdat,tmpdt)
+            &  tmpdat,tmperr,tmpdt)
           end if
           !! T2m
           !irec=irec+6
           !read(iunit,rec=irec) ibuf2
           !tmpelm=id_t2m_obs
           !tmpdat=real(ibuf2,kind=dp)*0.1d0 ![K]
+          !!kk = minloc(abs(tmplev-plevfix(:)))
+          !!k=kk(1)
+          !k=1
+          !tmperr=obserr(k,uid_obs(tmpelm))
           !if(tmpdat.gt.0) then
           !  if(debug) print *, 'T2m ',tmpdat
           !  nobsuse=nobsuse+1
           !  call setobs(nobsuse,tmpobs,&
           !  &  tmpelm,&
           !  &  tmplat,tmplon,tmplev,&
-          !  &  tmpdat,tmpdt)
+          !  &  tmpdat,tmperr,tmpdt)
           !end if
         end if
       end if
@@ -798,6 +824,7 @@ contains
     obs%lat (:) = tmpobs%lat (1:nobsuse)
     obs%lev (:) = tmpobs%lev (1:nobsuse)
     obs%dat (:) = tmpobs%dat (1:nobsuse)
+    obs%err (:) = tmpobs%err (1:nobsuse)
     obs%dmin(:) = tmpobs%dmin(1:nobsuse)
     close(iunit)
 
@@ -826,16 +853,16 @@ contains
     return
   end subroutine read_part1
 
-  subroutine setobs(n,obs,elem,lat,lon,lev,dat,dmin)
+  subroutine setobs(n,obs,elem,lat,lon,lev,dat,err,dmin)
     implicit none
     integer, intent(in) :: n
     type(obstype), intent(inout) :: obs
     integer, intent(in) :: elem
-    real(kind=dp), intent(in) :: lat,lon,lev,dat,dmin
+    real(kind=dp), intent(in) :: lat,lon,lev,dat,err,dmin
 
     obs%elem(n) = elem
     obs%lat(n) = lat; obs%lon(n) = lon; obs%lev(n) = lev
-    obs%dat(n) = dat; obs%dmin(n) = dmin
+    obs%dat(n) = dat; obs%err(n) = err; obs%dmin(n) = dmin
     return
   end subroutine setobs
 
@@ -882,6 +909,7 @@ contains
     tmpobs%lat (1:nobs) = obs%lat (1:nobs)
     tmpobs%lev (1:nobs) = obs%lev (1:nobs)
     tmpobs%dat (1:nobs) = obs%dat (1:nobs)
+    tmpobs%err (1:nobs) = obs%err (1:nobs)
     tmpobs%dmin(1:nobs) = obs%dmin(1:nobs)
     do j=1,nobstype_upper
       if( nelm(j)==0 ) cycle
@@ -896,6 +924,7 @@ contains
         obs%lat (nn+nelmsum(j)) = tmpobs%lat (n)
         obs%lev (nn+nelmsum(j)) = tmpobs%lev (n)
         obs%dat (nn+nelmsum(j)) = tmpobs%dat (n)
+        obs%err (nn+nelmsum(j)) = tmpobs%err (n)
         obs%dmin(nn+nelmsum(j)) = tmpobs%dmin(n)
       end do
     end do
@@ -907,6 +936,7 @@ contains
     tmpobs%lat (1:nobs) = obs%lat (1:nobs)
     tmpobs%lev (1:nobs) = obs%lev (1:nobs)
     tmpobs%dat (1:nobs) = obs%dat (1:nobs)
+    tmpobs%err (1:nobs) = obs%err (1:nobs)
     tmpobs%dmin(1:nobs) = obs%dmin(1:nobs)
     nobs=0
     do i=1,nobstype_upper
@@ -934,6 +964,7 @@ contains
       obs%lat (nobs) = tmpobs%lat (ns2)
       obs%lev (nobs) = tmpobs%lev (ns2)
       obs%dat (nobs) = tmpobs%dat (ns2)
+      obs%err (nobs) = tmpobs%err (ns2)
       obs%dmin(nobs) = tmpobs%dmin(ns2)
       clev=tmplev(1)
       if( nelm(i).gt.1 ) then
@@ -949,6 +980,7 @@ contains
           obs%lat (nobs) = tmpobs%lat (ns2)
           obs%lev (nobs) = tmpobs%lev (ns2)
           obs%dat (nobs) = tmpobs%dat (ns2)
+          obs%err (nobs) = tmpobs%err (ns2)
           obs%dmin(nobs) = tmpobs%dmin(ns2)
           clev=tmplev(j)
         end do
@@ -1050,6 +1082,9 @@ contains
             call calc_q(td,p,q)
             obs%elem(nn)=id_q_obs
             obs%dat(nn) = q
+            kk = minloc(abs(p-plevfix(:)))
+            k=kk(1)
+            obs%err(nn)=obserr(k,uid_obs(id_q_obs))
           else if(iq_.eq.2) then !Td=>rh
             do n_t=n2+1,n2+sum(nobseach(:,i))
               if(obs%elem(n_t)==id_t_obs.and.obs%lev(n_t)==p) exit
@@ -1069,6 +1104,9 @@ contains
             !!! debug
             obs%elem(nn)=id_rh_obs
             obs%dat(nn) = rh
+            kk = minloc(abs(p-plevfix(:)))
+            k=kk(1)
+            obs%err(nn)=obserr(k,uid_obs(id_rh_obs))
           end if
         end if
         if(iwnd_.eq.1.and.obs%elem(nn).eq.id_wd_obs) then
@@ -1082,8 +1120,14 @@ contains
           call calc_uv(obs%dat(n_ws),obs%dat(nn),u,v)
           obs%elem(nn)=id_u_obs
           obs%dat(nn) = u
+          kk = minloc(abs(obs%lev(nn)-plevfix(:)))
+          k=kk(1)
+          obs%err(nn)=obserr(k,uid_obs(id_u_obs))
           obs%elem(n_ws) = id_v_obs
           obs%dat(n_ws) = v
+          kk = minloc(abs(obs%lev(nn)-plevfix(:)))
+          k=kk(1)
+          obs%err(n_ws)=obserr(k,uid_obs(id_v_obs))
         end if
       end do
       n2=n2+sum(nobseach(:,i))
@@ -1103,6 +1147,7 @@ contains
     allocate( obs%lat (obs%nobs) )
     allocate( obs%lev (obs%nobs) )
     allocate( obs%dat (obs%nobs) )
+    allocate( obs%err (obs%nobs) )
     allocate( obs%dmin(obs%nobs) )
 
     obs%elem = 0
@@ -1110,6 +1155,7 @@ contains
     obs%lat = 0.0_dp
     obs%lev = 0.0_dp
     obs%dat = 0.0_dp
+    obs%err = 0.0_dp
     obs%dmin = 0.0_dp
 
     return
@@ -1123,6 +1169,7 @@ contains
     if(allocated(obs%lat))  deallocate(obs%lat)
     if(allocated(obs%lev))  deallocate(obs%lev)
     if(allocated(obs%dat))  deallocate(obs%dat)
+    if(allocated(obs%err))  deallocate(obs%err)
     if(allocated(obs%dmin)) deallocate(obs%dmin)
     return
   end subroutine obsin_deallocate
@@ -1218,7 +1265,7 @@ contains
     implicit none
     character(len=*), intent(in) :: cfile
     type(obstype), intent(inout) :: obs
-    real(kind=sp) :: wk(6)
+    real(kind=sp) :: wk(7)
     integer :: n, iunit
 
     iunit=91
@@ -1228,9 +1275,11 @@ contains
       select case(nint(wk(1)))
       case(id_ps_obs)
         wk(5)=wk(5)*100.0 !hPa -> Pa
+        wk(6)=wk(6)*100.0 !hPa -> Pa
       case(id_rh_obs)
         wk(4)=wk(4)*100.0 !hPa -> Pa
         wk(5)=wk(5)*0.01  !% -> nondimensional
+        wk(6)=wk(6)*0.01  !% -> nondimensional
       case default
         wk(4)=wk(4)*100.0 !hPa -> Pa
       end select
@@ -1240,7 +1289,8 @@ contains
       obs%lat (n) = real(wk(3),kind=dp)
       obs%lev (n) = real(wk(4),kind=dp)
       obs%dat (n) = real(wk(5),kind=dp)
-      obs%dmin(n) = real(wk(6),kind=dp)
+      obs%err (n) = real(wk(6),kind=dp)
+      obs%dmin(n) = real(wk(7),kind=dp)
     end do
     close(iunit)
 
@@ -1251,7 +1301,7 @@ contains
     implicit none
     character(len=*), intent(in) :: cfile
     type(obstype), intent(in) :: obs
-    real(kind=sp) :: wk(6)
+    real(kind=sp) :: wk(7)
     integer :: n, iunit
 
     iunit=92
@@ -1263,13 +1313,16 @@ contains
       wk(3)=real(obs%lat (n),kind=sp)
       wk(4)=real(obs%lev (n),kind=sp)
       wk(5)=real(obs%dat (n),kind=sp)
-      wk(6)=real(obs%dmin(n),kind=sp)
+      wk(6)=real(obs%err (n),kind=sp)
+      wk(7)=real(obs%dmin(n),kind=sp)
       select case(nint(wk(1)))
       case(id_ps_obs)
         wk(5)=wk(5)*0.01 !Pa->hPa
+        wk(6)=wk(6)*0.01 !Pa->hPa
       case(id_rh_obs)
         wk(4)=wk(4)*0.01 !Pa->hPa
         wk(5)=wk(5)*100.0 !nondimensional->%
+        wk(6)=wk(6)*100.0 !nondimensional->%
       case default
         wk(4)=wk(4)*0.01 !Pa->hPa
       end select

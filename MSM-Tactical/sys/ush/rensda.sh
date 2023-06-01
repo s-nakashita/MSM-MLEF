@@ -4,6 +4,7 @@ cycleda=${1}
 danest=${DANEST:-F}
 head_bv=${HEAD:-bv}
 head_da=${HEAD2:-da}
+headbase=${HEADBASE:-$head_bv}
 ## experiment parameters
 # ensemble size
 member=${MEMBER:-10}
@@ -80,9 +81,6 @@ export obsdir
 if [ $cycleda -eq 1 ]; then
 fhour=${IOFFSET:-$fhour}
 guesdir=${GUESDIR:-$RUNDIR0}
-if [ $danest = T ]; then
-	fhour=0
-fi
 fi
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/lmlef
 bindir2=/home/nakashita/Development/grmsm/MSM-Tactical/usr/post
@@ -98,7 +96,11 @@ idd=`expr $dd + 0`
 ihh=`expr $hh + 0`
 set -e
 if [ $cycleda -eq 1 ];then
+if [ $danest = T ]; then
+  head=${headbase}
+else
   head=$head_bv
+fi
 else
   head=$head_da
 fi
@@ -157,18 +159,51 @@ if [ $osse = T ];then
 obsin_num=2
 obsf=upper${prep}.siml.${obsdist}.${sdate}-${edate}
 obsf2=surf.siml.${obsdist}.${sdate}-${edate}
+obsfiles="'${obsf}','${obsf2}'"
 else
 if [ $platform = dcdf ]; then
 obsin_num=2
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
+obsfiles="'${obsf}','${obsf2}'"
 $USHDIR/decode_dcdf.sh $adate $lmin $rmin || exit 9
 elif [ $platform = prepbufr ]; then
 obsin_num=3
 obsf=ADPUPA${prep}.${sdate}-${edate}
 obsf2=ADPSFC.${sdate}-${edate}
 obsf3=SFCSHP.${sdate}-${edate}
+obsfiles="'${obsf}','${obsf2}','${obsf3}'"
 $USHDIR/decode_prepbufr.sh $adate $lmin $rmin || exit 9
+elif [ $platform = prepbufrall ]; then
+$USHDIR/decode_prepbufr_ascii.sh $adate $lmin $rmin || exit 9
+fi #platform
+fi #OSSE
+## prepare observations
+if [ $platform = prepbufrall ]; then
+obsfiles=
+obsin_num=0
+for otype in ADPUPA AIRCAR AIRCFT SATWND PROFLR VADWND SATBOG SATEMP \
+	ADPSFC SFCSHP SFCBOG SPSSMI SYNDAT ERS1DA GOESND
+do
+if [ $otype = ADPUPA ]; then
+obsf=${otype}${prep}.${sdate}-${edate}
+else
+obsf=${otype}.${sdate}-${edate}
+fi
+if [ -f ${obsdir}/${adate}/${obsf}.dat ]; then
+rm -f ${obsf}.dat
+ln -s ${obsdir}/${adate}/${obsf}.dat .
+obsin_num=`expr $obsin_num + 1`
+obsfiles=$obsfiles"'${obsf}',"
+fi
+done
+else
+rm -f ${obsf}.dat ${obsf2}.dat
+ln -s ${obsdir}/${adate}/${obsf}.dat .
+ln -s ${obsdir}/${adate}/${obsf2}.dat .
+if [ $platform = prepbufr ]; then
+rm -f ${obsf3}.dat
+ln -s ${obsdir}/${adate}/${obsf3}.dat .
 fi
 fi
 ### namelist
@@ -185,7 +220,7 @@ cat <<EOF >lmlef.nml
 &end
 &param_obsope
  obsin_num=${obsin_num},
- obsin_name='${obsf}','${obsf2}','${obsf3}',
+ obsin_name=${obsfiles},
  obs_out=F,
  obsout_basename=,
  fguess_basename=,
@@ -244,20 +279,13 @@ EOF
 #cat lmlef.nml
 
 ## prepare input files
-rm -f ${obsf}.dat ${obsf2}.dat
-ln -s ${obsdir}/${adate}/${obsf}.dat .
-ln -s ${obsdir}/${adate}/${obsf2}.dat .
-if [ $platform = prepbufr ]; then
-rm -f ${obsf3}.dat
-ln -s ${obsdir}/${adate}/${obsf3}.dat .
-fi
 rm -f gues.*.grd ${obsinf}.*.dat ${obsextf}.*.dat
 if [ $mean != T ]; then
 if [ $cycleda -eq 1 ];then
-if [ $danest = T ]; then
-ln -s ${guesdir}/${adate}/${head_da}000/r_sig.f$fh gues.0000.sig.grd
-ln -s ${guesdir}/${adate}/${head_da}000/r_sfc.f$fh gues.0000.sfc.grd
-ln -s ${guesdir}/${adate}/${head_da}000/r_flx.f$fh gues.0000.flx.grd
+if [ $danest = T ] && [ $head != $head_bv ]; then
+ln -s ${guesdir}/${pdate}/${head}000/r_sig.f$fh gues.0000.sig.grd
+ln -s ${guesdir}/${pdate}/${head}000/r_sfc.f$fh gues.0000.sfc.grd
+ln -s ${guesdir}/${pdate}/${head}000/r_flx.f$fh gues.0000.flx.grd
 else
 ln -s ${guesdir}/${pdate}/r_sig.f$fh gues.0000.sig.grd
 ln -s ${guesdir}/${pdate}/r_sfc.f$fh gues.0000.sfc.grd
@@ -286,30 +314,30 @@ mem=`printf '%0.3d' $m`
 #if [ $cycleda -eq 1 ] && [ $osse = T ] && [ $m -eq $tmem ]; then
 #else
 mem2=`printf '%0.3d' $em`
-if [ $cycleda -eq 1 ] && [ $danest = T ]; then
-ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
-ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
-ln -s ${guesdir}/${adate}/${head_da}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
-else
+#if [ $cycleda -eq 1 ] && [ $danest = T ]; then
+#ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+#ln -s ${guesdir}/${adate}/${head_da}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+#ln -s ${guesdir}/${adate}/${head_da}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+#else
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
 ln -s ${guesdir}/${pdate}/${head}${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
-fi
+#fi
 if [ $obsda_in = T ];then
 ln -s ${obsdir}/${adate}/${obsextf}.0${mem}.dat ${obsextf}.0${mem2}.dat
 fi
 em=`expr $em + 1`
 if [ $cycleda -eq 1 ] && [ do$psub = doyes ]; then
 mem2=`printf '%0.3d' $em`
-if [ $danest = T ]; then
-ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
-ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
-ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
-else
+#if [ $danest = T ]; then
+#ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
+#ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
+#ln -s ${guesdir}/${adate}/${head_da}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
+#else
 ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sig.f$fh gues.0${mem2}.sig.grd
 ln -s ${guesdir}/${pdate}/${head}m${mem}/r_sfc.f$fh gues.0${mem2}.sfc.grd
 ln -s ${guesdir}/${pdate}/${head}m${mem}/r_flx.f$fh gues.0${mem2}.flx.grd
-fi
+#fi
 if [ $obsda_in = T ];then
 ln -s ${obsdir}/${adate}/${obsextf}.m0${mem}.dat ${obsextf}.0${mem2}.dat
 fi

@@ -1,12 +1,14 @@
 #!/bin/sh
 set -e
+ires=3
+#datadir=/zdata/grmsm/work/rsm2msm9_jpn
 datadir=/zdata/grmsm/work/msm2msm3_jpn
 #datadir=/zdata/grmsm/work/msm2msm3_bv
 #datadir=/zdata/grmsm/work/rsm2msm9_bv
 #datadir=/zdata/grmsm/work/rsm2rsm18_da
-#obsdir=/zdata/grmsm/work/dpac/obs
+obsdir=/zdata/grmsm/work/dpac/obs
 #obsdir=/zdata/grmsm/work/rsm2rsm18_da/obs
-obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
+#obsdir=/zdata/grmsm/work/rsm2msm3_da/obs
 bindir=/home/nakashita/Development/grmsm/MSM-Tactical/dpac/build/obs
 member=0
 adate=${1:-2022061812}
@@ -26,6 +28,9 @@ RUNENV=''
 fi
 echo $RUNENV
 
+wdir=${obsdir}/${adate}
+mkdir -p $wdir
+cd $wdir
 odate=$adate
 yyyy=`echo ${odate} | cut -c1-4`
 yy=`echo ${odate} | cut -c3-4`
@@ -49,17 +54,33 @@ else
 edate=`date -j -f "%Y%m%d%H%M" -v+${rmin}M +"%H%M" "${odate}00"`
 fi
 if [ $platform = prepbufr ]; then
-obsin_num=3
-obsf=ADPUPA${prep}.${sdate}-${edate}
-obsf2=ADPSFC.${sdate}-${edate}
-obsf3=SFCSHP.${sdate}-${edate}
+obsfiles=
+obsin_num=0
+for otype in ADPUPA AIRCAR AIRCFT SATWND PROFLR VADWND SATBOG SATEMP \
+	ADPSFC SFCSHP SFCBOG SPSSMI SYNDAT ERS1DA GOESND
+do
+if [ $otype = SFCSHP ]; then
+if [ $otype = ADPUPA ]; then
+obsf=${otype}${prep}.${sdate}-${edate}
+else
+obsf=${otype}.${sdate}-${edate}
+fi
+if [ -f ${obsf}.dat ]; then
+obsin_num=`expr $obsin_num + 1`
+obsfiles=$obsfiles"'${obsf}',"
+fi
+fi #ADPSFC
+done
 else
 obsin_num=2
 obsf=upper${prep}.${sdate}-${edate}
 obsf2=surf.${sdate}-${edate}
+obsfiles="'${obsf}','${obsf2}',"
 fi
-outf=obsda${prep}_3_fh${fhour}
-logf=obsope${prep}_3_fh${fhour}
+#outf=obsda${prep}_${ires}_fh${fhour}
+#logf=obsope${prep}_${ires}_fh${fhour}
+outf=obsdaSFCSHP_${ires}_fh${fhour}
+logf=obsopeSFCSHP_${ires}_fh${fhour}
 if [ "$single" = "T" ];then
   outf=${outf}.single
   logf=${logf}.single
@@ -84,19 +105,17 @@ fi
 if [ $parallel = T ];then
   outf=${outf}_n${NODE}
 fi
-echo $obsf $outf
+echo $obsin_num $obsfiles
+echo $outf
 echo "luseobs="$luseobs
 
-wdir=${obsdir}/${adate}
-mkdir -p $wdir
-cd $wdir
 cat <<EOF >obsope.nml
 &param_ens
  member=${member},
 &end
 &param_obsope
  obsin_num=${obsin_num},
- obsin_name='${obsf}','${obsf2}','${obsf3}',
+ obsin_name=${obsfiles}
  obs_out=T,
  obsout_basename='${outf}.@@@@',
  fguess_basename=,

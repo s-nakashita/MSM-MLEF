@@ -6,6 +6,7 @@ set -ex
 PROG=rinp
 dtype=$1
 fh=$2
+lmd=${3:-F}
 #
 if [ do$dtype = doG2R ] ; then
    sig2rg=.TRUE.
@@ -33,6 +34,9 @@ rm -f fort.[0-9]* 2>/dev/null
     echo "    NEWSIG=$NEWSIG,NEWMTN=$newmtn,NEWHOR=.FALSE.,       " >>rinpparm
     echo "    PGB2RG=$pgb2rg,NEWSST=$NEWSST,                      " >>rinpparm
     echo "    ivs=$IVS,iqvar=$IQVAR,igribversion=$IGRIBVERSION,   " >>rinpparm
+if [ $lmd = T ]; then
+    echo "    MODDATE=.TRUE.,                                     " >>rinpparm
+fi
     echo " &END                                                   " >>rinpparm
 #
     cat rsmlocation >> rinpparm

@@ -138,13 +138,13 @@ while [ $CYCLE -le $CYCLEMAX ];do
     BGM=yes
     DA=no
     head=${HEAD:-bv}
+    if [ $DANEST = T ]; then
+      head=${HEADBASE}
+    fi
   else
     CYCLEDA=`expr $CYCLEDA + 1`
     BGM=no
     DA=yes
-    head=${HEAD2:-da}
-  fi
-  if [ $DANEST = T ]; then
     head=${HEAD2:-da}
   fi
 #-----------------------------------------------
@@ -227,9 +227,9 @@ EOF
 #   Ensemble DA
 #
 if [ do$DA = doyes ]; then
-#  if [ -d ${head}000 ]; then
-#    echo 'DA already done'
-#  else
+  if [ -d ${head}mean ]; then
+    echo 'DA already done'
+  else
     echo 'ensemble DA : '$SDATE' cycle='$CYCLEDA
     #
     #   Regional mountain
@@ -266,10 +266,18 @@ if [ do$DA = doyes ]; then
         mem=`expr $mem + 1`
       done
     fi
-#  fi # -d ${head}000
+  fi # -d ${head}000
 else
   #
   # control
+  if [ $DANEST = T ]; then
+    mkdir -p ${head}000
+    cd ${head}000
+    cp ../rsmparm . 
+    cp ../rsmlocation . 
+    cp ../rfcstparm . 
+    cp ../station.parm . 
+  fi
   if [ -s r_sigi -a -s r_sigitdt -a -s r_sfci ] ; then
     #
     #  Restart
@@ -301,22 +309,12 @@ else
     #
     fh0=$f0base
     if [ $fh0 -lt 10 ];then fh0=0$fh0;fi
-    if [ $DANEST = T ]; then
-    BASEDIR=${BASEDIR0}/${PDATE}/${HEADBASE}000
-    BASESFCDIR=${BASEDIR}
-    mkdir -p ${head}000
-    cd ${head}000
-    ### copy namelists
-    cp ${RUNDIR}/rsmparm .
-    cp ${RUNDIR}/rsmlocation .
-    cp ${RUNDIR}/rfcstparm .
-    cp ${RUNDIR}/station.parm .
-    ### copy orography data
-    cp ${RUNDIR}/rmtn.parm .
-    cp ${RUNDIR}/rmtnoss .
-    cp ${RUNDIR}/rmtnslm .
-    cp ${RUNDIR}/rmtnvar .
+    if [ $HEADBASE = $HEAD ]; then
+      BASEDIR=${BASEDIR0}/${PDATE}
+    else
+      BASEDIR=${BASEDIR0}/${PDATE}/${HEADBASE}000
     fi
+    BASESFCDIR=${BASEDIR}
     #     ln -fs $BASEDIR/sigf$CDATE$CHOUR rb_sigf00
     #     ln -fs $BASEDIR/sfcf$CDATE$CHOUR rb_sfcf00
      if [ do$G2R = doyes ] ; then
@@ -352,16 +350,20 @@ else
     #  Initial field for rsm run
     #
     if [ do$RUNRINP = doyes ] ; then
-      $USHDIR/rinp.sh $NEST 00 || exit 4
+      lmd=F
+      if [ $fh0 -gt 0 ]; then
+	lmd=T
+      fi
+      $USHDIR/rinp.sh $NEST 00 $lmd || exit 4
       cp r_sigi  r_sig.f00
       cp r_sfci  r_sfc.f00
     fi
     if [ do$POSTTYPE = dosync ]; then
       $USHDIR/rpgb_post.sh 00 || exit 5
     fi
-    if [ $DANEST = T ]; then cd ..;fi
   #
   fi #restart
+  if [ $DANEST = T ]; then cd ..;fi
   #
   # BGM rescaling (ensemble)
   #
@@ -411,11 +413,11 @@ else
       echo 'Restart file exists'
     else
     GBASEDIR=${BASEDIR0}/${PDATE}/${head}${pmem}
-    if [ $DANEST = T ]; then
-    GBASEDIR=${BASEDIR0}/${PDATE}/${HEADBASE}${pmem}
-    fi
+#    if [ $DANEST = T ]; then
+#    GBASEDIR=${BASEDIR0}/${PDATE}/${HEADBASE}${pmem}
+#    fi
     GBASESFCDIR=${GBASEDIR}
-    GUESDIR=${RUNDIR0}/${PDATE}/${head}${pmem}
+    GUESDIR=${RUNDIR0}/${SDATE}/${head}${pmem}
     mkdir -p $GUESDIR
     cd ${GUESDIR}
     ### copy namelists
@@ -455,7 +457,11 @@ else
       fi
       ln -fs ${WORKUSR}/DATA/himsst/${cyyyy}/him_sst_pac_D${cymd}.txt himsst.txt
     fi
-    $USHDIR/rinp.sh $NEST 00 || exit 4
+    lmd=F
+    if [ $fh0 -gt 0 ]; then
+      lmd=T
+    fi
+    $USHDIR/rinp.sh $NEST 00 $lmd || exit 4
     cp r_sigi  r_sig.f00
     cp r_sfci  r_sfc.f00
     if [ do$POSTTYPE = dosync ]; then
@@ -511,7 +517,11 @@ while [ $mem -le $MEMBER ];do
     cd $RUNDIR
     fi
     if [ $DANEST = T ];then
-    export BASEDIR=$base_dir/${HEADBASE}000
+    if [ $HEADBASE = $HEAD ]; then
+      export BASEDIR=$base_dir
+    else
+      export BASEDIR=$base_dir/${HEADBASE}000
+    fi
     export BASESFCDIR=$BASEDIR
     fi
   else ## member

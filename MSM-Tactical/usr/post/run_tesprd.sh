@@ -18,6 +18,8 @@ elif [ $IRES -eq 9 ]; then
 EXPN=rsm2msm9_da
 #SDATE0=2022061018
 #SDATE0=2022061812
+elif [ $IRES -eq 3 ]; then
+EXPN=msm2msm3_da
 else
 echo "Invalid resolution. Specify 9 or 3."
 exit 2
@@ -85,6 +87,9 @@ fi
 echo $header $truth
 fh=0
 end_hour=$ENDHOUR
+if [ $icyc -ge $DASTART ]; then
+end_hour=$INCCYCLE
+fi
 inc_h=$PRTHOUR
 echo $end_hour $inc_h
 #exit

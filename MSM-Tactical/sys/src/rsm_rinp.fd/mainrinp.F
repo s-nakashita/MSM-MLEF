@@ -14,11 +14,12 @@
 !
       logical         newsig,newmtn,newhor,sig2rg,sfc2rg,pgb2rg
       logical         newsst
+      logical         moddate
       integer ivs
       integer igribversion,iqvar
       real plevels(levs)
       namelist/namrin/newsst,newsig,newmtn,newhor,sig2rg,sfc2rg,          &
-     &                percmtn,ivs,igribversion,pgb2rg,iqvar
+     &                percmtn,ivs,igribversion,pgb2rg,iqvar,moddate
       data igribversion/1/
       data iqvar/1/
       data pgb2rg/.false./
@@ -28,6 +29,8 @@
       data sig2rg/.false./
       data sfc2rg/.false./
       data percmtn/0.0/
+      data newsst/.false./
+      data moddate/.false./
       data nsigi,nsfci,nrslm,nrorg,nsig,npgb,nplevels                     &
      &    /   11,   12,   13,   14,  15,  16,     17/
       data nrsigio,nrsfcio,nrsigo,nrsfco                                  &
@@ -92,11 +95,11 @@
          if ( pgb2rg ) then
          call rchgr(nrsigio,nrsfcio,nrslm,nrorg,nrsigo,nrsfco,nsig,      &
      &           newsig,newmtn,newhor,pgb2rg,pgb2rg,pgb2rg,percmtn,      &
-     &           newsst)
+     &           newsst,moddate)
          else
          call rchgr(nrsigio,nrsfcio,nrslm,nrorg,nrsigo,nrsfco,nsig,      &
      &           newsig,newmtn,newhor,sig2rg,sfc2rg,pgb2rg,percmtn,      &
-     &           newsst)
+     &           newsst,moddate)
          endif
               print *,'after call rchgr'
       endif

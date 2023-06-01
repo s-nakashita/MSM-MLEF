@@ -13,13 +13,14 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/$EXPN          #output top directory
-   export TEMP=$WORKUSR/rsm2msm9_osse          #output top directory
+   export TEMP=$WORKUSR/${EXPN}d2          #output top directory
+#   export TEMP=$WORKUSR/rsm2msm9_osse          #output top directory
 fi
 export GLOBAL=${GLOBAL:-GFS}
 export RUNDIR0=$TEMP
 export BASEDIR0=$WORKUSR/rsm2rsm27_da
 export IRES=9
+export DANEST=T
 
 # --------------- compile options ----------------
 # machine dependent
@@ -64,12 +65,13 @@ export RINP=yes
 export FCST=yes
 
 # --------------- run option --------------------
-export CYCLESTART=0
-export CYCLEMAX=0
+export CYCLESTART=2
+export CYCLEMAX=3
 export DASTART=1
 export INCCYCLE=6 # cycle interval (hours)
-export IOFFSET=24 # first guess offset (hours)
-export ENDHOUR=24 # forecast length (hours)
+export IOFFSET=0 # first guess offset (hours)
+#export IOFFSET=24 # first guess offset (hours) for OSSE
+export ENDHOUR=6 # forecast length (hours)
 export PRTHOUR=1
 export EXTEND=0
 #export PSEC=300   # output interval in seconds (debug)
@@ -84,10 +86,10 @@ export POSTTYPE=sync
 export RUNRMTN=yes
 export RUNRINP=yes
 export RUNFCST=yes
-#export RUNFCST=no # debug
+#export RUNFCST=no # debug or prepare first guess when DANEST=T
 
 # Ensemble size
-export MEMBER=30
+export MEMBER=40
 #export MEMBER=0
 export ENSMSPR=yes
 # BGM option for base
@@ -104,7 +106,8 @@ head=bv${TETYPE}${SCL}${BP}${SCLBASE}
 #fi #q adjustment
 export HEAD=$head
 # DA option
-export OSSE=T
+## OSSE
+export OSSE=F
 export OBSDIST=uniform # observation distribution
 export TMEM=25 # truth member
 export SINGLEOBS=F
@@ -112,28 +115,32 @@ export DA_SINGLE_LATS=28.0
 export DA_SINGLE_LATN=32.0
 export DA_SINGLE_LONW=125.0
 export DA_SINGLE_LONE=131.0
-export DA_FIXED_LEVEL=F
+## PARALLEL
 export NISEP=6
 export NJSEP=4
 export IGHOST=1
 export JGHOST=1
-export LOBSMIN=0
-export ROBSMIN=0
+## OBSERVATION
+export PLATFORM=prepbufrall
+export LOBSMIN=-30
+export ROBSMIN=30
 export SELOBS=all
-export PREP=_preprh
+export DA_FIXED_LEVEL=F
+export PREP=
+## DA SETTINGS
 export DA_MEAN=F
 export DA_TL=F
 export DA_SCL_MEM=T
-export MAXITER=1
+export MAXITER=3
 export HLOC=200 #km
 export VLOC=4   #*0.1ln p
 export MINFL=0 #%
-export RTPP=0 #%
-export RTPS=90 #%
+export RTPP=80 #%
+export RTPS=0 #%
 export RELAX_SPREAD_OUT=T
 export Q_UPDATE_TOP=20000.0 #Pa
 export DA_SAVE_INFO=T
-head2=da${BP}${PREP}
+head2=da${BP}${PLATFORM}${PREP}
 if [ $OSSE = T ];then
   head2=${head2}.siml${MEMBER}.${OBSDIST}
 fi
@@ -163,8 +170,12 @@ if [ $RTPS -gt 0 ];then
   DA_INFL=${DA_INFL}rs${RTPS}.
 fi
 head2=${head2}.iter${MAXITER}.l${HLOC}.v${VLOC}.${DA_INFL}
-#head2=${head2}tn.
+#head2=${head2}2.
+head2=${head2}nhydupd.
+#head2=${head2}spinup.
+headbase=$head
 export HEAD2=$head2
+export HEADBASE=$headbase
 
 #### rsmlocation
 

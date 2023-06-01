@@ -120,10 +120,11 @@ contains
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
-          k=kk(1)
-          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          !k=kk(1)
+          !obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           ! horizontal domain check
           if(    obsin(iof)%lon(n).le.rlon(1) &
              .or.obsin(iof)%lon(n).ge.rlon(nlon)&
@@ -358,10 +359,11 @@ contains
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
-          k=kk(1)
-          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          !k=kk(1)
+          !obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
     ! (debug) check whether observation is 
     !  within prescribed horizontal domain or not
     if(     lonw.ne.0.0d0.and.lone.ne.0.0d0 &
@@ -584,7 +586,7 @@ contains
       print *, nobsin
       allocate( rand(nobsin) )
       call random_normal(rand)
-      allocate( wk(nobsin,2)[*] ) !level,dat
+      allocate( wk(nobsin,3)[*] ) !level,dat,err
       wk=0.0d0
       do n=1,obsin(iof)%nobs
         ! horizontal domain check
@@ -615,14 +617,16 @@ contains
           if(obsin(iof)%elem(n).lt.10000) then !upper
             rk=obsin(iof)%lev(n)
             call itpl_2d(p_full(:,:,nint(rk)),ri,rj,wk(n,1))
-            kk = minloc(abs(wk(n,1)-plevfix))
-            k = kk(1)
+          !  kk = minloc(abs(wk(n,1)-plevfix))
+          !  k = kk(1)
           else !synop
             call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,wk(n,1))
             rk=wk(n,1)
-            k=1
+          !  k=1
           end if
-          tmperr  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !tmperr  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          tmperr  = obsin(iof)%err(n)
+          wk(n,3) = tmperr
           print '(3I6,3F10.2,ES10.2)', &
                   myimage, n, obsin(iof)%elem(n), ri,rj,rk,tmperr
 !debug          print '(2I5,2F10.2)',n, obsin(iof)%elem(n), obsin(iof)%lev(n),wk(n,1)
@@ -662,6 +666,7 @@ contains
         do n=1,obsin(iof)%nobs
           obsin(iof)%lev(n)=wk(n,1)
           obsin(iof)%dat(n)=wk(n,2)
+          obsin(iof)%err(n)=wk(n,3)
         end do
         call monit_obsin(obsin(iof)%nobs,obsin(iof)%elem,obsin(iof)%dat)
         ofile=trim(datatype(iof))//'.siml.'//odate
@@ -763,9 +768,8 @@ contains
         qc=iqc_out_h
         return
       end if
-!!DEBUG
-      write(6,'(6(a,f8.2))') &
-        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
+!!DEBUG      write(6,'(6(a,f8.2))') &
+!!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
     ! rlev1 -> rk
     if(elm.gt.9999) then !surface observation : rlev = height [m]

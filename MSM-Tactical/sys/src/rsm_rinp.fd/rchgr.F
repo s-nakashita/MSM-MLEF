@@ -1,6 +1,6 @@
       subroutine rchgr(nin,nsfcin,nslmsk,norog,nou,nsfcou,nsig,          &   
      &                 lsig,lmtn,lhor,lc2r,ls2r,lp2r,percmtn,            &
-     &                 lsst)
+     &                 lsst,lmd)
 !$$$  subprogram documentation block
 !                .      .    .                                       .
 ! subprogram:  rchgr
@@ -40,7 +40,7 @@
 !   machine:  cray ymp.
 !
 !$$$
-      use machine , only : kind_io4
+      use machine , only : kind_io4, kind_io8
       use newsst_module, only : new_sst !added by SN
 !ccj
 #include <paramodel.h>
@@ -115,13 +115,15 @@
 !
       integer version
 !
-      logical lsig,lmtn,lhor,lc2r,ls2r,lp2r,lsst
+      logical lsig,lmtn,lhor,lc2r,ls2r,lp2r,lsst,lmd
 !
 ! added by SN
       integer issttype
       namelist/namsst/ issttype
       data issttype/0/
       integer instmsk(ijdimo)
+      real (kind=kind_io8) fha(5)
+      integer ida(8),jda(8)
 ! added by SN
 !
       print *,' +++++++++++++ start regional chgr ++++++++++ '
@@ -367,12 +369,29 @@
       call maxmin(wwo,ijdimo,kdimo+1,1,kdimo+1,' wwo ')
 #endif
 !
-      if(fhour.ne.0.0) then
+      if(lmd.and.(fhour.ne.0.0)) then
 ! for nonhyd initial w in rsm_fcst
         print*,'Warning!! initial fhour is not zero!!!'
         print*,' fhour= ',fhour
+        fha=0
+        ida=0
+        jda=0
+        fha(2)=fhour
+        ida(1)=idate(4)
+        ida(2)=idate(2)
+        ida(3)=idate(3)
+        ida(5)=idate(1)
+        call w3movdat(fha,ida,jda)
+        idate(4)=jda(1)
+        idate(2)=jda(2)
+        idate(3)=jda(3)
+        idate(1)=jda(5)
         print*,'Warning!! initial non-zero fhour is set to be zero!!!'
         fhour=0.
+        print 1104,fhour,idate
+ 1104   format(1h0,1x,'modified date ',/,                   &
+     &           3x,'fhour=',f6.1,' ihour=',i2,' month=',i2,' day=',i2,  &
+     &              ' year=',i4)
       endif
 !
       call rwrite(nou,label,fhour,idate,kdimo,                           &
@@ -398,6 +417,23 @@
       fhour=fhours
       print *,' read fhour,idate of sfc.'
       print *,'fhour,idate=',fhour,idate
+      if(lmd.and.(fhour.ne.0.0)) then
+        fha=0
+        ida=0
+        jda=0
+        fha(2)=fhour
+        ida(1)=idate(4)
+        ida(2)=idate(2)
+        ida(3)=idate(3)
+        ida(5)=idate(1)
+        call w3movdat(fha,ida,jda)
+        idate(4)=jda(1)
+        idate(2)=jda(2)
+        idate(3)=jda(3)
+        idate(1)=jda(5)
+        fhours=0.
+        print 1104,fhours,idate
+      endif
       write(nsfcou) fhours,idate,lon,lat,version
 !
       do 5900 nfld = 3,100

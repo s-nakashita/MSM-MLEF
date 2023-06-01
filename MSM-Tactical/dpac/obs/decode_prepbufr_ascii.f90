@@ -22,6 +22,7 @@ program decode_prepbufr_ascii
 !
   use kind_module
   use obs_module, only : obstype, &
+     & uid_obs, plevfix, obserr, &
      & id_t_obs, id_q_obs, id_u_obs, id_v_obs, id_ps_obs, &
      & obsin_allocate, obsin_deallocate, obs_preproc, monit_obsin, &
      & write_obs, ndate, nhour
@@ -78,9 +79,10 @@ program decode_prepbufr_ascii
   logical :: ex
 
   integer :: tmpelm,tmpdmin
-  real(kind=dp) :: tmplon, tmplat, tmplev, tmpdat, tmpdhr
+  real(kind=dp) :: tmplon, tmplat, tmplev, tmpdat, tmperr, tmpdhr
         
-  integer :: i,ii,j,jj,lv,kk,mm
+  integer :: i,ii,j,jj,lv,k,kk,mm
+  integer, dimension(1) :: k1d
 
   character(len=300) :: infhead='prepbufr' 
   character(len=300) :: ofile( NFILO )
@@ -206,14 +208,29 @@ program decode_prepbufr_ascii
         tmpelm=id_ps_obs
         tmplev=elv !elevation
         tmpdat=ob*100.0 !mb->Pa
+        tmperr=oe*100.0 !mb->Pa
+        if(tmperr==0.0d0) then
+          k=1
+          tmperr=obserr(k,uid_obs(tmpelm))
+        end if
         obs%elem(ndataall)=tmpelm
         obs%lon (ndataall)=tmplon
         obs%lat (ndataall)=tmplat
         obs%lev (ndataall)=tmplev
         obs%dat (ndataall)=tmpdat
+        obs%err (ndataall)=tmperr
         obs%dmin(ndataall)=real(tmpdmin,kind=dp)
       ELSE !IF (filo(n) .eq. 'ADPUPA')  THEN
         !==UPPER==
+        !
+        ! skip 4 ships' observations
+        !
+        if ((sid(1:4)=='7KBR').or.(sid(1:4)=='7JEJ') &
+        .or.(sid(1:4)=='7JJW').or.(sid(1:4)=='JPBN')) then
+          print *, 'skip station ', sid
+          cycle
+        end if
+        !
         if(cvar.eq.'    P') then
           tmplev=ob*100.0 !mb->Pa
         elseif(cvar.eq.'    Z') then
@@ -223,23 +240,33 @@ program decode_prepbufr_ascii
           case('    T')
             tmpelm=id_t_obs
             tmpdat=ob+273.15 !degC->degK
+            tmperr=oe
           case('    Q')
             tmpelm=id_q_obs
             tmpdat=ob*1.0e-6 !mg/kg->kg/kg
+            tmperr=oe*1.0e-6 !mg/kg->kg/kg
             if(pc.gt.1.0) cycle !duplicate
           case('    U')
             tmpelm=id_u_obs
             tmpdat=ob
+            tmperr=oe
           case('    V')
             tmpelm=id_v_obs
             tmpdat=ob
+            tmperr=oe
           end select
+          if(tmperr==0.0d0) then
+            k1d = minloc(abs(tmplev-plevfix(:)))
+            k=k1d(1)
+            tmperr=obserr(k,uid_obs(tmpelm))
+          end if
           ndataall=ndataall+1
           obs%elem(ndataall)=tmpelm
           obs%lon (ndataall)=tmplon
           obs%lat (ndataall)=tmplat
           obs%lev (ndataall)=tmplev
           obs%dat (ndataall)=tmpdat
+          obs%err (ndataall)=tmperr
           obs%dmin(ndataall)=real(tmpdmin,kind=dp)
         endif
         !==UPPER==
