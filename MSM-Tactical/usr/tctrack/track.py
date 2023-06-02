@@ -72,7 +72,8 @@ fguess = {
 yyyy = t0.strftime("%Y")
 yy = yyyy[2:]
 lbst=False
-fbst=f"/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
+#fbst=f"/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
+fbst=f"/Volumes/dandelion/data/bsttrack/{yyyy}/bst{yy}{tcnum:02d}.txt"
 try:
     bsttrack = np.loadtxt(fbst)
 except FileNotFoundError:

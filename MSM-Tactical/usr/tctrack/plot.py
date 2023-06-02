@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import sys
 plt.rcParams['font.size'] = 18
 
-wdir='rsm2msm9_himsst'
+wdir='rsm2msm9_gfsz'
 #wdir='DATA/gfs/rda'
 datadir = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/{wdir}')
 figdir = datadir / 'fig'
@@ -28,7 +28,7 @@ if len(sys.argv) > 3:
 
 ## best track
 yyyy = sdate.strftime("%Y")
-fbst = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/bsttrack/{yyyy}/bst{yyyy[2:]}{tcnum:02d}.txt')
+fbst = Path(f'/Volumes/dandelion/data/bsttrack/{yyyy}/bst{yyyy[2:]}{tcnum:02d}.txt')
 try:
     bsttrack = np.loadtxt(fbst)
 except FileNotFoundError:
@@ -75,7 +75,8 @@ ax2.set_xticks(xticks)
 cmap = plt.get_cmap('tab10')
 icol = 0
 while sdate <= edate:
-    for wdir, style in zip(['rsm2msm9','rsm2msm9_himsst'],\
+    for wdir, style in zip(['rsm2msm9_gfsz','rsm2msm9'],\
+    #,'rsm2msm9_himsst'],\
         ['solid','dashed']):
     #for wdir, style in zip(['DATA/gfs/rda'],['solid','dashed']):
         datadir = Path(f'/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work/{wdir}')

@@ -8,10 +8,11 @@ decode() {
   wgrib ${infile} | grep "${var}" | grep "${lev}" | wgrib ${infile} -i -ieee -nh -o ${ofile}
 }
 
-datadir="/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work"
+#datadir="/Users/nakashita/Development/grmsm/MSM-Tactical/usr/work"
+datadir="/Volumes/dandelion/GRMSMJob"
 init=${1:-2022082800} # initial date (input)
 tcnum=${2:-11} # TC number
-wdir=rsm2msm9
+wdir=rsm2msm9_gfsz
 igrd=384 # size(lon)-1
 jgrd=192 # size(lat)-1
 endhour=120 # forecast length (hour)
