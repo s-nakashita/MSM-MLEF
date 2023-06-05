@@ -1,0 +1,25 @@
+!
+! Define list of channels for which to reconstruct radiances
+!
+! The first integer is the number of channels:
+! Negative number => turn off radiance reconstruction
+! Zero => reconstruct all channels
+! Positive number => the number of channels, followed by the channel list
+!
+!
+! Examples:
+!
+! No radiance reconstruction:
+! -1
+!
+! Reconstruct all channels:
+! 0
+!
+! Reconstruct a specific set of 10 channels:
+! 10
+! 93 137 185 237 285 349 413 1013 1533 2289
+!
+!
+! For this test case, reconstruct all channels:
+!
+0

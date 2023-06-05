@@ -1,0 +1,26 @@
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: Input ozone profile exceeds upper coef limit (profile number =        1)
+ 2020/03/11  17:07:34  Limit   =     7.7868    8.5028
+ 2020/03/11  17:07:34  p (hPa) =     3.3398    4.0770
+ 2020/03/11  17:07:34  Value   =     7.8691    8.6177
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: Input water vapour profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:34  Limit   =     5.1387
+ 2020/03/11  17:07:34  p (hPa) =     1.2972
+ 2020/03/11  17:07:34  Value   =     5.0000
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: Input water vapour profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:34  Limit   =     5.1387
+ 2020/03/11  17:07:34  p (hPa) =     1.2972
+ 2020/03/11  17:07:34  Value   =     4.9912
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: Input water vapour profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:34  Limit   =     5.1387
+ 2020/03/11  17:07:34  p (hPa) =     1.2972
+ 2020/03/11  17:07:34  Value   =     5.0000
+ 2020/03/11  17:07:34  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)

@@ -1,0 +1,32 @@
+FC=gfortran
+FC77=gfortran
+CC=gcc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-g
+AR=ar r
+
+F2PY=f2py --fcompiler=gnu95
+F2PYFLAGS_ARCH="-fPIC -g"
+F2PYLDFLAGS_ARCH=
+
+# -fcheck=all               enable all checks
+# -finit-real=nan/snan      init all reals to NaN/signalling NaN
+# -finit-character=127      init all characters to a weird value
+# -std=f2008                enforce Fortran 2008 standard
+# -Wall                     all warnings
+# -pedantic                 warnings for Fortran extensions
+# -fbacktrace               backtrace when a runtime error occurs
+# -ffree-line-length-none   no restrictions on free form line length
+
+FFLAGS_ARCH=-g -fPIC -fcheck=all -finit-real=snan -finit-character=127 -std=f2008 \
+            -pedantic -Wall -fbacktrace -ffree-line-length-none -ffpe-trap=invalid,zero,overflow
+
+# Allow the system intrinsic
+FFLAGS_ARCH_rttov_lbl_unix_env=-g -fPIC -fcheck=all -finit-real=snan -finit-character=127 -std=f2008 -fall-intrinsics \
+            -pedantic -Wall -fbacktrace -ffpe-trap=invalid,zero,overflow
+
+# No warnings for lapack modules since the code is copied directly from the original source
+FFLAGS_ARCH_lapack=-g -fPIC -fcheck=all -finit-real=snan -finit-character=127 \
+            -fbacktrace -ffpe-trap=invalid,zero,overflow
+FFLAGS_ARCH_lapack_lbl=-g -fPIC -fcheck=all -finit-real=snan -finit-character=127 \
+            -fbacktrace -ffpe-trap=invalid,zero,overflow

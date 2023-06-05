@@ -1,0 +1,13 @@
+FC=gfortran
+FC77=gfortran
+CC=gcc
+LDFLAGS_ARCH=-fopenmp
+CFLAGS_ARCH=
+FFLAGS_ARCH=-fPIC -O3 -fopenmp -ffree-line-length-none
+AR=ar r
+
+F2PY=f2py --fcompiler=gnu95
+F2PYFLAGS_ARCH="-fPIC"
+F2PYLDFLAGS_ARCH="-lgomp"
+
+FFLAGS_ARCH_lapack=-fPIC -O3 -fopenmp

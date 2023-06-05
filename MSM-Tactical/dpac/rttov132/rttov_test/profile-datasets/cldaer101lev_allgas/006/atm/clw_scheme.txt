@@ -1,0 +1,4 @@
+&clw_scheme_nml
+  clw_scheme = 2
+  clwde_param = 1
+/

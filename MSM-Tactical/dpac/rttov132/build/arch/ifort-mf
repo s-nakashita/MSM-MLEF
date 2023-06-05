@@ -1,0 +1,12 @@
+FC=ifort 
+FC77=ifort 
+CC=icc
+LDFLAGS_ARCH=-qopenmp -qopenmp-threadprivate=compat -mkl=sequential 
+CFLAGS_ARCH=-g 
+FFLAGS_ARCH=-march=core-avx2 -no-fma -fp-model source -fp-model precise -fimf-use-svml=true -g -traceback -fPIC -ip -align array64byte,all -qopenmp -qopenmp-threadprivate=compat -assume byterecl -list -qopt-report=5 -qopt-report-phase=vec -diag-enable=all -qopt-report-annotate=text -qopt-report-annotate-position=both
+
+AR=ar r
+
+F2PY=f2py --fcompiler=intelem
+F2PYFLAGS_ARCH="-fPIC -g"
+F2PYLDFLAGS_ARCH=

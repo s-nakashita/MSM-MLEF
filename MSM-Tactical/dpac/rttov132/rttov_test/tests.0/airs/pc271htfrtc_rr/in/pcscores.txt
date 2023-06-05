@@ -1,0 +1,5 @@
+&pcscores
+  npcscores = 300
+  ipcreg = 1
+/
+

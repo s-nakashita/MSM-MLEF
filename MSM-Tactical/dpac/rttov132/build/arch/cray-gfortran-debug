@@ -1,0 +1,8 @@
+FC=ftn
+FC77=ftn
+CC=gcc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-O -g
+FFLAGS_ARCH=-cpp -ffree-line-length-none -fall-intrinsics -fno-backslash -fno-range-check  -fmax-identifier-length=63 -Wampersand -march=native -O2 -pipe -ftree-vectorize -funroll-loops -ffpe-trap=zero,overflow,invalid -g -fbacktrace -fno-realloc-lhs -fno-sign-zero -fcheck=bounds,pointer,mem -finit-real=nan -finit-integer=-2147483648 -finit-character=127
+AR=ar r
+

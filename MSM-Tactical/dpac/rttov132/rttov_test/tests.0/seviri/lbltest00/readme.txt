@@ -1,0 +1,1 @@
+US76 profile 1 (tropical) clear-sky for LBL vs RTTOV_DOM comparisons

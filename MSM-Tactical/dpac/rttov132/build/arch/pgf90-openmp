@@ -1,0 +1,21 @@
+FC=pgf90
+FC77=pgf90
+CC=gcc
+LDFLAGS_ARCH=-mp
+CFLAGS_ARCH=
+AR=ar r
+
+# For PGF v14 and v15 -fastsse and -fast don't work with -mp (later versions are OK)
+FFLAGS_ARCH=-O2 -fast -Kieee -notraceback -fPIC -mp
+
+# PGF v14 won't compile these subroutines with -O2:
+#FFLAGS_ARCH_rttov_add_aux_prof=-O1 -Kieee -notraceback -fPIC -mp
+#FFLAGS_ARCH_rttov_dom_setup_profile_tl=-O1 -Kieee -notraceback -fPIC -mp
+
+# PGF v14 and later won't run if these subroutines are compiled with -O2:
+FFLAGS_ARCH_rttov_dom_setup_profile=-O1 -Kieee -notraceback -fPIC -mp
+
+
+F2PY=f2py --fcompiler=pg
+F2PYFLAGS_ARCH="-fPIC"
+F2PYLDFLAGS_ARCH="-lpgmp"

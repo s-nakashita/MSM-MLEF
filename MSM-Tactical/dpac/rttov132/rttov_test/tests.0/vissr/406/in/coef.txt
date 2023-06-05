@@ -1,0 +1,3 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov13pred54L/rtcoef_fy2_8_vissr_o3.dat'
+/

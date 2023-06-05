@@ -1,0 +1,11 @@
+# This worked for RTTOV v12: untested for later versions.
+
+FC=xlf95_r
+FC77=f77
+CC=xlc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=
+FFLAGS_ARCH=-O3 -qsuffix=cpp=F90 -qextname
+FFLAG_D=-WF,-D
+CPP=/usr/lib/cpp
+AR=ar r

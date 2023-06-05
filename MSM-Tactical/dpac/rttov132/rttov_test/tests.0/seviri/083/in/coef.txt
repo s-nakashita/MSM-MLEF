@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov7pred54L/rtcoef_msg_3_seviri.dat'
+  defn%f_scaer = 'rtcoef_rttov13/cldaer_ir/scaercoef_msg_3_seviri_opac_ironly.dat'
+/

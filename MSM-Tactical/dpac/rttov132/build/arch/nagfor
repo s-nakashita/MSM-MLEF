@@ -1,0 +1,25 @@
+FC=nagfor
+FC77=nagfor -dusty
+CC=gcc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-fPIC
+AR=ar r
+
+# -kind=byte so that jpim=4 and jprb=8; it is necessary to be able to compile against dr_hook
+FFLAGS_ARCH=-kind=byte -O4 -maxcontin=500 -PIC
+
+# Prevent small AD/K diffs to other compilers
+FFLAGS_ARCH_rttov_fresnel_ad=-kind=byte -O0 -maxcontin=500 -PIC
+FFLAGS_ARCH_rttov_fresnel_k=-kind=byte -O0 -maxcontin=500 -PIC
+
+# -DRTTOV_USE_F90_UNIX_ENV to load NAG modules
+FFLAGS_ARCH_rttov_lbl_unix_env = $(FFLAGS_ARCH) -DRTTOV_USE_F90_UNIX_ENV
+
+# 5.2(649) is broken - uncomment these lines if using this version
+#FFLAGS_ARCH_rttov_opdep_9_ad = -kind=byte -O2 -PIC
+#FFLAGS_ARCH_rttov_opdep_9_k  = -kind=byte -O2 -PIC
+
+
+F2PY=f2py --fcompiler=nag --f77flags="-PIC -kind=byte"
+F2PYFLAGS_ARCH="-PIC -kind=byte"
+F2PYLDFLAGS_ARCH=

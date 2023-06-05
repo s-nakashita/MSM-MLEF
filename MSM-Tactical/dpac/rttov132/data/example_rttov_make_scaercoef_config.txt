@@ -1,0 +1,52 @@
+! Example config_file for rttov_make_scaercoef.exe
+! Comment lines begin with "!"
+! File paths should be enclosed in quotes ""
+!
+!------------------------------------------------------------------------------
+! Number of particle types defined
+  2
+!------------------------------------------------------------------------------
+! Particle 1
+!
+  aer1            ! Name (4 characters)
+  1               ! Number of relative humidity values: 1 for hydrophobic species
+  0               ! Relative humidity values (%): 0 for hydrophobic species
+  2.37E-05        ! Unit conversion factor ([g.m^-3]/[part.cm^-3]), if zero the
+                  !     executable computes this using density
+  0.              ! Density (g.cm^-3), only used if conversion factor is
+                  !     computed by the executable
+!
+! Input files for RH=0%
+!
+  "data/example_aer1_RH00_ref_index.dat"      ! Refractive index file
+  "data/example_aer1_RH00_size_dist.dat"      ! Size distribution file
+!
+! End of Particle 1 definition
+!------------------------------------------------------------------------------
+! Particle 2
+!
+  aer2            ! Name (4 characters)
+  3               ! Number of relative humidity values
+  0 50 99         ! Relative humidity values (%) - values in the range [0,99]
+  0.              ! Unit conversion factor ([g.m^-3]/[part.cm^-3]), if zero the
+                  !     executable computes this using density
+  1.8             ! Density (g.cm^-3), only used if conversion factor is
+                  !     computed by the executable
+!
+! Input files for RH=0%
+!
+  "data/example_aer2_RH00_ref_index.dat"      ! Refractive index file
+  "data/example_aer2_RH00_size_dist.dat"      ! Size distribution file
+!
+! Input files for RH=50%
+!
+  "data/example_aer2_RH50_ref_index.dat"      ! Refractive index file
+  "data/example_aer2_RH50_size_dist.dat"      ! Size distribution file
+!
+! Input files for RH=99%
+!
+  "data/example_aer2_RH99_ref_index.dat"      ! Refractive index file
+  "data/example_aer2_RH99_size_dist.dat"      ! Size distribution file
+!
+! End of Particle 2 definition
+!------------------------------------------------------------------------------

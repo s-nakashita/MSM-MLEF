@@ -1,0 +1,56 @@
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input ozone profile exceeds upper coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     7.7766
+ 2020/03/11  17:07:39  p (hPa) =     3.3398
+ 2020/03/11  17:07:39  Value   =     7.8691
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input N2O profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     0.2986    0.3060    0.3123    0.3133    0.3133    0.3133    0.3133
+ 2020/03/11  17:07:39  p (hPa) =   223.4410  235.2340  247.4080  259.9690  272.9190  286.2620  300.0000
+ 2020/03/11  17:07:39  Value   =     0.2959    0.2978    0.3002    0.3039    0.3074    0.3105    0.3127
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input CH4 profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     1.4779    1.5180    1.5446    1.5725    1.5922    1.5958    1.5770    1.6292    1.6421    1.6557
+ 2020/03/11  17:07:39  p (hPa) =    89.5203   96.1138  103.0170  110.2370  117.7770  125.6460  133.8460  142.3850  151.2660  160.4960
+ 2020/03/11  17:07:39  Value   =     1.4778    1.4943    1.5110    1.5271    1.5421    1.5564    1.5698    1.5819    1.5938    1.6054
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input N2O profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     0.3060    0.3123    0.3133    0.3133
+ 2020/03/11  17:07:39  p (hPa) =   235.2340  247.4080  259.9690  272.9190
+ 2020/03/11  17:07:39  Value   =     0.3036    0.3071    0.3100    0.3123
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input N2O profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     0.2502    0.2611    0.2715    0.2813    0.2904    0.2986    0.3060    0.3123    0.3133    0.3133
+ 2020/03/11  17:07:39  p (hPa) =   170.0780  180.0180  190.3200  200.9890  212.0280  223.4410  235.2340  247.4080  259.9690  272.9190
+ 2020/03/11  17:07:39  Value   =     0.2493    0.2514    0.2535    0.2555    0.2573    0.2591    0.2608    0.2625    0.2641    0.2657
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input CH4 profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     1.5446    1.5725    1.5922    1.5958    1.6292    1.6421    1.6557    1.6699    1.6837    1.6960
+ 2020/03/11  17:07:39  p (hPa) =   103.0170  110.2370  117.7770  125.6460  142.3850  151.2660  160.4960  170.0780  180.0180  190.3200
+ 2020/03/11  17:07:39  Value   =     1.5341    1.5493    1.5637    1.5772    1.6024    1.6143    1.6260    1.6377    1.6494    1.6611
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input CH4 profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     1.0302    1.1092    1.1839    1.2525    1.3135    1.3434    1.3750    1.4083    1.4433    1.4779
+ 2020/03/11  17:07:39  p (hPa) =    43.1001   47.1882   51.5278   56.1259   60.9895   66.1252   71.5398   77.2395   83.2310   89.5203
+ 2020/03/11  17:07:39  Value   =     1.0034    1.0488    1.0984    1.1516    1.2018    1.2510    1.2949    1.3351    1.3708    1.4019
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input temperature profile exceeds upper coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =   227.9156
+ 2020/03/11  17:07:39  p (hPa) =     0.0161
+ 2020/03/11  17:07:39  Value   =   230.4430
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input N2O profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     0.3123    0.3133
+ 2020/03/11  17:07:39  p (hPa) =   247.4080  259.9690
+ 2020/03/11  17:07:39  Value   =     0.3105    0.3126
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: Input CH4 profile exceeds lower coef limit (profile number =        1)
+ 2020/03/11  17:07:39  Limit   =     1.3135    1.3434    1.3750    1.4083    1.4433    1.4779    1.5180    1.5446    1.5725    1.5922
+ 2020/03/11  17:07:39  p (hPa) =    60.9895   66.1252   71.5398   77.2395   83.2310   89.5203   96.1138  103.0170  110.2370  117.7770
+ 2020/03/11  17:07:39  Value   =     1.2948    1.3325    1.3675    1.3993    1.4312    1.4589    1.4828    1.5053    1.5267    1.5473
+ 2020/03/11  17:07:39  rttov_check_reg_limits.F90
+     PC-RTTOV: surface pressure outside limits (profile number =        1)

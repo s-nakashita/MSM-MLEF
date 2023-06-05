@@ -1,0 +1,56 @@
+FC=nagfor
+FC77=nagfor -dusty 
+CC=gcc
+LDFLAGS_ARCH=-g90
+CFLAGS_ARCH=-g -fPIC
+AR=ar r
+
+# -C=all all warnings
+# -gline backtrace on error
+# -nan initialize real values to NaN
+# -ieee=stop stop program on arithmetic exception
+# -g90 generate debug data for NAG debugger
+
+FFLAGS_ARCH=-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008
+
+# LAPACK code does not adhere to F2003/2008 standard
+FFLAGS_ARCH_lapack=-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC
+
+
+# Prevent unused external NetCDF reference warnings in a few non-core routines
+FFLAGS_ARCH_rttov_brdf_atlas_nc2h5      =-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008 -w=uep
+FFLAGS_ARCH_rttov_uwiremis_atlas_nc2h5  =-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008 -w=uep
+FFLAGS_ARCH_rttov_camel_atlas_nc2h5     =-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008 -w=uep
+FFLAGS_ARCH_rttov_camel_clim_atlas_nc2h5=-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008 -w=uep
+FFLAGS_ARCH_rttov_mie_params_cld        =-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -f2008 -w=uep
+
+# -DRTTOV_USE_F90_UNIX_ENV enable the use of NAG compatibility modules 
+FFLAGS_ARCH_rttov_lbl_unix_env=-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC -DRTTOV_USE_F90_UNIX_ENV
+
+# LAPACK code does not adhere to F2003/2008 standard
+FFLAGS_ARCH_lapack_lbl=-C=all -g -gline -nan -ieee=stop -kind=byte -g90 -maxcontin=500 -PIC
+
+
+# Required by NAG v5.X
+#FFLAGS_ARCH_rttov_test = -C=array -C=bits -C=calls -C=do -C=present -C=recursion -g -gline -nan -ieee=stop -kind=byte -g90 -PIC -f2008
+
+# Required by NAG v6.0 (NB the test suite won't run with v6.0 due to a compiler bug; there are no problems with v6.1)
+#FFLAGS_ARCH_rttov_hdf_mod = -C=bits -C=calls -C=do -C=present -C=recursion -g -nan -ieee=stop -kind=byte -g90 -PIC -f2008
+
+
+# Individual warnings
+# array     (check array bounds),
+# bits      (check bit intrinsic arguments),
+# calls     (check procedure references),
+# dangling  (check for dangling pointers),
+# do        (check DO loops for zero step values),
+# none      (do no checking: this is the default),
+# present   (check OPTIONAL references),
+# pointer   (check POINTER references),
+# recursion (check for invalid recursion) or
+# undefined (check for undefined variables; see later section for details).
+
+
+F2PY=f2py --fcompiler=nag --f77flags="-PIC -kind=byte"
+F2PYFLAGS_ARCH="-PIC -g -kind=byte"
+F2PYLDFLAGS_ARCH=

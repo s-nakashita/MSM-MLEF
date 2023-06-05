@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov13pred54L/rtcoef_noaa_15_amsua.dat'
+  defn%f_rttovscatt = 'rtcoef_rttov13/hydrotable/hydrotable_noaa_amsua.dat'
+/

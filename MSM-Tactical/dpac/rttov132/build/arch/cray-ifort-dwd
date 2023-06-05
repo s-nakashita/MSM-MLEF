@@ -1,0 +1,13 @@
+FC=ftn
+FC77=ftn
+CC=cc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-O -g -std=c99 -xHost
+FFLAGS_ARCH=-fpp -stand=f03 -diag-disable 6477,7025 -O2 -no-vec -xHost -fp-model source -g -traceback
+AR=ar r
+
+# -fp-model source ensures more consistent floating point results
+
+F2PY=f2py --fcompiler=intelem
+F2PYFLAGS_ARCH="-fPIC"
+F2PYLDFLAGS_ARCH=

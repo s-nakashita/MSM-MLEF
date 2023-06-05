@@ -10,7 +10,7 @@ module func_module
   implicit none
   private
 !
-  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, calc_q2,&
+  public :: calc_pfull, conv_temp, calc_rh, calc_td, calc_q, calc_q2, calc_qs, &
    &        calc_wd, calc_uv, prsadj, distll_1
   contains
 !
@@ -192,6 +192,25 @@ module func_module
 
     return
   end subroutine calc_q2
+!
+! saturated specific humidity
+!
+  subroutine calc_qs(t,p,qs)
+    implicit none
+    real(kind=dp),parameter :: e0=6.112_dp
+    real(kind=dp),parameter :: a=17.67_dp
+    real(kind=dp),parameter :: b=243.5_dp
+    real(kind=dp),intent(in) :: t,p !t[K],p[Pa]
+    real(kind=dp),intent(out):: qs
+    real(kind=dp) :: e,es,tc
+
+    tc = t - t0
+    es = e0*exp(a*tc/(tc+b)) !Bolton(1980)
+
+    qs = 0.622_dp * es / (p*0.01_dp - 0.378_dp * es)
+
+    return
+  end subroutine calc_qs
 !
 ! wind direction
 !

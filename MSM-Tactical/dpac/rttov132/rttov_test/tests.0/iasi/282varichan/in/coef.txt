@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov9pred101L/rtcoef_metop_2_iasi_7gas.H5'
+  defn%f_sccld = 'rtcoef_rttov13/cldaer_visir/sccldcoef_metop_2_iasi.H5'
+/

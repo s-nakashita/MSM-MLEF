@@ -1,0 +1,9 @@
+FC=ftn
+FC77=ftn
+CC=cc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-g
+FFLAGS_ARCH=-c -hflex_mp=conservative -hfp1 -hadd_paren -r am -emf -J $(MODDIR)
+FFLAG_D=-D
+CPP=CC
+AR=ar r

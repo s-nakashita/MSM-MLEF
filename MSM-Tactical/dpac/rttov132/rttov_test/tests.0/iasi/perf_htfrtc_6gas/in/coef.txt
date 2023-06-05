@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_htfrtc_coef   = 'rtcoef_rttov13/htfrtc/htfrtc_coef_static.nc'
+  defn%f_htfrtc_sensor = 'rtcoef_rttov13/htfrtc/htfrtc_coef_sensor_metop_iasi.nc'
+/

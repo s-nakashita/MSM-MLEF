@@ -1,0 +1,1018 @@
+# radsim installation script. This script is automatically generated at the time
+# of code release. Do not edit!
+
+SRC_DIR=`dirname $0`
+LDFLAGS=""
+
+# Import user configuration
+
+if [ -f "$1" ]; then
+  echo "Importing configuration from $1"
+  . $1
+elif [ -f $SRC_DIR/user.cfg ]; then
+  echo "Importing user configuration from $SRC_DIR/user.cfg"
+  . $SRC_DIR/user.cfg
+elif [ -f $SRC_DIR/test.cfg ]; then
+  echo "Importing test configuration from $SRC_DIR/test.cfg"
+  . $SRC_DIR/test.cfg
+fi
+
+# Check locations
+
+ls $ECCODES_DIR $NETCDF_DIR $RTTOV_DIR > /dev/null
+
+if [ $? != 0 ]; then
+  echo "Error: One or more missing lib directories. Cannot install."
+  echo "Check paths in $SRC_DIR/user.cfg"
+  exit 1
+fi
+
+# Import the compiler-dependent configuration file
+
+if [ -f "$SRC_DIR/build/cfg/$FC.cfg" ]; then
+  . $SRC_DIR/build/cfg/$FC.cfg
+else
+  echo "No build configuration for $FC"
+  echo "Available configurations are:"
+  cd $SRC_DIR/build/cfg
+  ls -Icommon.cfg | sed -e 's/.cfg//'
+  exit 1
+fi
+
+INSTALL_DIR=${RADSIM_INSTALL_DIR:=.}
+
+# Import common configuration
+
+. $SRC_DIR/build/cfg/common.cfg
+
+# Initialise install directories
+
+mkdir -p $INSTALL_DIR/bin $INSTALL_DIR/build/obj $INSTALL_DIR/build/include
+rm -rf $INSTALL_DIR/bin/* $INSTALL_DIR/build/obj/* $INSTALL_DIR/build/include/*.mod
+
+# Now build the code
+
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_constants.f90 -o $INSTALL_DIR/build/obj/radsim_mod_constants.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_constants.f90 -o $INSTALL_DIR/build/obj/radsim_mod_constants.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_constants.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_constants.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_mod_cfg.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_mod_cfg.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_cfg.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_cfg.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "cp $SRC_DIR/src/code/main/radsim_readwrite_nf90.f90 $INSTALL_DIR/build/include"
+cp $SRC_DIR/src/code/main/radsim_readwrite_nf90.f90 $INSTALL_DIR/build/include
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "cp $SRC_DIR/src/code/main/radsim_write_field_nc.f90 $INSTALL_DIR/build/include"
+cp $SRC_DIR/src/code/main/radsim_write_field_nc.f90 $INSTALL_DIR/build/include
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_io.f90 -o $INSTALL_DIR/build/obj/radsim_mod_io.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_io.f90 -o $INSTALL_DIR/build/obj/radsim_mod_io.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_io.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_io.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_types.f90 -o $INSTALL_DIR/build/obj/radsim_mod_types.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_types.f90 -o $INSTALL_DIR/build/obj/radsim_mod_types.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_types.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_types.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_obs_nd.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_obs_nd.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_obs_nd.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_obs_nd.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_error_report.interface ]; then
+  cp $SRC_DIR/build/include/radsim_error_report.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_error_report.interface ]; then
+  cp $SRC_DIR/build/include/radsim_error_report.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_setup_rttov.F90 -o $INSTALL_DIR/build/obj/radsim_setup_rttov.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_setup_rttov.F90 -o $INSTALL_DIR/build/obj/radsim_setup_rttov.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_meto_plevels.f90 -o $INSTALL_DIR/build/obj/radsim_calc_meto_plevels.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_meto_plevels.f90 -o $INSTALL_DIR/build/obj/radsim_calc_meto_plevels.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ff_headers.f90 -o $INSTALL_DIR/build/obj/radsim_read_ff_headers.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ff_headers.f90 -o $INSTALL_DIR/build/obj/radsim_read_ff_headers.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_obs_nd.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_obs_nd.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_obs_nd.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_obs_nd.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_obs.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_obs.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_obs.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_obs.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_calc.f90 -o $INSTALL_DIR/build/obj/radsim_grid_calc.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_calc.f90 -o $INSTALL_DIR/build/obj/radsim_grid_calc.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_obs_1d.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_obs_1d.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_obs_1d.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_obs_1d.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_grid_init.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_init.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_grid_init.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_init.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_interp_horiz.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_horiz.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_interp_horiz.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_horiz.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_interp_index.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_index.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_interp_index.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_index.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_interp_unstructured.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_unstructured.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_interp_unstructured.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp_unstructured.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp.f90 -o $INSTALL_DIR/build/obj/radsim_interp.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp.f90 -o $INSTALL_DIR/build/obj/radsim_interp.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_index.f90 -o $INSTALL_DIR/build/obj/radsim_interp_index.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_index.f90 -o $INSTALL_DIR/build/obj/radsim_interp_index.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_convert_fields.interface ]; then
+  cp $SRC_DIR/build/include/radsim_convert_fields.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_convert_fields.interface ]; then
+  cp $SRC_DIR/build/include/radsim_convert_fields.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_check_ff_packing.f90 -o $INSTALL_DIR/build/obj/radsim_check_ff_packing.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_check_ff_packing.f90 -o $INSTALL_DIR/build/obj/radsim_check_ff_packing.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof91.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof91.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof91.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof91.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_grib_paramid_name.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grib_paramid_name.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_grib_paramid_name.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grib_paramid_name.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_error_report.f90 -o $INSTALL_DIR/build/obj/radsim_error_report.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_error_report.f90 -o $INSTALL_DIR/build/obj/radsim_error_report.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_grid_rotate.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_rotate.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_grid_rotate.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_rotate.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_esat.f90 -o $INSTALL_DIR/build/obj/radsim_esat.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_esat.f90 -o $INSTALL_DIR/build/obj/radsim_esat.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_obs.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_obs.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_obs.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_obs.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_process.f90 -o $INSTALL_DIR/build/obj/radsim_mod_process.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_process.f90 -o $INSTALL_DIR/build/obj/radsim_mod_process.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_process.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_process.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_set_stash.f90 -o $INSTALL_DIR/build/obj/radsim_set_stash.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_set_stash.f90 -o $INSTALL_DIR/build/obj/radsim_set_stash.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_pp.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_pp.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_pp.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_pp.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_init_obs_out.interface ]; then
+  cp $SRC_DIR/build/include/radsim_init_obs_out.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_init_obs_out.interface ]; then
+  cp $SRC_DIR/build/include/radsim_init_obs_out.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_init_rttov_data.interface ]; then
+  cp $SRC_DIR/build/include/radsim_init_rttov_data.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_init_rttov_data.interface ]; then
+  cp $SRC_DIR/build/include/radsim_init_rttov_data.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_model_to_rttov.interface ]; then
+  cp $SRC_DIR/build/include/radsim_model_to_rttov.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_model_to_rttov.interface ]; then
+  cp $SRC_DIR/build/include/radsim_model_to_rttov.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_print_ob.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_ob.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_print_ob.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_ob.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_obs_1d.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_obs_1d.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_obs_1d.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_obs_1d.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_run_batch.f90 -o $INSTALL_DIR/build/obj/radsim_run_batch.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_run_batch.f90 -o $INSTALL_DIR/build/obj/radsim_run_batch.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_calc_geo_sat_angles.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_geo_sat_angles.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_calc_geo_sat_angles.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_geo_sat_angles.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_calc_solar_angles.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_solar_angles.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_calc_solar_angles.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_solar_angles.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_model.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_model.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_functions.f90 -o $INSTALL_DIR/build/obj/radsim_mod_functions.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_mod_functions.f90 -o $INSTALL_DIR/build/obj/radsim_mod_functions.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "mv radsim_mod_functions.mod $INSTALL_DIR/build/include/"
+mv radsim_mod_functions.mod $INSTALL_DIR/build/include/
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_model_to_obs.interface ]; then
+  cp $SRC_DIR/build/include/radsim_model_to_obs.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_model_to_obs.interface ]; then
+  cp $SRC_DIR/build/include/radsim_model_to_obs.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_print_cfg.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_cfg.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_print_cfg.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_cfg.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_cfg.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_cfg.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_cfg.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_cfg.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_model.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_model.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_obsdata.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_obsdata.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_obsdata.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_obsdata.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_run_batch.interface ]; then
+  cp $SRC_DIR/build/include/radsim_run_batch.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_run_batch.interface ]; then
+  cp $SRC_DIR/build/include/radsim_run_batch.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_setup_rttov.interface ]; then
+  cp $SRC_DIR/build/include/radsim_setup_rttov.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_setup_rttov.interface ]; then
+  cp $SRC_DIR/build/include/radsim_setup_rttov.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_init.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_init.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_init.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_init.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_model.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_write_netcdf_model.interface ]; then
+  cp $SRC_DIR/build/include/radsim_write_netcdf_model.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim.f90 -o $INSTALL_DIR/build/obj/radsim.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim.f90 -o $INSTALL_DIR/build/obj/radsim.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_check_fields.f90 -o $INSTALL_DIR/build/obj/radsim_check_fields.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_check_fields.f90 -o $INSTALL_DIR/build/obj/radsim_check_fields.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_init_rttov_data.F90 -o $INSTALL_DIR/build/obj/radsim_init_rttov_data.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_init_rttov_data.F90 -o $INSTALL_DIR/build/obj/radsim_init_rttov_data.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grib_paramid_name.f90 -o $INSTALL_DIR/build/obj/radsim_grib_paramid_name.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grib_paramid_name.f90 -o $INSTALL_DIR/build/obj/radsim_grib_paramid_name.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_plevels.f90 -o $INSTALL_DIR/build/obj/radsim_calc_plevels.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_plevels.f90 -o $INSTALL_DIR/build/obj/radsim_calc_plevels.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_calc_plevels.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_plevels.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_calc_plevels.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_plevels.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_grib.f90 -o $INSTALL_DIR/build/obj/radsim_read_grib.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_grib.f90 -o $INSTALL_DIR/build/obj/radsim_read_grib.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_store_stash.interface ]; then
+  cp $SRC_DIR/build/include/radsim_store_stash.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_store_stash.interface ]; then
+  cp $SRC_DIR/build/include/radsim_store_stash.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_print_grid.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_grid.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_print_grid.interface ]; then
+  cp $SRC_DIR/build/include/radsim_print_grid.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof137.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof137.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof137.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof137.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_set_stash.interface ]; then
+  cp $SRC_DIR/build/include/radsim_set_stash.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_set_stash.interface ]; then
+  cp $SRC_DIR/build/include/radsim_set_stash.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_grid_calc.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_calc.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_grid_calc.interface ]; then
+  cp $SRC_DIR/build/include/radsim_grid_calc.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_check_ff_packing.interface ]; then
+  cp $SRC_DIR/build/include/radsim_check_ff_packing.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_check_ff_packing.interface ]; then
+  cp $SRC_DIR/build/include/radsim_check_ff_packing.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_esat.interface ]; then
+  cp $SRC_DIR/build/include/radsim_esat.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_esat.interface ]; then
+  cp $SRC_DIR/build/include/radsim_esat.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_qsat.f90 -o $INSTALL_DIR/build/obj/radsim_qsat.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_qsat.f90 -o $INSTALL_DIR/build/obj/radsim_qsat.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_unstructured.f90 -o $INSTALL_DIR/build/obj/radsim_interp_unstructured.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_unstructured.f90 -o $INSTALL_DIR/build/obj/radsim_interp_unstructured.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_ff_headers.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ff_headers.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_ff_headers.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ff_headers.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_init_obs_out.f90 -o $INSTALL_DIR/build/obj/radsim_init_obs_out.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_init_obs_out.f90 -o $INSTALL_DIR/build/obj/radsim_init_obs_out.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_obsdata.f90 -o $INSTALL_DIR/build/obj/radsim_read_obsdata.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_obsdata.f90 -o $INSTALL_DIR/build/obj/radsim_read_obsdata.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_calc_meto_plevels.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_meto_plevels.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_calc_meto_plevels.interface ]; then
+  cp $SRC_DIR/build/include/radsim_calc_meto_plevels.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_interp.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_interp.interface ]; then
+  cp $SRC_DIR/build/include/radsim_interp.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_model_to_obs.f90 -o $INSTALL_DIR/build/obj/radsim_model_to_obs.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_model_to_obs.f90 -o $INSTALL_DIR/build/obj/radsim_model_to_obs.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof60.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof60.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof60.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof60.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_fieldsfile.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_fieldsfile.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_fieldsfile.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_fieldsfile.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof60.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof60.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_ecprof60.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_ecprof60.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_ff_hd.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_ff_hd.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_dealloc_ff_hd.interface ]; then
+  cp $SRC_DIR/build/include/radsim_dealloc_ff_hd.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_fieldsfile.f90 -o $INSTALL_DIR/build/obj/radsim_read_fieldsfile.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_fieldsfile.f90 -o $INSTALL_DIR/build/obj/radsim_read_fieldsfile.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_init.f90 -o $INSTALL_DIR/build/obj/radsim_grid_init.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_init.f90 -o $INSTALL_DIR/build/obj/radsim_grid_init.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_model.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_model.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_model.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_model.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_ob.f90 -o $INSTALL_DIR/build/obj/radsim_print_ob.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_ob.f90 -o $INSTALL_DIR/build/obj/radsim_print_ob.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_qsat.interface ]; then
+  cp $SRC_DIR/build/include/radsim_qsat.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_qsat.interface ]; then
+  cp $SRC_DIR/build/include/radsim_qsat.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_pp.f90 -o $INSTALL_DIR/build/obj/radsim_read_pp.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_pp.f90 -o $INSTALL_DIR/build/obj/radsim_read_pp.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_netcdf.f90 -o $INSTALL_DIR/build/obj/radsim_read_netcdf.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_netcdf.f90 -o $INSTALL_DIR/build/obj/radsim_read_netcdf.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_read_cfg.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_read_cfg.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_store_stash.f90 -o $INSTALL_DIR/build/obj/radsim_store_stash.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_store_stash.f90 -o $INSTALL_DIR/build/obj/radsim_store_stash.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_ff_hd.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_ff_hd.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_ff_hd.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_ff_hd.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_rotate.f90 -o $INSTALL_DIR/build/obj/radsim_grid_rotate.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_grid_rotate.f90 -o $INSTALL_DIR/build/obj/radsim_grid_rotate.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_horiz.f90 -o $INSTALL_DIR/build/obj/radsim_interp_horiz.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_interp_horiz.f90 -o $INSTALL_DIR/build/obj/radsim_interp_horiz.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_init.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_init.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_write_netcdf_init.f90 -o $INSTALL_DIR/build/obj/radsim_write_netcdf_init.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_model.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_model.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_dealloc_model.f90 -o $INSTALL_DIR/build/obj/radsim_dealloc_model.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_model_to_rttov.f90 -o $INSTALL_DIR/build/obj/radsim_model_to_rttov.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_model_to_rttov.f90 -o $INSTALL_DIR/build/obj/radsim_model_to_rttov.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_geo_sat_angles.f90 -o $INSTALL_DIR/build/obj/radsim_calc_geo_sat_angles.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_geo_sat_angles.f90 -o $INSTALL_DIR/build/obj/radsim_calc_geo_sat_angles.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_solar_angles.f90 -o $INSTALL_DIR/build/obj/radsim_calc_solar_angles.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_calc_solar_angles.f90 -o $INSTALL_DIR/build/obj/radsim_calc_solar_angles.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_convert_fields.f90 -o $INSTALL_DIR/build/obj/radsim_convert_fields.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_convert_fields.f90 -o $INSTALL_DIR/build/obj/radsim_convert_fields.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_print_cfg.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_cfg.f90 -o $INSTALL_DIR/build/obj/radsim_print_cfg.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_grid.f90 -o $INSTALL_DIR/build/obj/radsim_print_grid.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_print_grid.f90 -o $INSTALL_DIR/build/obj/radsim_print_grid.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof137.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof137.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof137.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof137.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof91.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof91.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_ecprof91.f90 -o $INSTALL_DIR/build/obj/radsim_read_ecprof91.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_check_fields.interface ]; then
+  cp $SRC_DIR/build/include/radsim_check_fields.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_check_fields.interface ]; then
+  cp $SRC_DIR/build/include/radsim_check_fields.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_grib.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_grib.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_grib.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_grib.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_netcdf.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_netcdf.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_netcdf.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_netcdf.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+## Added by SN
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/machine.F -o $INSTALL_DIR/build/obj/machine.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/machine.F -o $INSTALL_DIR/build/obj/machine.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/physcons.F -o $INSTALL_DIR/build/obj/physcons.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/physcons.F -o $INSTALL_DIR/build/obj/physcons.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/module.F -o $INSTALL_DIR/build/obj/module.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/module.F -o $INSTALL_DIR/build/obj/module.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/crhtab.F -o $INSTALL_DIR/build/obj/crhtab.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/crhtab.F -o $INSTALL_DIR/build/obj/crhtab.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/cldjms.F -o $INSTALL_DIR/build/obj/cldjms.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/cldjms.F -o $INSTALL_DIR/build/obj/cldjms.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/getclds.F -o $INSTALL_DIR/build/obj/getclds.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/getclds.F -o $INSTALL_DIR/build/obj/getclds.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/kind_module.f90 -o $INSTALL_DIR/build/obj/kind_module.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/kind_module.f90 -o $INSTALL_DIR/build/obj/kind_module.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/phconst_module.f90 -o $INSTALL_DIR/build/obj/phconst_module.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/phconst_module.f90 -o $INSTALL_DIR/build/obj/phconst_module.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/func_module.f90 -o $INSTALL_DIR/build/obj/func_module.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/func_module.f90 -o $INSTALL_DIR/build/obj/func_module.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/read_module.f90 -o $INSTALL_DIR/build/obj/read_module.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/../mod/common/read_module.f90 -o $INSTALL_DIR/build/obj/read_module.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/radsim_read_msm.f90 -o $INSTALL_DIR/build/obj/radsim_read_msm.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/grmsm_utils/radsim_read_msm.f90 -o $INSTALL_DIR/build/obj/radsim_read_msm.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "if [ ! -f $INSTALL_DIR/build/include/radsim_read_msm.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_msm.interface $INSTALL_DIR/build/include/
+fi"
+if [ ! -f $INSTALL_DIR/build/include/radsim_read_msm.interface ]; then
+  cp $SRC_DIR/build/include/radsim_read_msm.interface $INSTALL_DIR/build/include/
+fi
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+mv *.mod $INSTALL_DIR/build/include/
+## End Added by SN
+echo "$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_model.f90 -o $INSTALL_DIR/build/obj/radsim_read_model.o"
+$FC $FCFLAGS $INC -c $SRC_DIR/src/code/main/radsim_read_model.f90 -o $INSTALL_DIR/build/obj/radsim_read_model.o
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+echo "$FC $INC $INSTALL_DIR/build/obj/*.o $LDFLAGS -o $INSTALL_DIR/bin/radsim.exe"
+$FC $INC $INSTALL_DIR/build/obj/*.o $LDFLAGS -o $INSTALL_DIR/bin/radsim.exe
+if [ $? != 0 ]; then
+  echo 'ERROR: Installation failed'
+  exit 1
+fi
+# Create run script
+
+cd $INSTALL_DIR/bin
+
+cat > radsim_run << END
+#------------------------------------
+# Resources for loadleveler scheduler
+#------------------------------------
+# @ class = serial
+# @ job_type = serial
+# @ resources = ConsumableCpus(1) ConsumableMemory(5Gb)
+# @ wall_clock_limit = "02:00:00"
+# @ queue
+# @ output = radsim.out
+# @ error = radsim.err
+#----------------------------
+# Resources for PBS scheduler
+#----------------------------
+# PBS -q = shared
+# PBS -l ncpus = 1
+# PBS -l walltime = 02:00:00
+# PBS -N radsim
+
+if [ "\$1" ]; then
+  RADSIM_NL=\$1
+fi
+if [ ! -f "\$RADSIM_NL" ]; then
+  echo "Error: Cannot find configuration file: \$1" 1>&2
+  exit 1
+fi
+export LD_LIBRARY_PATH=$NETCDF_DIR/lib:$HDF_DIR/lib:$ECCODES_DIR/lib:$JASPER_DIR/lib:$AEC_DIR/lib:\$LD_LIBRARY_PATH
+ulimit -s unlimited 2>/dev/null
+$PWD/radsim.exe \$RADSIM_NL
+END
+
+chmod a+x radsim_run
+echo Installation complete

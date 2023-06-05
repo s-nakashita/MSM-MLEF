@@ -1,0 +1,4 @@
+&ice_scheme_nml
+  ice_scheme = 1
+  icede_param = 1
+/

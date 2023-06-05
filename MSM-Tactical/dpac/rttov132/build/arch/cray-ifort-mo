@@ -1,0 +1,14 @@
+FC=ftn
+FC77=ftn
+CC=gcc
+LDFLAGS_ARCH=-static-intel
+CFLAGS_ARCH=
+FFLAGS_ARCH=-O3 -fp-model source -static-intel -integer-size 64 -real-size 64
+AR=ar r
+
+# -fp-model source ensures more consistent floating point results
+
+# Loop unrolling causes ifort v13 and later to take a long time to compile these subroutines
+FFLAGS_ARCH_rttov_opdep_9_ad=-fPIC -O3 -unroll0 -fp-model source -integer-size 64 -real-size 64
+FFLAGS_ARCH_rttov_opdep_9_k=-fPIC -O3 -unroll0 -fp-model source -integer-size 64 -real-size 64
+

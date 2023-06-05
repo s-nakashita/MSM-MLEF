@@ -69,26 +69,26 @@ module rsmcom_module
   integer,parameter :: iv2d_cv=9
   integer,parameter :: iv2d_cvb=10
   integer,parameter :: iv2d_cvt=11
-  integer,parameter :: iv2d_slmsk=12
-  integer,parameter :: iv2d_vfrac=13
-  integer,parameter :: iv2d_f10m=14
-  integer,parameter :: iv2d_canopy=15
-  integer,parameter :: iv2d_vtype=16
-  integer,parameter :: iv2d_stype=17
-  integer,parameter :: iv2d_uustar=18
-  integer,parameter :: iv2d_ffmm=19
-  integer,parameter :: iv2d_ffhh=20
-  integer,parameter :: iv2d_alvsf=21
-  integer,parameter :: iv2d_alvwf=22
-  integer,parameter :: iv2d_alnsf=23
-  integer,parameter :: iv2d_alnwf=24
-  integer,parameter :: iv2d_facsf=25
-  integer,parameter :: iv2d_facwf=26
+  integer,parameter :: iv2d_alvsf=12
+  integer,parameter :: iv2d_alvwf=13
+  integer,parameter :: iv2d_alnsf=14
+  integer,parameter :: iv2d_alnwf=15
+  integer,parameter :: iv2d_slmsk=16
+  integer,parameter :: iv2d_vfrac=17
+  integer,parameter :: iv2d_canopy=18
+  integer,parameter :: iv2d_f10m=19
+  integer,parameter :: iv2d_vtype=20
+  integer,parameter :: iv2d_stype=21
+  integer,parameter :: iv2d_facsf=22
+  integer,parameter :: iv2d_facwf=23
+  integer,parameter :: iv2d_uustar=24
+  integer,parameter :: iv2d_ffmm=25
+  integer,parameter :: iv2d_ffhh=26
   character(len=6),parameter :: varnames_sfc(nfldsfc) = (/&
   '  TSFC',' SMC_1',' SMC_2','SHELEG',' STC_1',' STC_2','   TG3',&
-  '  ZORL','    CV','   CVB','   CVT',' SLMSK',' VFRAC','  F10m',&
-  'CANOPY',' VTYPE',' STYPE','UUSTAR','  FFMM','  FFHH',' ALVSF',&
-  ' ALVWF',' ALNSF',' ALNWF',' FACSF',' FACWF'/)
+  '  ZORL','    CV','   CVB','   CVT',' ALVSF',' ALVWF',' ALNSF',' ALNWF',&
+  ' SLMSK',' VFRAC','CANOPY','  F10m',' VTYPE',' STYPE',&
+  ' FACSF',' FACWF','UUSTAR','  FFMM','  FFHH'/)
   integer,parameter :: nv2d_flx=2 !r_flx(diagnostic,no need to write)
   integer,parameter :: iv2d_t2m=1
   integer,parameter :: iv2d_q2m=2

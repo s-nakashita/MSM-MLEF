@@ -1,0 +1,71 @@
+#!/bin/bash
+
+THIS=$(basename $0)
+echo "$THIS: Running a test simulation..."
+
+CDIR=` pwd `
+export RADSIM_NL=etc/radsim_check_install.nl
+INSTALL_DIR=${RADSIM_INSTALL_DIR:=.}
+
+cd ${INSTALL_DIR}
+if [ $CDIR != $INSTALL_DIR ]; then
+ln -s ${CDIR}/etc .
+fi
+bin/radsim_run
+if [ $CDIR != $INSTALL_DIR ]; then
+rm -rf etc
+fi
+
+if [ $? -ne 0 ]; then
+  echo "$THIS: ERROR: Problem running the simulation. Installation may not be valid."
+  exit 1
+fi
+
+TESTFILE=radsim-metop_2_amsua.nc
+REFFILE=${CDIR}/etc/radsim-metop_2_amsua-check_install.nc
+
+nccmp --help > /dev/null 2> /dev/null
+
+if [ $? -eq 0 ]; then
+
+  # Use nccmp if available as it is simpler and avoids temporary files
+
+  echo "$THIS: Comparing output file against reference using nccmp..."
+
+  nccmp -dfq $TESTFILE $REFFILE
+  ERR=$?
+
+else
+
+  ncdump > /dev/null 2> /dev/null
+
+  if [ $? -ne 0 ]; then
+    echo "$THIS: cannot find ncdump or nccmp, cannot compare output file against reference"
+    echo "  Output file:    $TESTFILE"
+    echo "  Reference file: $REFFILE"
+    exit 1
+  fi
+
+  # Use ncdump if available and nccmp not present
+
+  echo "$THIS: Comparing output file against reference using ncdump..."
+
+  TESTFILETMP=__${THIS}_test_output__
+  REFFILETMP=__${THIS}_ref_output__
+  ncdump $TESTFILE | tail -n +2 > $TESTFILETMP
+  ncdump $REFFILE  | tail -n +2 > $REFFILETMP
+  diff $TESTFILETMP $REFFILETMP > /dev/null 2> /dev/null
+  ERR=$?
+  rm -f $TESTFILETMP $REFFILETMP
+  
+fi
+
+if [ $ERR -ne 0 ]; then
+  echo "$THIS: ERROR: Files do not match. Installation may not be valid."
+  echo "  Output file:    $TESTFILE"
+  echo "  Reference file: $REFFILE"
+else
+  echo "$THIS: Output and reference match."
+  echo "$THIS: Finished. Simulation successful."
+  rm $TESTFILE
+fi

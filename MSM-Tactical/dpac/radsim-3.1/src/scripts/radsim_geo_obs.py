@@ -1,0 +1,537 @@
+#!/usr/bin/env python
+
+# ------------------------------------------------------------------------------
+# This script generates RadSim obs data files for a single full-disc scan by
+# a geostationary sensor such as MSG SEVIRI, HIMAWARI AHI, and GOES ABI.
+#
+# It requires pixel latitudes/longitudes to be provided in a netCDF file and
+# optionally other pixel data. Relevant data for several satellites are
+# available on the RadSim web site.
+#
+# It calculates the satellite zenith and azimuth angles and outputs
+# observations for all pixels or a subset restricted to a user-specified
+# lat/lon range.
+#
+# The script is designed for GEO sensors only. See the RadSim user guide for
+# more information on using this tool.
+#
+# Usage: $ radsim_geo_obs.py -h
+# ------------------------------------------------------------------------------
+
+
+# The input data file is specific to a particular satellite sensor. Example
+# files are available on the RadSim web site for a number of geostationary
+# sensors.
+#
+# Requirements of the input netCDF sensor data file:
+# - all datasets must be the same size
+# - datasets can be one-dimensional or two-dimensional
+# - pixel latitude and longitude datasets ("lat", "lon") in degrees
+#   - latitude values outside [-90,90] are used to exclude space view pixels
+#   - longitudes must be in either [-180,180] or [0,360] so as to be monotonic
+#     within the dataset
+# - optional: "scan_time", the number of minutes into the scan that each pixel
+#                          is scanned, integer
+# - optional: "lsm", pixel land fraction dataset, float in range [0,1]
+# - optional: "orog", pixel orography dataset (m), float 
+#
+# To enable support for a new satellite or scan area you can create a data file
+# according to the specification above. The observation (pixel) dates/times are
+# required for temporal interpolation and/or solar radiation. If these RadSim
+# options are not being used then the scan time is not relevant and the
+# --date_time argument can be omitted. However, if either of these capabilities
+# are to be used, there are options for specifying the pixel dates/times:
+#
+# 1. for the most accurate results, provide the scan_time dataset in the netCDF
+# file. This specifies the number of minutes into the scan (rounded to the
+# nearest integer) that each pixel is scanned according to the sensor scan
+# schedule. This allows for sensors which scan multiple pixels/fields of view
+# simultaneously. The pixel date/times are simply set to the specified
+# scan start --date_time plus the offset given by the scan_time dataset.
+#
+# 2. specify in the --scan_time argument the total length of the scan in
+# minutes (float value). Pixel scan times are calculated by assuming the
+# first pixel is scanned at the specified scan --date_time and the last pixel is
+# scanned at this time plus the provided --scan_time. The times for pixels are
+# linearly interpolated between these two times assuming each pixel is scanned
+# in the order provided in the datasets. Times are rounded to the nearest
+# minute. Note that this calculation works well for SEVIRI which scans each
+# pixel in order (so long as the pixels are specified in scan order in the
+# netCDF file), but is less accurate for AHI and ABI, for example, because
+# multiple pixels are detected simultaneously by these sensors.
+#
+# 3. specify --fixed_date_time T so that all pixels are assigned the date/time
+# provided in the --date_time argument (which in this case could be the time of
+# the midpoint of the scan, for example).
+#
+# This script is intended for GEO sensors.
+#
+# The satellite height (km) may be specified, otherwise the default of 35800km
+# is used.
+#
+# The longitude of the sub-satellite point must be specified. If the satellite
+# latitude is omitted it is set to zero. The satellite and min/max longitudes
+# must all lie within the range of longitudes in the "lon" dataset in the input
+# data file.
+#
+# RTTOV has a maximum zenith angle of 85 degrees and this is the default if
+# max_sat_zen is not specified. It is not recommended to set a larger maximum
+# than this.
+#
+# Specifying write_lsm or write_orog requires the corresponding dataset to be
+# present in the input data file.
+#
+# To write out the semi-major/minor axes (radii) for each observation, specify
+# the nadir_footprint_radius in km.
+
+
+import numpy as np
+import datetime as dt
+import netCDF4 as nc
+import h5py
+import argparse
+import os
+import sys
+
+# Define some constants
+
+MAX_SAT_ZEN_RTTOV = np.float64(85.) # Maximum zenith angle allowed in RTTOV (degrees)
+GEO_HEIGHT = np.float64(35800.)     # Default height for GEO sensors (km)
+R_EARTH = np.float64(6371.0)        # Earth mean radius [(r_equator)^2 (r_pole)]^1/3
+D2R = np.pi / np.float64(180.)      # Degrees-radians conversion factors
+R2D = np.float64(180.) / np.pi      #
+
+OBS_FILE_HEADER = \
+"""!-------------------------------------------------------------------------------
+! Obs file generated by """ + sys.argv[0] + """
+! 
+! Column definitions (data values are floating point real unless stated):
+! 1. lon      : longitude in degrees
+! 2. lat      : latitude in degrees
+! 3. h        : surface elevation in metres
+! 4. lsm      : land-sea mask: 1 = land, 0 = sea
+! 5. satzen   : satellite zenith angle in degrees
+! 6. viewid   : identifier or index value for instrument view angle (INTEGER)
+! 7. scanline : scan line number (INTEGER)
+! 8. scanpos  : relative position along a scan line (INTEGER)
+! 9. satazim  : satellite azimuth angle in degrees (clockwise from North, East=90 deg)
+!10. year     : observation year (INTEGER)
+!11. month    : observation month (INTEGER)
+!12. day      : observation day (INTEGER)
+!13. hour     : observation hour (INTEGER)
+!14. minute   : observation minute (INTEGER)
+!15. solzen   : solar zenith angle in degrees
+!16. solazim  : solar azimuth angle in degrees (clockwise from North, East=90 deg)
+!17. rmajor   : footprint semi-major axis (radius) in km
+!18. rminor   : footprint semi-minor axis (radius) in km
+!-------------------------------------------------------------------------------
+"""
+
+
+def parse_args():
+    """
+    Parse the script arguments
+    """
+
+    class TFAction(argparse.Action):
+        def __init__(self, option_strings, dest, nargs=None, **kwargs):
+            super(TFAction, self).__init__(option_strings, dest, **kwargs)
+        def __call__(self, parser, namespace, values, option_string=None):
+            if values.lower() in ('t', 'true'):
+                setattr(namespace, self.dest, True)
+            elif values.lower() in ('f', 'false'):
+                setattr(namespace, self.dest, False)
+            else:
+                raise ValueError("True/False arguments require T or F")
+
+    parser = argparse.ArgumentParser( \
+        description='Generate a RadSim obs data file for a GEO sensor', conflict_handler='resolve')
+
+    # Output file
+    parser.add_argument('--output_file', dest='output_file', type=str, required=True,
+                        help='name of output obs data file', metavar='FILE')
+
+    # Input file, satellite-specific
+    parser.add_argument('--data_file', dest='data_file', type=str, required=True,
+                        help='name of input sensor data file', metavar='FILE')
+
+    # Satellite information
+    parser.add_argument('--sat_lat', dest='sat_lat', type=float, required=False, default=0.,
+                        help='latitude of sub-satellite point (degrees)', metavar='FLOAT')
+    parser.add_argument('--sat_lon', dest='sat_lon', type=float, required=True,
+                        help='longitude of sub-satellite point (degrees)', metavar='FLOAT')
+    parser.add_argument('--sat_height', dest='sat_height', type=float, required=False, default=GEO_HEIGHT,
+                        help='satellite orbital height (km)', metavar='FLOAT')
+    parser.add_argument('--nadir_footprint_radius', dest='nadir_footprint_radius', type=float, required=False,
+                        help='footprint radius at nadir (km), supply if footprints are required', metavar='FLOAT')
+    parser.add_argument('--scan_time', dest='scan_time', type=float, required=False,
+                        help='length of time for a scan to complete (minutes)', metavar='FLOAT')
+
+    # Scan start date/time
+    parser.add_argument('--date_time', dest='date_time', type=int, required=False, nargs=5,
+                        help='date/time of scan start: year month day hour minute', metavar=('INT',)*5)
+    parser.add_argument('--fixed_date_time', dest='fixed_date_time', type=str, action=TFAction, required=False, default=False,
+                        help='if true all pixels have the same date/time', metavar='T|F')
+
+    # Restrict output obs
+    parser.add_argument('--max_sat_zen', dest='max_sat_zen', type=float, required=False, default=MAX_SAT_ZEN_RTTOV,
+                        help='maximum zenith angle (degrees)', metavar='FLOAT')
+    parser.add_argument('--min_lat', dest='min_lat', type=float, required=False,
+                        help='minimum latitude (degrees)', metavar='FLOAT')
+    parser.add_argument('--max_lat', dest='max_lat', type=float, required=False,
+                        help='maximum latitude (degrees)', metavar='FLOAT')
+    parser.add_argument('--min_lon', dest='min_lon', type=float, required=False,
+                        help='minimum longitude (degrees)', metavar='FLOAT')
+    parser.add_argument('--max_lon', dest='max_lon', type=float, required=False,
+                        help='maximum longitude (degrees)', metavar='FLOAT')
+
+    # Additional output options
+    parser.add_argument('--write_lsm', dest='write_lsm', type=str, action=TFAction, required=False, default=False,
+                        help='output land/sea mask in obs file if data available', metavar='T|F')
+    parser.add_argument('--write_orog', dest='write_orog', type=str, action=TFAction, required=False, default=False,
+                        help='output orography in obs file if data available', metavar='T|F')
+    parser.add_argument('--write_sat_angles', dest='write_sat_angles', type=str, action=TFAction, required=False, default=True,
+                        help='output satellite angles in obs file (recommended true, option intended for testing)', metavar='T|F')
+
+    return parser.parse_args()
+
+
+def check_args(args):
+    """
+    Check for valid arguments
+    """
+
+    # Validate file arguments
+
+    if os.path.exists(args.output_file):
+        print('Output file ' + args.output_file + ' exists')
+        sys.exit(1)
+
+    if not os.path.exists(args.data_file):
+        print('Input data file ' + args.data_file + ' does not exist')
+        sys.exit(1)
+
+    # Validate date/time arguments
+
+    if args.date_time is None and args.fixed_date_time:
+        print('--fixed_date_time option requires --date_time to be specified')
+        sys.exit(1)
+
+    if args.date_time is None and args.scan_time is not None:
+        print('--scan_time option requires --date_time to be specified')
+        sys.exit(1)
+
+    if args.fixed_date_time and args.scan_time is not None:
+        print('WARNING: --fixed_date_time takes precedence over --scan_time')
+
+    # Validate numerical arguments
+
+    if args.min_lat is not None:
+        if args.min_lat < -90. or args.min_lat > 90.:
+            print('Bad min_lat, valid range is [-90,+90]')
+            sys.exit(1)
+
+    if args.max_lat is not None:
+        if args.max_lat < -90. or args.max_lat > 90.:
+            print('Bad max_lat, valid range is [-90,+90]')
+            sys.exit(1)
+
+    if args.min_lat is not None and args.max_lat is not None:
+        if args.min_lat >= args.max_lat:
+            print('Bad arguments, require min_lat < max_lat')
+            sys.exit(1)
+
+    if args.min_lon is not None and args.max_lon is not None:
+        if args.min_lon >= args.max_lon:
+            print('Bad arguments, require min_lon < max_lon')
+
+    if args.max_sat_zen is not None:
+        if args.max_sat_zen < 0. or args.max_sat_zen > 90.:
+            print('Bad max_sat_zen, valid range is [0,90]')
+            sys.exit(1)
+
+
+def make_obs_file(args):
+    """
+    Create obs data file
+    """
+
+    # --------------------
+    # Read input data file
+    # --------------------
+    print('Reading data file...')
+
+    # Open input file
+
+    rootgrp = nc.Dataset(args.data_file, 'r', format='NETCDF4')
+
+    # Read the lat/lon data
+
+    try:
+        lat = rootgrp['lat'][:].flatten()
+        lon = rootgrp['lon'][:].flatten()
+    except IndexError:
+        try:
+            lat = rootgrp['latitude'][:].flatten()
+            lon = rootgrp['longitude'][:].flatten()
+        except IndexError:
+            print('Cannot read variables "lat" and "lon" from ' + args.data_file)
+            sys.exit(1)
+
+    # for 2D gridded data
+    dims = rootgrp.dimensions.keys()
+    print(dims)
+    if 'longitude' in dims and 'latitude' in dims:
+        X,Y = np.meshgrid(lon,lat)
+        lon = X.flatten()
+        lat = Y.flatten()
+        print(lon)
+        print(lat)
+
+    n = len(lat)
+
+    # Define mask as space pixels (invalid latitudes)
+
+    mask = np.abs(lat) > 90.
+
+    # Check for non-monotonic longitudes
+
+    lon = np.ma.masked_array(lon, mask=mask)
+    if np.abs(np.max(lon) - np.min(lon)) > 180.:
+        print('Longitudes appear not to be monotonic: valid ranges are ' +
+              '[-180,+180] or [0,360]')
+        sys.exit(1)
+
+    # Determine date/time status
+
+    scan_times = None
+    if args.date_time is not None:
+        if args.fixed_date_time:
+            scan_times = np.zeros((n,), dtype='timedelta64[m]')
+            print('Using fixed date/time for all pixels')
+        elif args.scan_time is not None:
+            scan_times = np.array( \
+               np.round(np.arange(n, dtype=np.int64) * args.scan_time / n), \
+               dtype='timedelta64[m]')
+            print('Using specified scan_time to calculate pixel scan times')
+        elif 'scan_time' in rootgrp.variables:
+            scan_times = np.array(rootgrp['scan_time'][:].flatten(), \
+               dtype='timedelta64[m]')
+            print('Using scan_time dataset in netCDF file for pixel scan times')
+
+    if scan_times is None:
+        print('No scan_time and/or date_time specified and fixed_date_time ' + \
+              'is false: dates/times will not be written out')
+
+    # Read optional data if available and requested
+
+    if args.write_lsm:
+        if 'lsm' not in rootgrp.variables:
+            print('Dataset "lsm" not found in ' + args.data_file)
+            sys.exit(1)
+        lsm = rootgrp['lsm'][:].flatten()
+
+    if args.write_orog:
+        if 'orog' not in rootgrp.variables:
+            print('Dataset "orog" not found in ' + args.data_file)
+            sys.exit(1)
+        orog = rootgrp['orog'][:].flatten()
+
+    # ----------------------------
+    # Calculate necessary obs data
+    # ----------------------------
+    print('Calculating obs fields...')
+
+    # Check sat lat/lon
+
+    if args.sat_lat is None:
+        sat_lat = 0.
+    else:
+        sat_lat = args.sat_lat
+
+    sat_lon = args.sat_lon
+
+    # Compute date/time array
+
+    if scan_times is not None:
+        year, month, day, hour, mins = args.date_time
+        start = np.datetime64(dt.datetime(year, month, day, hour, mins))
+        datetimes = start + scan_times
+
+    # Calculate satellite zenith and azimuth angles
+
+    sat_height = GEO_HEIGHT
+    if args.sat_height is not None:
+        sat_height = args.sat_height
+
+    rratio = R_EARTH / (sat_height + R_EARTH)
+    cos_dlon = np.cos((lon - sat_lon) * D2R)
+
+    cos_alpha = np.sin(lat * D2R) * np.sin(sat_lat * D2R) + \
+                np.cos(lat * D2R) * np.cos(sat_lat * D2R) * cos_dlon
+
+    sin_alpha = np.sqrt(1. - cos_alpha * cos_alpha)
+    tan_satzen_denom = cos_alpha - rratio
+
+    # Screen out pixels below the horizon (zenith angles above 90 degrees)
+
+    mask = np.logical_or(mask, tan_satzen_denom <= 0)
+    tan_satzen_denom = np.ma.masked_array(tan_satzen_denom, mask=mask)
+
+    # Zenith angle calculation
+
+    tan_satzenithang = sin_alpha / tan_satzen_denom
+    sat_zen = np.arctan(tan_satzenithang) * R2D
+
+    # Azimuth angle calculation - for idealised GEO at latitude zero
+
+    sin_lat = np.ma.masked_array(np.sin(lat * D2R), mask=mask)
+    sin_dlon = np.ma.masked_array(np.sin((lon - sat_lon) * D2R), mask=mask)
+    sat_azi = np.arctan2(sin_dlon, -sin_lat * cos_dlon) * R2D
+
+    # Modify azimuth angle to RTTOV definition (clockwise from N, due E=+90 deg)
+
+    sat_azi = np.where(sat_azi < 0, sat_azi + 360, sat_azi)
+    sat_azi = np.ma.masked_array(360 - sat_azi, mask=mask)
+
+    # Update mask for sat zen limit
+
+    mask = np.logical_or(mask, sat_zen > args.max_sat_zen)
+
+    # Update mask for user-specified lat/lon range
+
+    min_lat = -90.
+    if args.min_lat is not None:
+        min_lat = args.min_lat
+    max_lat = 90.
+    if args.max_lat is not None:
+        max_lat = args.max_lat
+
+    min_lon = -1.E10
+    if args.min_lon is not None:
+        min_lon = args.min_lon
+    max_lon = 1.E10
+    if args.max_lon is not None:
+        max_lon = args.max_lon
+
+    mask = np.logical_or(mask, lat < min_lat)
+    mask = np.logical_or(mask, lat > max_lat)
+    mask = np.logical_or(mask, lon < min_lon)
+    mask = np.logical_or(mask, lon > max_lon)
+
+    # Compress data to include only required/valid obs
+
+    lat = np.ma.masked_array(lat, mask=mask).compressed()
+    lon = np.ma.masked_array(lon, mask=mask).compressed()
+    sat_zen = np.ma.masked_array(sat_zen, mask=mask).compressed()
+    sat_azi = np.ma.masked_array(sat_azi, mask=mask).compressed()
+    if scan_times is not None:
+        datetimes = np.ma.masked_array(datetimes, mask=mask).compressed()
+    nobs = len(lat)
+
+    # Check if we excluded everything
+
+    if nobs == 0:
+        print('No valid obs - not writing empty obs data file')
+        sys.exit(1)
+
+    # Check and compress optional data
+
+    if args.write_lsm:
+        lsm = np.ma.masked_array(lsm, mask=mask).compressed()
+        if np.any(lsm < 0) or np.any(lsm > 1):
+            print('Some invalid lsm, valid range [0-1]')
+            sys.exit(1)
+
+    if args.write_orog:
+        orog = np.ma.masked_array(orog, mask=mask).compressed()
+
+    print('Number of observations: ' + str(nobs))
+
+    # Calculate footprints
+
+    if args.nadir_footprint_radius is not None:
+        # Footprints are modelled as ellipses where the semi-major axis is
+        # parallel to the azimuthal direction between obs and satellite.
+        # The off-nadir footprint semi-major/minor axes are calculated by
+        # scaling the radius of the circular nadir footprint.
+        #
+        # The footprint increases in size in both dimensions in proportion to
+        # the increase in path length from satellite to surface. Additionally
+        # the semi-major axis is scaled by sec(sat_zen).
+        #
+        # By applying the sine rule we obtain the path length from the satellite
+        # to the obs location:
+        #
+        #   path = [(H+R)cos(view) - R.cos(sat_zen)]
+        #
+        # where H is sat_height, R is Earth radius, view is the satellite view
+        # angle (treating the Earth as a sphere).
+        #
+        # Then the scale factor applied to the nadir footprint size is:
+        #
+        #   factor = path / H
+
+        sin_view = np.sin(sat_zen * D2R) * rratio
+        cos_view = np.sqrt(1. - sin_view**2)
+        cos_zen  = np.cos(sat_zen * D2R)
+        factor   = ((sat_height + R_EARTH) * cos_view - R_EARTH * cos_zen) / \
+                   sat_height
+        rmajor   = args.nadir_footprint_radius * factor / cos_zen
+        rminor   = args.nadir_footprint_radius * factor
+
+    # -------------------
+    # Write obs data file
+    # -------------------
+    rw = 'w'
+    print('Writing new observation data file...')
+
+    # Output columns always present:
+    #   lon, lat
+
+    cols = '1 2 '
+
+    # Add optional columns
+
+    if args.write_sat_angles:
+        cols += '5 9 '
+    if scan_times is not None:
+        cols += '10 11 12 13 14 '
+    if args.write_lsm:
+        cols += '4 '
+    if args.write_orog:
+        cols += '3 '
+    if args.nadir_footprint_radius is not None:
+        cols += '17 18 '
+
+    # Write to file
+
+    with open(args.output_file, rw) as f:
+        f.write(OBS_FILE_HEADER)
+        f.write('           2   ! file version number\n')
+        f.write(f'{nobs:12d}   ! number of observations\n')
+        f.write(f'          {len(cols.split()):2d}   ! number of columns to read\n')
+        f.write(cols + '\n')
+        for i in range(nobs):
+            s = f'{lon[i]:7.2f} {lat[i]:6.2f} ' + \
+                f'{sat_zen[i]:5.2f}  {sat_azi[i]:6.2f} '
+            if scan_times is not None:
+                datetime = str(datetimes[i])
+                s += datetime[:4] + ' ' + datetime[5:7] + ' ' + \
+                     datetime[8:10] + ' ' + datetime[11:13] + ' ' + \
+                     datetime[14:16] + ' '
+            if args.write_lsm:
+                s += f'{lsm[i]:4.2f} '
+            if args.write_orog:
+                s += f'{orog[i]:8.2f} '
+            if args.nadir_footprint_radius is not None:
+                s += f'{rmajor[i]:7.2f} {rminor[i]:7.2f} '
+            f.write(s + '\n')
+
+    print('Done')
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    check_args(args)
+    make_obs_file(args)

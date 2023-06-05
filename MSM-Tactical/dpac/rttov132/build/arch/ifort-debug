@@ -1,0 +1,31 @@
+FC=ifort
+FC77=ifort
+CC=gcc
+LDFLAGS_ARCH=-g -pg
+CFLAGS_ARCH=-g 
+
+F2PY=f2py --fcompiler=intelem
+F2PYFLAGS_ARCH="-fPIC -g"
+F2PYLDFLAGS_ARCH=
+
+# -debug-parameters      debug info for PARAMETERS
+# -warn	                 enable all compiler warnings
+# -check bounds          enable run-time bounds checking
+# -check uninit          enable checking for uninitialised variables
+# -traceback             enable traceback info for severe errors
+# -stand f08             warnings for non-standard Fortran 2008
+
+FFLAGS_ARCH=-g -pg -fPIC -fp-model source -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08 -diag-disable 5268,7712,6371
+AR=ar r
+
+FFLAGS_ARCH_rttov_test=-g -pg -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_iniscatt=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_iniscatt_tl=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_iniscatt_ad=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_scatt=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_scatt_tl=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+FFLAGS_ARCH_rttov_scatt_ad=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback -stand f08
+
+FFLAGS_ARCH_lapack=-g -fPIC -fpe0 -ftrapuv -check bounds -check uninit -traceback
+
+FFLAGS_ARCH_rttov_lbl_unix_env=-g -fPIC -fpe0 -ftrapuv -debug-parameters -debug semantic_stepping -warn -nogen-interfaces -check bounds -check uninit -traceback

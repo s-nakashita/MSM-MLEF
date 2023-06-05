@@ -1,0 +1,9 @@
+&angles
+  zenangle     = 3.0
+  azangle      = 0.0
+  sunzenangle  = 25.0
+  sunazangle   = 294
+  latitude     = 4.61
+  longitude    = 52.65
+  elevation    = 0.0
+/

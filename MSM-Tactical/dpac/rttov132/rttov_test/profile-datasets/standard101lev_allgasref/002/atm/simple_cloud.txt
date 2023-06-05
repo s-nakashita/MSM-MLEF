@@ -1,0 +1,4 @@
+&simple_cloud
+  ctp       = 510.0
+  cfraction = 0.1
+/

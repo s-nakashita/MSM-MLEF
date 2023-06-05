@@ -1,0 +1,3 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov8pred101L/rtcoef_nimbus_4_iris.H5'
+/

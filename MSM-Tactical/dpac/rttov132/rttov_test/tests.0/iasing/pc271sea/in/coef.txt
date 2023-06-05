@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_coef   = 'rtcoef_rttov13/rttov9pred101L/rtcoef_metopsg_1_iasing_pcrttov_compat.H5'
+  defn%f_pccomp = 'rtcoef_rttov13/pc/pccoef_metopsg_1_iasing_sea.H5'
+/

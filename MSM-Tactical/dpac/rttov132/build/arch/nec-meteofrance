@@ -1,0 +1,51 @@
+# This worked for RTTOV v10: untested for later versions.
+
+FC=sxf90
+FC77=sxf90
+CC=gcc
+LDFLAGS_ARCH=
+CFLAGS_ARCH=-g
+
+# -dw                     basic storage unit is 4 bytes
+# -dW                     disable promotion of 1 and 2 byte quantities
+# -Pstack                 disable all parallelisation; local data on the stack
+# loopcnt=1000000         assume a fallback value of 1000000 as the maximum runtime iteration count for a loop
+# nomsg                   issue no vectorization diagnostic messages
+# vl=fix256               maximum vector register length is 256
+# vwork=stack             vector work arrays on the stack
+# -P,nh                   do not discriminate between +0.0 and -0.0 as the second argument to the SIGN intrinsic
+# -ptr,byte               byte addresses for FORTRAN77 pointer arithmetic
+# -C hopt                 high level of optimization and vectorization
+# noassume                do not assume loop length based on array declarations
+# -pi auto                enable inline expansion of subroutines and functions
+# line=500                limit of 500 lines for a function to be expanded
+# f5	       specifies that the input source program is described in extended free format.
+#            Note: One line can contain up to 264 characters in extended free form. 
+# -D_RTTOV_DO_DISTRIBCOEF 
+# -DRTTOV_ARCH_VECTOR     change the order of some of the loops to enable optimization
+# 
+AR=sxar rv
+
+
+FFLAGS_ARCH_HOPT=  -C hopt  -dw -dW -Pstack -f5 -Wf,-pvctl,nomsg,loopcnt=1000000,vl=fix256,vwork=stack,-P,nh,-ptr,byte  -Wf,-pvctl,noassume -pi auto line=500 -D_RTTOV_DO_DISTRIBCOEF -DRTTOV_ARCH_VECTOR 
+FFLAGS_ARCH_VSAFE= -C vsafe -dw -dW -Pstack -f5 -Wf,-pvctl,nomsg,loopcnt=1000000,vl=fix256,vwork=stack,-P,nh,-ptr,byte  -Wf,-pvctl,noassume -pi auto line=500 -D_RTTOV_DO_DISTRIBCOEF -DRTTOV_ARCH_VECTOR 
+FFLAGS_ARCH_VOPT=  -C vopt                  -f5 -Wf,-pvctl,loopcnt=200000                                               -Wf,-pvctl,fullmsg -Wf,-O nomove -DRTTOV_ARCH_VECTOR -R5 -Wf,-L fmtlist mrgmsg transform summary map source
+
+FFLAGS_ARCH= $(FFLAGS_ARCH_HOPT) 
+
+FFLAGS_ARCH_lapack= -C vsafe -dw -dW -Pstack -Wf,-pvctl,nomsg,loopcnt=1000000,vl=fix256,vwork=stack,-P,nh,-ptr,byte  -Wf,-pvctl,noassume -pi auto line=500 -D_RTTOV_DO_DISTRIBCOEF -DRTTOV_ARCH_VECTOR
+
+FFLAGS_ARCH_rttov_pcscores_rec_k= $(FFLAGS_ARCH_VOPT) 
+FFLAGS_ARCH_rttov_pcscores_k=     $(FFLAGS_ARCH_VOPT) 
+
+FFLAGS_ARCH_rttov_opdpscattir=    $(FFLAGS_ARCH_VOPT) 
+FFLAGS_ARCH_rttov_opdpscattir_tl= $(FFLAGS_ARCH_VOPT) 
+FFLAGS_ARCH_rttov_opdpscattir_ad= $(FFLAGS_ARCH_VOPT)
+FFLAGS_ARCH_rttov_opdpscattir_k = $(FFLAGS_ARCH_VOPT) 
+
+FFLAGS_ARCH_rttov_integrate_tl=   $(FFLAGS_ARCH_VOPT)
+FFLAGS_ARCH_rttov_integrate_ad=   $(FFLAGS_ARCH_VOPT)
+FFLAGS_ARCH_rttov_integrate_k=    $(FFLAGS_ARCH_VOPT)
+
+
+

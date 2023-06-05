@@ -1,0 +1,1 @@
+US76 profile 3 (midlat winter) clear-sky for LBL vs RTTOV_DOM comparisons

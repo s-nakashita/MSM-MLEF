@@ -1,0 +1,27 @@
+!-------------------------------------------------------------------------------
+! Example observation data file.
+!
+! The purpose of this is to specify observation locations so that a more
+! realistic orbit simulation can be produced. Model data profiles will be
+! interpolated to observation positions. It is only valid for use for with
+! profile data at a single data time.
+!
+! The format of the file is as follows (lines start after >). All quantities are
+! real valued.
+!
+!>! Any number of header lines which must begin with !
+!>file_version
+!>numobs
+!>lon, lat, h, lsm, satzen   ! Repeated for numobs observations
+!
+! lon = longitude in degrees
+! lat = latitude in degrees
+! h   = surface elevation in metres
+! lsm = surface type: 1 = land, 0 = sea (real value)
+! satzen = satellite zenith angle in degrees
+!
+!-------------------------------------------------------------------------------
+1  ! file version number - only 1 version currently supported
+2  ! number of observations
+-3.48 50.73 15.0 1.0 23.5  ! observation 1
+-0.95 51.42 25.0 1.0 34.7  ! observation 2

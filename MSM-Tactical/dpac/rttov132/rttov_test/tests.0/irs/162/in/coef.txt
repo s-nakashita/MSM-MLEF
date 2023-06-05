@@ -1,0 +1,3 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov8pred101L/rtcoef_mtg_2_irs-hamming-2mopd.H5'
+/

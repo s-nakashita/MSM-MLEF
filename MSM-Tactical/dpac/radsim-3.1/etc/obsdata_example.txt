@@ -1,0 +1,48 @@
+!-------------------------------------------------------------------------------
+! Example observation data file (version 2)
+!
+! The purpose of this is to specify observation locations so that a more
+! realistic orbit simulation can be produced. Model data profiles will be
+! interpolated to observation positions. If the profile dataset contains
+! fields valid at multiple times then the date and time associated with each
+! observation can be specified and the model data profiles will additionally
+! be interpolated in time.
+!
+! The format of the file is as follows (lines start after >).
+!
+!>! Any number of header lines which must begin with !
+!>file_version  ! = 2
+!>numobs        ! Number of observations
+!>numcols       ! Number of columns to read in
+!>columns       ! Space-separated list of column numbers (defined below)
+!>data          ! Repeated for numobs observations
+!
+! Column definitions (data values are floating point real unless stated):
+! Columns 1, 2 are mandatory. Nadir is assumed if column 5 is absent.
+! Columns 10-14 must all be specified if temporal interpolation is required.
+! Columns 9, 17, 18 must all be specified for footprint simulations.
+! 1. lon      : longitude in degrees
+! 2. lat      : latitude in degrees
+! 3. h        : surface elevation in metres
+! 4. lsm      : land-sea mask: 1 = land, 0 = sea
+! 5. satzen   : satellite zenith angle in degrees
+! 6. viewid   : identifier or index value for instrument view angle (INTEGER)
+! 7. scanline : scan line number (INTEGER)
+! 8. scanpos  : relative position along a scan line (INTEGER)
+! 9. satazim  : satellite azimuth angle in degrees (clockwise from North, East=90 deg)
+!10. year     : observation year (INTEGER)
+!11. month    : observation month (INTEGER)
+!12. day      : observation day (INTEGER)
+!13. hour     : observation hour (INTEGER)
+!14. minute   : observation minute (INTEGER)
+!15. solzen   : solar zenith angle in degrees
+!16. solazim  : solar azimuth angle in degrees (clockwise from North, East=90 deg)
+!17. rmajor   : footprint semi-major axis (radius) in km
+!18. rminor   : footprint semi-minor axis (radius) in km
+!-------------------------------------------------------------------------------
+2  ! file version number
+2  ! number of observations
+4  ! number of columns to read
+1 2 5 7  ! Columns contained in the file are lon, lat, satzen, scanline 
+-3.48 50.73 23.5  1 ! observation 1
+-0.95 51.42 34.7 10 ! observation 2

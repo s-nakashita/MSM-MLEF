@@ -1,0 +1,4 @@
+&coef_nml
+  defn%f_coef = 'rtcoef_rttov13/rttov13pred54L/rtcoef_himawari_8_ahi_o3co2.dat'
+  defn%f_scaer = 'rtcoef_rttov13/cldaer_visir/scaercoef_himawari_8_ahi_opac.dat'
+/

@@ -1,0 +1,24 @@
+FC=pgf90
+FC77=pgf90
+CC=gcc
+LDFLAGS_ARCH=-g
+CFLAGS_ARCH=-g
+FFLAGS_ARCH=-g -Mbounds -Mchkptr -traceback -Kieee -fPIC
+AR=ar r
+
+F2PY=f2py --fcompiler=pg
+F2PYFLAGS_ARCH="-fPIC -g"
+F2PYLDFLAGS_ARCH=
+
+# Do not check for null pointers in some test routines as this is used as a short-cut for enabling/disabling radar simulations
+# Bounds checking causes spurious failures in some test routines with pgf90 v16 and v18
+
+FFLAGS_ARCH_rttov_test=-g -Mbounds -traceback -Kieee -fPIC
+FFLAGS_ARCH_rttov_taylor_test=-g -Mbounds -traceback -Kieee -fPIC
+FFLAGS_ARCH_rttov_k_tl=-g -Mchkptr -traceback -Kieee -fPIC
+FFLAGS_ARCH_rttov_k_ad=-g -Mchkptr -traceback -Kieee -fPIC
+FFLAGS_ARCH_rttov_k_bf=-g -Mchkptr -traceback -Kieee -fPIC
+FFLAGS_ARCH_rttovscatt_test_one=-g -traceback -Kieee -fPIC
+
+FFLAGS_ARCH_lapack=-g -Mbounds -traceback -Kieee -fPIC
+FFLAGS_ARCH_lapack_lbl=-g -Mbounds -traceback -Kieee -fPIC

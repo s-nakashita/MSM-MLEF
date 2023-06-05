@@ -1,0 +1,12 @@
+&skin
+  k0%surftype        = 1
+  k0%watertype       = 1
+  k0%t               = 293.585
+  k0%salinity        = 35.0
+  k0%foam_fraction   = 0.0
+  k0%fastem(1)       = 3.0
+  k0%fastem(2)       = 5.0
+  k0%fastem(3)       = 15.0
+  k0%fastem(4)       = 0.1
+  k0%fastem(5)       = 0.3
+/

@@ -1,0 +1,23 @@
+# This worked for RTTOV v12: untested for later versions.
+
+FC=xlf95_r
+FC77=f77
+CC=xlc
+LDFLAGS_ARCH=-pg
+CFLAGS_ARCH=-g
+
+# -g                  = debug symbols
+# -pg                 = enable profiling with gprof
+# -qinitauto=7FF7FFFF = initialise real variables with NaN
+# -qflttrap           = trap floating point errors
+# -C                  = array bounds checking
+
+FFLAGS_ARCH=-g -pg -qextname -qsuffix=cpp=F90 -qinitauto=7FF7FFFF -qflttrap=ov:und:zero:inv:en -C
+FFLAG_D=-WF,-D
+CPP=/usr/lib/cpp
+AR=ar r
+
+FFLAGS_ARCH_rttov_iratlas_test = -g -pg -qextname -qsuffix=cpp=F90 -qinitauto=7FF7FFFF -C
+FFLAGS_ARCH_rttov_brdf_atlas_test = -g -pg -qextname -qsuffix=cpp=F90 -qinitauto=7FF7FFFF -C 
+FFLAGS_ARCH_example_atlas_fwd = -g -pg -qextname -qsuffix=cpp=F90 -qinitauto=7FF7FFFF -C 
+FFLAGS_ARCH_rttov_test = -g -pg -qextname -qsuffix=cpp=F90 -qinitauto=7FF7FFFF -C 

@@ -1,0 +1,9 @@
+FC=mpinfort
+FC77=mpinfort
+CC=mpincc
+CPP=mpincc -E
+LDFLAGS_ARCH=-static-nec -traceback=verbose
+CFLAGS_ARCH=-g
+FFLAGS_ARCH=
+FFLAG_D=-D
+AR=ar r
