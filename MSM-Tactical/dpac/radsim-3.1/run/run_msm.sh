@@ -4,16 +4,26 @@ RADSIM_SCDIR=${RADSIM_DIR}/src/scripts
 RADSIM_BINDIR=${RADSIM_DIR}/run/bin
 RTTOV_DIR=${HOME}/Development/grmsm/MSM-Tactical/dpac/rttov132
 MODELDIR=${HOME}/Development/grmsm/MSM-Tactical
-MODELDATADIR=${HOME}/mnt/methane/work/msm2msm3_dad3
-EXPN=daprepbufrall.scl.iter1.l100.v4.rp80
+#MODELDATADIR=${HOME}/mnt/methane/work/msm2msm3_dad3
+#EXPN=daprepbufrall.scl.iter1.l100.v4.rp80
+##EXPN=${EXPN}.spinup
+##EXPN=${EXPN}.nhydupd
+#EXPN=${EXPN}.no4ship
+MODELDATADIR=${HOME}/mnt/methane/work/msm2msm3_jpn
+EXPN=
 #OBSDATADIR=${HOME}/Development/dpac/himawari/hmwr_nc
 OBSDATADIR=${HOME}/mnt/ensens2/jaxa/jma/netcdf
 
-sdate=2022061900
-edate=2022061906
-while [ $sdate -le $edate ];do
-fhour=1
+wdir=`basename $MODELDATADIR`
+echo $wdir
+
 member=0
+#for member in $(seq 0 40);do
+sdate=2022061800
+edate=2022061800
+while [ $sdate -le $edate ];do
+fhour=3
+#for fhour in $(seq 1 3); do
 yyyy=`echo $sdate | cut -c1-4`
 mm=`echo $sdate | cut -c5-6`
 dd=`echo $sdate | cut -c7-8`
@@ -27,7 +37,8 @@ vhh=`echo $vdate | cut -c9-10`
 num_threads=8
 export OMP_NUM_THREADS=$num_threads
 ## create outdir
-outdir=${sdate}/$EXPN
+#outdir=${sdate}/$EXPN
+outdir=${sdate}/${wdir}/$EXPN
 if [ ! -d $outdir ]; then
 mkdir -p $outdir
 fi
@@ -39,7 +50,11 @@ mem3="mean"
 else
 mem3=`printf '%0.3d' $member`
 fi
+if [ -z $EXPN ]; then
+datadir=${MODELDATADIR}/${sdate}
+else
 datadir=${MODELDATADIR}/${sdate}/${EXPN}.${mem3}
+fi
 atmname=r_sig.f$fh
 flxname=r_flx.f$fh
 sfcname=r_sfc.f$fh
@@ -76,11 +91,15 @@ $RADSIM_SCDIR/radsim_geo_obs.py \
     --date_time $vyyyy $imm $idd $ihh 0 \
     --fixed_date_time T \
     --sat_lon 140.7 \
-    --max_lat 33.8 \
-    --min_lat 29.1 \
-    --min_lon 124.8 \
-    --max_lon 132.1 \
+    --max_lat 33.0 --min_lat 30.0 \
+    --min_lon 131.5 --max_lon 134.5 \
     || exit 1
+    #--max_lat 33.8 --min_lat 29.1 \
+    #--min_lon 124.8 --max_lon 132.1 \
+    #--min_lat 5.0 --max_lat 55.0 \
+    #--min_lon 110.0 --max_lon 160.0 \
+    #--min_lat 27.0 --max_lat 37.0 \
+    #--min_lon 130.0 --max_lon 140.0 \
     #--min_lat 30.0 --max_lat 31.5 \
     #--min_lon 130.0 --max_lon 132.0 \
     #--min_lat 23.5 --max_lat 41.8 \
@@ -92,8 +111,10 @@ fi
 ## create config file and run
 ch=`printf '%0.2d' $channel`
 outfile=radsim-${model_filetype}-${platform}_${satid}_${inst}${options}_ch${ch}-${sdate}00+${fh}h_ircld.nc
+if [ ! -z $EXPN ]; then
 outfile=${outfile%.nc}.${mem3}.nc
 #outfile=${outfile%.nc}_zoom.nc
+fi
 #if [ ! -f $outfile ]; then
 rm $outfile radsim_test.nml
 if [ -z $options ]; then
@@ -149,11 +170,12 @@ ls -ltr
 ## create plot
 $RADSIM_SCDIR/radsim_plot_example.py \
     --filename $outfile \
-    --vmin 190 --vmax 300 --cmap gist_ncar_r  ## band13
+    --vmin 190 --vmax 300 --cmap gray_r --cltop T ## band13
 #    --vmin 190 --vmax 260 --cmap gist_ncar_r  ## band10
 #    --vmin 240 --vmax 320 --cmap gray_r ## band7
 #    --vmin 190 --vmax 240 --cmap gray_r ## band8
 #    --vmin 190 --vmax 310 --cmap gray_r  ## band14
+#    --boxlonmin 131.5 --boxlonmax 134.5 --boxlatmin 30.0 --boxlatmax 33.0 \
 #    --lonmin 113.3 --lonmax 135.3 --latmin 23.5 --latmax 41.8
 ### debug
 #python plot_skewT.py $sdate $outfile
@@ -161,5 +183,7 @@ $RADSIM_SCDIR/radsim_plot_example.py \
 #mv ${outfile%.nc}.log log/
 #mv ${outfile}*.png fig/
 cd -
+#done #fhour
 sdate=`date -j -f "%Y%m%d%H" -v+1H +"%Y%m%d%H" "$sdate"`
-done
+done #[ sdate -le edate ]
+#done #member

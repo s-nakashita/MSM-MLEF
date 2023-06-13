@@ -73,9 +73,9 @@ fi
 ch=`printf '%0.2d' $channel`
 outfile=radsim-${model_filetype}-${platform}_${satid}_${inst}${options}_ch${ch}-${sdate}00.nc
 #outfile=${outfile%.nc}_ozn.nc
-#outfile=${outfile%.nc}_ircld.nc
-#if [ ! -f $outfile ]; then
-rm $outfile radsim_test.nml
+outfile=${outfile%.nc}_ircld.nc
+if [ ! -f $outfile ]; then
+#rm $outfile radsim_test.nml
 if [ -z $options ]; then
 $RADSIM_SCDIR/radsim_run.py \
     --config_file radsim_test.nml \
@@ -120,6 +120,7 @@ $RADSIM_SCDIR/radsim_run.py \
 #    --ozone_data T \
 #    --ir_addclouds T \
 fi
+fi
 ls -ltr
 ## create plot
 $RADSIM_SCDIR/radsim_plot_example.py \
@@ -128,7 +129,6 @@ $RADSIM_SCDIR/radsim_plot_example.py \
 #    --vmin 190 --vmax 240 --cmap gray_r ## band8
 #    --vmin 240 --vmax 320 --cmap gray_r ## band7
 #    --lonmin 113.3 --lonmax 135.3 --latmin 23.5 --latmax 41.8
-#fi
 ### debug
 #python plot_skewT.py $sdate $outfile
 #mv ${outfile} data/

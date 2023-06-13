@@ -222,7 +222,7 @@ end do
 
 select case(model(1) % grid % type)
 
-  case(0,1,2,3)
+  case(0,1,2,3,10)
 
     print '(a)', 'Calculating coordinates for lat,lon grid'
 

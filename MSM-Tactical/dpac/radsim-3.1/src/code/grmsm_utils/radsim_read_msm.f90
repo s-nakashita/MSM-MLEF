@@ -229,18 +229,14 @@ nprofs = dim_n_lat * dim_n_lon
 !----------------
 
 imodel=1
-model(imodel) % grid % type = 101 ! Unstructured grid
-if( .not. associated(model(imodel) % grid % lat) ) allocate(model(imodel) % grid % lat(nprofs))
-if( .not. associated(model(imodel) % grid % lon) ) allocate(model(imodel) % grid % lon(nprofs))
+model(imodel) % grid % type = 10 ! Mercator projection (See GRIB2 - GRID DEFINITION TEMPLATE 3.10)
+if( .not. associated(model(imodel) % grid % phi) ) allocate(model(imodel) % grid % phi(dim_n_lat))
+if( .not. associated(model(imodel) % grid % lambda) ) allocate(model(imodel) % grid % lambda(dim_n_lon))
 
-ij=1
-do j=1,dim_n_lat
-  do i=1,dim_n_lon
-    model(imodel) % grid % lat(ij) = lat(j)
-    model(imodel) % grid % lon(ij) = lon(i)
-    ij = ij + 1
-  end do
-end do
+model(imodel) % grid % nrows = dim_n_lat
+model(imodel) % grid % ncols = dim_n_lon
+model(imodel) % grid % phi(:) = lat(:)
+model(imodel) % grid % lambda(:) = lon(:)
 deallocate(lat, lon)
 
 if ( output_mode >= output_verbose ) then
@@ -248,8 +244,8 @@ if ( output_mode >= output_verbose ) then
   print '(a,i0)', 'nlevels = ', nlevels
   print '(a,i0)', 'nlatitudes = ', dim_n_lat
   print '(a,i0)', 'nlongitudes = ', dim_n_lon
-  print '(a,f8.2)', 'latitude of first point (degrees) = ', model(1) % grid % lat(1)
-  print '(a,f8.2)', 'longitude of first point (degrees) = ', model(1) % grid % lon(1)
+  print '(a,f8.2)', 'latitude of first point (degrees) = ', model(1) % grid % phi(1)
+  print '(a,f8.2)', 'longitude of first point (degrees) = ', model(1) % grid % lambda(1)
 end if
 
 !---------
@@ -478,10 +474,19 @@ istrat = 1
 me = 0
 call crhtab(rhcl,ier,me)
 
+allocate(lat(nprofs), lon(nprofs))
+ij=1
+do j=1,dim_n_lat
+  do i=1,dim_n_lon
+    lat(ij) = model(imodel) % grid % phi(j)
+    lon(ij) = model(imodel) % grid % lambda(i)
+    ij = ij + 1
+  end do
+end do
 call getclds(nprofs,nprofs,nlevels,&
 & model(imodel) % t, model(imodel) % q, &
 & vvel, model(imodel) % rh, qs, model(imodel) % lsm, &
-& model(imodel) % grid % lon, model(imodel) % grid % lat, &
+& lon, lat, &
 & cv, cvt, cvb, rhcl, istrat, &
 & prsi, prsl, cldtot, cldcnv, cldsa, &
 & mbota, mtopa, model(imodel) % ciw, ncld &
@@ -493,6 +498,7 @@ where(cldtot .le. 0.0)
 elsewhere(cldtot .ge. 1.0)
   model(imodel) % cfrac = 1.0
 end where
+deallocate(lat, lon)
 
 ! temporary arrays
 allocate( values_in2D(nprofs, nlevels) )

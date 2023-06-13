@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 from datetime import datetime, timedelta
 import sys
+plt.rcParams['font.size'] = 18
 
 def parse_args():
     """
@@ -102,11 +103,29 @@ def parse_args():
                         help='maximum value for latitude (default: max value of data latitude)',
                         metavar='FLOAT')
 
+    parser.add_argument('--boxlonmin', dest='boxlonmin', type=float, required=False,
+                        help='minimum value for box longitude (default: None)',
+                        metavar='FLOAT')
+    parser.add_argument('--boxlonmax', dest='boxlonmax', type=float, required=False,
+                        help='maximum value for box longitude (default: None)',
+                        metavar='FLOAT')
+    parser.add_argument('--boxlatmin', dest='boxlatmin', type=float, required=False,
+                        help='minimum value for box latitude (default: None)',
+                        metavar='FLOAT')
+    parser.add_argument('--boxlatmax', dest='boxlatmax', type=float, required=False,
+                        help='maximum value for box latitude (default: None)',
+                        metavar='FLOAT')
+
+    parser.add_argument('--cltop', dest='cltop', type=str, action=TFAction, required=False,
+                        help='generate a cloud-top highright plot (default: false)',
+                        metavar='T|F', default=False)
+
     return parser.parse_args()
 
 
 def make_plot(filename, varname, chan, scatter, size, vmin, vmax, cmapstr, title, diff_filename, \
-    lonmin, lonmax, latmin, latmax):
+    lonmin, lonmax, latmin, latmax, cltop,
+    boxlonmin, boxlonmax, boxlatmin, boxlatmax):
     """
     Read data and generate plot
     """
@@ -248,6 +267,18 @@ def make_plot(filename, varname, chan, scatter, size, vmin, vmax, cmapstr, title
     else:
         im = ax.pcolormesh(lon, lat, dat, transform=ccrs.PlateCarree(),
                            cmap=cmapstr, vmin=vmin, vmax=vmax)
+    
+    # highlight cloud-top
+    if cltop:
+        vminrgb, vmaxrgb = 200, 240
+        cmaprgb = 'rainbow_r'
+        datrgb = np.where(dat>vmaxrgb,np.nan,dat)
+        if scatter:
+            im = ax.scatter(lon, lat, c=datrgb, transform=ccrs.PlateCarree(), s=size,
+                        cmap=cmaprgb, vmin=vminrgb, vmax=vmaxrgb, antialiased=False)
+        else:
+            im = ax.pcolormesh(lon, lat, datrgb, transform=ccrs.PlateCarree(),
+                           cmap=cmaprgb, vmin=vminrgb, vmax=vmaxrgb)
 
     # Add coastlines, gridlines, colour bar, title
     #if abs(lonmax - lonmin) > 100:
@@ -266,11 +297,15 @@ def make_plot(filename, varname, chan, scatter, size, vmin, vmax, cmapstr, title
     #ax.set_yticks(latticks,ccrs.PlateCarree())
     ax.set_extent([lonmin,lonmax,latmin,latmax],crs=ccrs.PlateCarree())
     ax.coastlines(resolution='50m') # options: 110m, 50m 10m
-    ax.gridlines(draw_labels=True,crs=ccrs.PlateCarree())
-    fig.colorbar(im, ax=ax)
-    boxlon=[128.0,129.0,129.0,128.0,128.0]
-    boxlat=[31.15,31.15,30.15,30.15,31.15]
-    ax.plot(boxlon,boxlat,c='k',lw=2,transform=ccrs.PlateCarree())
+    gl=ax.gridlines(draw_labels=True,crs=ccrs.PlateCarree())
+    gl.top_labels = False
+    gl.right_labels = False
+    fig.colorbar(im, ax=ax, pad=0.01, shrink=0.6)
+    if boxlonmax is not None and boxlonmin is not None \
+        and boxlatmax is not None and boxlatmin is not None:
+        boxlon=[boxlonmin,boxlonmax,boxlonmax,boxlonmin,boxlonmin]
+        boxlat=[boxlatmax,boxlatmax,boxlatmin,boxlatmin,boxlatmax]
+        ax.plot(boxlon,boxlat,c='k',lw=2,transform=ccrs.PlateCarree())
     if title is None:
         vdate = datetime(*rootgrp.validity_time)
         idate = datetime(*rootgrp.data_time)
@@ -288,13 +323,14 @@ def make_plot(filename, varname, chan, scatter, size, vmin, vmax, cmapstr, title
         if chan is not None:
             title = 'Simulated ' + varname.upper() + diffstr + ' for ' + \
                     rootgrp.platform.upper() + ' ' + str(rootgrp.satid) + ' ' + \
-                    rootgrp.instrument.upper() + ' ch' + str(chan) + timestr
+                    rootgrp.instrument.upper() + ' ch' + str(chan) + '\n' + timestr
         else:
             title = 'Simulated ' + varname.upper() + diffstr + ' for ' + \
                     rootgrp.platform.upper() + ' ' + str(rootgrp.satid) + ' ' + \
-                    rootgrp.instrument.upper() + timestr
+                    rootgrp.instrument.upper() + '\n' + timestr
     ax.set_title(title+f"\nmax={dat.max():.2f}K min={dat.min():.2f}K")
     fig.savefig(filename+".png",dpi=300)
+    #fig.savefig(filename+".ps")
 
     # Display the plot
     #plt.show()
@@ -304,4 +340,5 @@ if __name__ == '__main__':
     args = parse_args()
     make_plot(args.filename, args.varname, args.channel, args.scatter,
               args.size, args.vmin, args.vmax, args.cmap, args.title, args.diff,
-              args.lonmin,args.lonmax,args.latmin,args.latmax)
+              args.lonmin,args.lonmax,args.latmin,args.latmax, args.cltop,
+              args.boxlonmin,args.boxlonmax,args.boxlatmin,args.boxlatmax)
