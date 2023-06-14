@@ -14,10 +14,11 @@ if [ -s /ptmp ]; then
    export TEMP=/ptmp/${USERID}/$EXPN         #output top directory
 else
 #   export TEMP=/tmp/${USERID}/$EXPN          #output top directory
-   export TEMP=$WORKUSR/${EXPN}_jpn          #output top directory
+   export TEMP=$WORKUSR/${EXPN}          #output top directory
+#   export TEMP=$WORKUSR/${EXPN}_jpn          #output top directory
 fi
 
-export BASEDIR=$WORKUSR/rsm2msm9_jpn/${SDATE}
+export BASEDIR=$WORKUSR/rsm2msm9_truth/${SDATE}
 #export BASEDIR=$WORKUSR/rsm2msm9_3nest/${SDATE}
 export IRES=3
 
@@ -51,7 +52,7 @@ export RKN=no
 export RAS=no
 export SAS=yes
 export NCLDB=1
-export NCLD=1
+export NCLD=5
 export GTOPO30=yes
 export PERCMTN=0.0
 export CHGTLEV=no 
@@ -67,7 +68,7 @@ export FCST=yes
 # --------------- run option --------------------
 export RUNENV='mpiexec -s all -n 2 '
 export LENMON=1  
-export ENDHOUR=48 
+export ENDHOUR=24
 export TIMESTEP=10
 export INCBASE=1
 export INCHOUR=1
@@ -81,23 +82,49 @@ export RUNFCST=yes
 
 #### rsmlocation
 
-# d03 120E-134E 24N-34N
-export  IGRD=384
-export  JGRD=324
+# d03 domain 118.5E-135E 22N-36N
+export  IGRD=144
+export  JGRD=144
 export  LEVR=42
 export  RPROJ=0.
 export  RTRUTH=45.0
-export  RORIENT=120.0
+export  RORIENT=140.0
 export  RDELX=3000.
-export  RDELY=3100.
-export  RCENLAT=29.0
-export  RCENLON=125.0
-#export  RCENLAT=31.0
-#export  RCENLON=130.0
-export  RLFTGRD=132.
-export  RBTMGRD=153. 
+export  RDELY=3000.
+export  RCENLAT=31.5
+export  RCENLON=127.5
+export  RLFTGRD=72.0
+export  RBTMGRD=72.0
+## d03 120E-134E 24N-34N
+#export  IGRD=384
+#export  JGRD=324
+#export  LEVR=42
+#export  RPROJ=0.
+#export  RTRUTH=45.0
+#export  RORIENT=120.0
+#export  RDELX=3000.
+#export  RDELY=3100.
+#export  RCENLAT=29.0
+#export  RCENLON=125.0
+##export  RCENLAT=31.0
+##export  RCENLON=130.0
+#export  RLFTGRD=132.
+#export  RBTMGRD=153. 
 
 # ------------------- MSM9
+# d02 domain 118.5E-135E 22N-36N
+export  CIGRD=128
+export  CJGRD=128
+export  LEVS=42
+export  CPROJ=0.
+export  CTRUTH=45.0
+export  CORIENT=140.0
+export  CDELX=9000.
+export  CDELY=9000.
+export  CCENLAT=30.0
+export  CCENLON=120.0
+export  CLFTGRD=30.0
+export  CBTMGRD=33.0
 #export  CIGRD=384
 #export  CJGRD=324
 #export  LEVS=42
@@ -110,21 +137,21 @@ export  RBTMGRD=153.
 #export  CCENLON=120.0
 #export  CLFTGRD=183.0
 #export  CBTMGRD=190.0
-# Japan domain 115E-157E 18N-48N
-export  CIGRD=384
-export  CJGRD=324
-export  LEVS=42
-export  CPROJ=0.
-export  CTRUTH=45.0
-export  CORIENT=140.0
-export  CDELX=9000.
-export  CDELY=9300.
-export  CCENLAT=35.0
-export  CCENLON=130.0
-#export  CCENLAT=37.0
-#export  CCENLON=135.0
-export  CLFTGRD=183.0
-export  CBTMGRD=190.0
+## Japan domain 115E-157E 18N-48N
+#export  CIGRD=384
+#export  CJGRD=324
+#export  LEVS=42
+#export  CPROJ=0.
+#export  CTRUTH=45.0
+#export  CORIENT=140.0
+#export  CDELX=9000.
+#export  CDELY=9300.
+#export  CCENLAT=35.0
+#export  CCENLON=130.0
+##export  CCENLAT=37.0
+##export  CCENLON=135.0
+#export  CLFTGRD=183.0
+#export  CBTMGRD=190.0
 ## test dimension and shift
 # export  CIGRD=128                            # release_test
 # export  CJGRD=108                            # release_test

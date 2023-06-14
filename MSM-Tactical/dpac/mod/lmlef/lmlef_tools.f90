@@ -76,6 +76,7 @@ subroutine init_das_lmlef
    & ,(/nv3d+nv2d_sig,nobstype/))
 !!                              Th  U  V  Q OZ CW Pn Tn  W GZ Ps Wb
   var_update(1:nv3d+nv2d_sig)=(/ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0/)
+!  var_update(1:nv3d+nv2d_sig)=(/ 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1/)
   iv3d_t = iv3d_tn !non-hydrostatic temperature updated
   iv3d_tt= iv3d_th !hydrostatic temperature not updated
   else !hydrostatic
@@ -524,7 +525,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
   end do ! while ( niter <= maxiter )
   if (niter>=maxiter) write(6,'(A,I4)') 'iteration number exceeds ',maxiter
   ! update analysis
-  if(relax_spread_out) then
+  if(relax_spread_out.and.sp_infl_rtps>0.0d0) then
     allocate( rtps3d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nlev,nv3d)[*] )
     allocate( rtps2d(1-ighost:ni1max+ighost,1-jghost:nj1max+jghost,nv2d)[*] )
     rtps3d = 1.0_dp
@@ -835,7 +836,7 @@ subroutine das_lmlefy(gues3dc,gues2dc,gues3d,gues2d,anal3dc,anal2dc,anal3d,anal2
     deallocate(work3d,work2d)
   end if
   ! write out RTPS coefficients
-  if(relax_spread_out) then
+  if(relax_spread_out.and.sp_infl_rtps>0.0d0) then
     call gather_grd(print_img,rtps3d,rtps2d,work3dg,work2dg)
     if(myimage == print_img) then
       write(6,'(A,I3.3,2A)') 'MYIMAGE ',myimage,' is writing a file ',trim(relax_spread_out_basename)

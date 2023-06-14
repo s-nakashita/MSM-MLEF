@@ -6,6 +6,7 @@ program decode_prepbufr
 !
   use kind_module
   use obs_module, only : obstype, &
+     & uid_obs, plevfix, obserr, &
      & id_t_obs, id_q_obs, id_u_obs, id_v_obs, id_ps_obs, &
      & obsin_allocate, obsin_deallocate, obs_preproc, monit_obsin, &
      & write_obs, ndate, nhour
@@ -58,10 +59,11 @@ program decode_prepbufr
   integer :: nout
   integer :: io,stat,n,inlength,np,nt,nplat, &
              count,k,flag,pflag,p,ns,s,platflag
+  integer, dimension(1) :: k1d
   real(kind=dp) :: lat1,lat2,lon1,lon2,platform
 
   integer :: tmpelm,tmpdmin
-  real(kind=dp) :: tmplon, tmplat, tmplev, tmpdat, tmpdhr
+  real(kind=dp) :: tmplon, tmplat, tmplev, tmpdat, tmperr, tmpdhr
         
   integer :: tv_ev_idx, tvflag
   integer :: idate, ierrpb, iuno
@@ -462,23 +464,33 @@ program decode_prepbufr
               case('T')
                 tmpelm=id_t_obs
                 tmpdat=evns(1,lv,jj,kk)+273.15 !degC->degK
+                tmperr=evns(7,lv,jj,kk)
               case('Q')
                 tmpelm=id_q_obs
                 tmpdat=evns(1,lv,jj,kk)*1.0e-6 !mg/kg->kg/kg
+                tmperr=evns(7,lv,jj,kk)*1.0e-6 !mg/kg->kg/kg
                 if(evns(3,lv,jj,kk).ne.1.0) cycle !duplicate
               case('U')
                 tmpelm=id_u_obs
                 tmpdat=evns(1,lv,jj,kk)
+                tmperr=evns(7,lv,jj,kk)
               case('V')
                 tmpelm=id_v_obs
                 tmpdat=evns(1,lv,jj,kk)
+                tmperr=evns(7,lv,jj,kk)
               end select
+              if(tmperr==0.0d0) then
+                k1d = minloc(abs(tmplev-plevfix(:)))
+                k=k1d(1)
+                tmperr=obserr(k,uid_obs(tmpelm))
+              end if
               ndataall(iof(ii))=ndataall(iof(ii))+1
               obs(iof(ii))%elem(ndataall)=tmpelm
               obs(iof(ii))%lon (ndataall)=tmplon
               obs(iof(ii))%lat (ndataall)=tmplat
               obs(iof(ii))%lev (ndataall)=tmplev
               obs(iof(ii))%dat (ndataall)=tmpdat
+              obs(iof(ii))%err (ndataall)=tmperr
               obs(iof(ii))%dmin(ndataall)=real(tmpdmin,kind=dp)
             endif
             !==UPPER==
@@ -490,11 +502,17 @@ program decode_prepbufr
             tmpelm=id_ps_obs
             tmplev=hdr(4) !elevation
             tmpdat=evns(1,lv,jj,kk)*100.0 !mb->Pa
+            tmperr=evns(7,lv,jj,kk)*100.0 !mb->Pa
+            if(tmperr==0.0d0) then
+              k=1
+              tmperr=obserr(k,uid_obs(tmpelm))
+            end if
             obs(iof(ii))%elem(ndataall)=tmpelm
             obs(iof(ii))%lon (ndataall)=tmplon
             obs(iof(ii))%lat (ndataall)=tmplat
             obs(iof(ii))%lev (ndataall)=tmplev
             obs(iof(ii))%dat (ndataall)=tmpdat
+            obs(iof(ii))%err (ndataall)=tmperr
             obs(iof(ii))%dmin(ndataall)=real(tmpdmin,kind=dp)
           END IF
         END DO  ! End jj = 1, MXR8VN loop

@@ -270,8 +270,9 @@
          enddo
        endif
 !
-       if(ncldb.eq.0.and.ncld.ge.1) then
-         do kc = 1,ncld
+       !if(ncldb.eq.0.and.ncld.ge.1) then
+       if(ncld.gt.ncldb) then
+         do kc = ncldb+1,ncld
            kcloud = 1+ntoz+kc
            do k=1,levs
            do i=1,clngrd

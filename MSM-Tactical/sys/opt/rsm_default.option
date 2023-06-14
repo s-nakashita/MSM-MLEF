@@ -244,12 +244,12 @@ if [ do$NEST = doP2R ] ; then
       exit
    fi
 fi
-if [ $NCLDB -ne $NCLD ] ; then
-   if [ $NCLDB -ne 0 ] ; then
-      echo ' NCLDB should be 0 or equal NCLD '
-      exit
-   fi
-fi
+#if [ $NCLDB -ne $NCLD ] ; then
+#   if [ $NCLDB -ne 0 ] ; then
+#      echo ' NCLDB should be 0 or equal NCLD '
+#      exit
+#   fi
+#fi
 if [ $NCLD = 2 ] ; then
    export NUMP3D=4
    export NUMP2D=3

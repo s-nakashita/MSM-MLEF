@@ -296,7 +296,7 @@ contains
   if(icld==1.and.fhour > 0.0) then
     write(nctl,'(a,i2,a)') 'f_ice ',levs,' 99 ice fraction'
     write(nctl,'(a,i2,a)') 'f_rain ',levs,' 99 rain fraction'
-    write(nctl,'(a,i2,a)') 'f_rimef ',levs,' 99 mixed fraction'
+    write(nctl,'(a,i2,a)') 'f_rimef ',levs,' 99 rime factor for ice'
   end if
     write(nctl,'(a)') 'endvars'
     return

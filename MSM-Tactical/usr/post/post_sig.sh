@@ -14,6 +14,7 @@ ENDHOUR=${3:-24}
 MEM=${4}
 if [ $IRES -eq 27 ]; then
 ICLD=0 #hydrostatic
+inc_h=3
 if [ do$MEM = do ]; then
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad/$SDATE
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_himsst/$SDATE
@@ -30,11 +31,13 @@ fi
 fi
 elif [ $IRES -eq 18 ]; then
 ICLD=0
+inc_h=3
 #DATADIR=/zdata/grmsm/work/rsm2rsm18_truth/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE
 #DATADIR=/zdata/grmsm/work/rsm2rsm18_osse/$SDATE/da_prep.siml30.grid.scl.iter1.l200.v4.rs90.000
 elif [ $IRES -eq 9 ]; then
 ICLD=1 #nonhydrostatic
+inc_h=1
 DATADIR=/zdata/grmsm/work/rsm2msm9_jpn/$SDATE
 #DATADIR=/zdata/grmsm/work/rsm2msm9_truth/$SDATE
 DATADIR=/zdata/grmsm/work/rsm2msm9_osse/$SDATE
@@ -49,6 +52,7 @@ fi
 #fi
 elif [ $IRES -eq 3 ]; then
 ICLD=1 #nonhydrostatic
+inc_h=1
 #DATADIR=/zdata/grmsm/work/msm2msm3_jpn/$SDATE
 ICLD=0
 #DATADIR=/zdata/grmsm/work/rsm2msm3_truthb/$SDATE
@@ -56,8 +60,10 @@ DATADIR=/zdata/grmsm/work/rsm2msm3_osse/$SDATE/da_prep.siml30.grid.scl.iter1.l10
 #DATADIR=/zdata/grmsm/work/rsm2msm3_osseb/$SDATE/noda000
 elif [ $IRES -gt 27 ]; then ##debug for base perturbation
 ICLD=0 #hydrostatic
+inc_h=3
 if [ do$MEM = do ] || [ "$MEM" = "000" ]; then
-DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE
+DATADIR=/zdata/grmsm/work/gfsp2rsm27_nomad_gfsz/$SDATE
+#DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE
 else
 DATADIR=/zdata/grmsm/work/gfsp2rsm27_rda/$SDATE/$MEM
 fi
@@ -85,7 +91,6 @@ EOF
 fh=0
 #fh=$ENDHOUR
 end_hour=$ENDHOUR
-inc_h=1
 rm -f fort.*
 rm ${EXEC}.log
 while [ $fh -le $end_hour ]; do
@@ -93,8 +98,8 @@ if [ $fh -lt 10 ]; then
   fh=0$fh
 fi
 in=r_sig.f$fh
-out=sig.f${fh}.bin
-ctl=sig.f${fh}.ctl
+out=sig.f${fh}.nconv.bin
+ctl=sig.f${fh}.nconv.ctl
 #in=rbssigf$fh
 #out=sigb.f${fh}.bin
 #ctl=sigb.f${fh}.ctl

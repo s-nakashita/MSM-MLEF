@@ -10,7 +10,7 @@ module obsope_module
   use co_module
   use rsmcom_module
   use corsm_module
-  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj, calc_q2
+  use func_module, only : calc_pfull, calc_td, calc_wd, calc_rh, prsadj
   use obs_module
   implicit none
   private
@@ -120,10 +120,11 @@ contains
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
-          k=kk(1)
-          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          !k=kk(1)
+          !obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
           ! horizontal domain check
           if(    obsin(iof)%lon(n).le.rlon(1) &
              .or.obsin(iof)%lon(n).ge.rlon(nlon)&
@@ -358,13 +359,29 @@ contains
           obsout%lat(nobsout)  = obsin(iof)%lat(n)
           obsout%lev(nobsout)  = obsin(iof)%lev(n)
           obsout%dat(nobsout)  = obsin(iof)%dat(n)
+          obsout%err(nobsout)  = obsin(iof)%err(n)
           obsout%dmin(nobsout) = obsin(iof)%dmin(n)
-          kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
-          k=kk(1)
-          obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !kk = minloc(abs(obsin(iof)%lev(n)-plevfix(:)))
+          !k=kk(1)
+          !obsout%err(nobsout)  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+    ! (debug) check whether observation is 
+    !  within prescribed horizontal domain or not
+    if(     lonw.ne.0.0d0.and.lone.ne.0.0d0 &
+       .and.lats.ne.0.0d0.and.latn.ne.0.0d0 &
+       .and.(obsout%lon(nobsout).lt.lonw&
+         .or.obsout%lon(nobsout).gt.lone&
+         .or.obsout%lat(nobsout).lt.lats&
+         .or.obsout%lat(nobsout).gt.latn)) then
+        write(0,'(2a,4f8.2,2(a,f8.2))') &
+        & 'warning: observation is outside of the prescribed horizontal domain ', &
+        & 'lonw,lone,lats,latn=',lonw,lone,lats,latn,&
+        & 'lon=',obsout%lon(nobsout),' lat=',obsout%lat(nobsout)
+        obsout%qc(nobsout)=iqc_out_h
+    else
           call phys2ijk(p_full,obsin(iof)%elem(n),&
              &  obsin(iof)%lon(n),obsin(iof)%lat(n),obsin(iof)%lev(n), &
              &  ri,rj,rk,obsout%qc(nobsout))
+    end if
           if(obsout%qc(nobsout).eq.iqc_good) then
             if(.not.luseobs(uid_obs(obsin(iof)%elem(n)))) then
               obsout%qc(nobsout)=iqc_otype
@@ -530,9 +547,6 @@ contains
     real(kind=dp), allocatable :: rand(:)
     real(kind=dp) :: tmplev, tmperr
     real(kind=dp), allocatable :: wk(:,:)[:]
-    !! q-adjustment
-    real(kind=dp) :: ptmp,ttmp,qstmp
-    !!
     integer :: is,ie,js,je
     integer,dimension(1) :: kk
     integer :: k
@@ -572,7 +586,7 @@ contains
       print *, nobsin
       allocate( rand(nobsin) )
       call random_normal(rand)
-      allocate( wk(nobsin,2)[*] ) !level,dat
+      allocate( wk(nobsin,3)[*] ) !level,dat,err
       wk=0.0d0
       do n=1,obsin(iof)%nobs
         ! horizontal domain check
@@ -603,14 +617,16 @@ contains
           if(obsin(iof)%elem(n).lt.10000) then !upper
             rk=obsin(iof)%lev(n)
             call itpl_2d(p_full(:,:,nint(rk)),ri,rj,wk(n,1))
-            kk = minloc(abs(wk(n,1)-plevfix))
-            k = kk(1)
+          !  kk = minloc(abs(wk(n,1)-plevfix))
+          !  k = kk(1)
           else !synop
             call itpl_2d(v2d(:,:,iv2d_gz),ri,rj,wk(n,1))
             rk=wk(n,1)
-            k=1
+          !  k=1
           end if
-          tmperr  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          !tmperr  = obserr(k,uid_obs(obsin(iof)%elem(n)))
+          tmperr  = obsin(iof)%err(n)
+          wk(n,3) = tmperr
           print '(3I6,3F10.2,ES10.2)', &
                   myimage, n, obsin(iof)%elem(n), ri,rj,rk,tmperr
 !debug          print '(2I5,2F10.2)',n, obsin(iof)%elem(n), obsin(iof)%lev(n),wk(n,1)
@@ -628,18 +644,7 @@ contains
                 if(wk(n,2)<0.0) wk(n,2)=1.0e-6
                 if(wk(n,2)>1.0) wk(n,2)=1.0
               else if(obsin(iof)%elem(n)==id_q_obs) then
-                if(wk(n,2)<0.0) then
-                  wk(n,2)=1.0e-9
-                else
-                  ptmp=wk(n,1)
-                  call trans_xtoy(id_t_obs,ri,rj,rk,&
-                     &  v3d,v2d,p_full,ttmp)
-                  call calc_q2(ttmp,1.0d0,ptmp,qstmp)
-                  if(wk(n,2)>qstmp) then
-                    write(0,*) 'simulated q ',wk(n,2),'>',qstmp
-                    wk(n,2)=qstmp
-                  end if
-                end if
+                if(wk(n,2)<0.0) wk(n,2)=1.0e-9
               end if
             end if !luseobs
           end if !iqc_good
@@ -661,6 +666,7 @@ contains
         do n=1,obsin(iof)%nobs
           obsin(iof)%lev(n)=wk(n,1)
           obsin(iof)%dat(n)=wk(n,2)
+          obsin(iof)%err(n)=wk(n,3)
         end do
         call monit_obsin(obsin(iof)%nobs,obsin(iof)%elem,obsin(iof)%dat)
         ofile=trim(datatype(iof))//'.siml.'//odate
@@ -762,9 +768,8 @@ contains
         qc=iqc_out_h
         return
       end if
-!!DEBUG
-      write(6,'(6(a,f8.2))') &
-        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
+!!DEBUG      write(6,'(6(a,f8.2))') &
+!!DEBUG        & 'lon=',rlon1,' lat=',rlat1,' ri=',ri,' rj=',rj, ' rlon=',rlon(i),' rlat=',rlat(j)
     end if
     ! rlev1 -> rk
     if(elm.gt.9999) then !surface observation : rlev = height [m]

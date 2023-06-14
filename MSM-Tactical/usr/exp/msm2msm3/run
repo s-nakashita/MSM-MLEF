@@ -1,9 +1,12 @@
 #!/bin/sh
 #
 set -x
-#export SDATE=2022042700
+export SDATE=2022061812
 WDIR=${WDIR:-` pwd `}
 . ${WDIR}/configure 
+if [ $NCLD -ne $NCLDB ] || [ $NCLD -gt 1 ]; then
+export RUNDIR=${TEMP}/${SDATE}.nc${NCLD}b${NCLDB}
+fi
 echo $RUNDIR
 #
 #export RUNENV='mpiexec -s all -n '${NPES}

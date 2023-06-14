@@ -12,14 +12,14 @@ mkdir -p $CMPDIR $INCDIR $EXPEXE
 #####           except ASFC and RPOST for global parts.
 #####           all executive files in here saved in EXPEXE
 
-if [ $NCLDB != $NCLD ]
-then
-  if [ $NCLDB != 0 ]
-  then
-    echo 'NCLDB should be 0 or equal NCLD'
-    exit
-  fi
-fi
+#if [ $NCLDB != $NCLD ]
+#then
+#  if [ $NCLDB != 0 ]
+#  then
+#    echo 'NCLDB should be 0 or equal NCLD'
+#    exit
+#  fi
+#fi
 if [ $NCLD -gt 1 ]
 then
   export NUMP3D=4
